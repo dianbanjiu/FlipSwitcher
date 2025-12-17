@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>Switcheroo</AssemblyName>
+    <RootNamespace>Switcheroo</RootNamespace>
+    <Version>2.0.0</Version>
+    <Authors>Switcheroo Team</Authors>
+    <Description>A modern Alt-Tab replacement with Fluent 2 Design</Description>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.1.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\switcheroo.png" Condition="Exists('Assets\switcheroo.png')" />
+  </ItemGroup>
+
+</Project>

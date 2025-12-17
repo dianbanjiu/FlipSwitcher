@@ -1,0 +1,10 @@
+Place your switcheroo.png file here.
+
+Recommended size: 256x256 pixels (will be scaled for system tray).
+
+For a Fluent 2 style icon, consider:
+- Using the Microsoft Fluent System Icons
+- A simple grid or window switching motif
+- Microsoft Blue (#0078D4) as the primary color
+- Transparent background
+
