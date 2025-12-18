@@ -11,7 +11,8 @@
     AllowsTransparency="True"
     Background="Transparent"
     WindowStartupLocation="CenterScreen"
-    ResizeMode="NoResize">
+    ResizeMode="NoResize"
+    PreviewKeyDown="Window_PreviewKeyDown">
 
     <!-- Main Container -->
     <Border Background="{StaticResource BackgroundAcrylicBaseBrush}"

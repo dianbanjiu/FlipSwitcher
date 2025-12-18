@@ -36,6 +36,7 @@ public partial class MainWindow : Window
         _hotkeyService.CloseWindowRequested += HotkeyService_CloseWindowRequested;
         _hotkeyService.SearchModeRequested += HotkeyService_SearchModeRequested;
         _hotkeyService.EscapePressed += HotkeyService_EscapePressed;
+        _hotkeyService.SettingsRequested += HotkeyService_SettingsRequested;
 
         // Listen for settings changes
         SettingsService.Instance.SettingsChanged += OnSettingsChanged;
@@ -210,6 +211,15 @@ public partial class MainWindow : Window
         HideWindow();
     }
 
+    private void HotkeyService_SettingsRequested(object? sender, EventArgs e)
+    {
+        // Hide main window and open settings
+        HideWindow();
+        var settingsWindow = new SettingsWindow();
+        settingsWindow.Owner = this;
+        settingsWindow.ShowDialog();
+    }
+
     private void ShowWindow()
     {
         // Refresh window list - in Alt+Tab mode, select the second window
@@ -333,6 +343,15 @@ public partial class MainWindow : Window
                 if (Keyboard.Modifiers == ModifierKeys.Alt)
                 {
                     EnterSearchMode();
+                    e.Handled = true;
+                }
+                break;
+
+            case Key.OemComma:
+                // Alt+, to open settings
+                if (Keyboard.Modifiers == ModifierKeys.Alt)
+                {
+                    HotkeyService_SettingsRequested(this, EventArgs.Empty);
                     e.Handled = true;
                 }
                 break;

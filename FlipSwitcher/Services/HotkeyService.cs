@@ -81,6 +81,11 @@ public class HotkeyService : IDisposable
     /// </summary>
     public event EventHandler? EscapePressed;
 
+    /// <summary>
+    /// Fired when Alt+, is pressed (to open settings)
+    /// </summary>
+    public event EventHandler? SettingsRequested;
+
     public string CurrentHotkey { get; private set; } = "Alt + Space";
     public bool IsAltTabEnabled => _useAltTab;
 
@@ -307,6 +312,16 @@ public class HotkeyService : IDisposable
                         Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                         {
                             SearchModeRequested?.Invoke(this, EventArgs.Empty);
+                        }));
+                        return (IntPtr)1;
+                    }
+
+                    // Alt+, - open settings
+                    if (hookStruct.vkCode == NativeMethods.VK_OEM_COMMA)
+                    {
+                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            SettingsRequested?.Invoke(this, EventArgs.Empty);
                         }));
                         return (IntPtr)1;
                     }

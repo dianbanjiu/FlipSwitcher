@@ -229,6 +229,7 @@ internal static class NativeMethods
     public const int VK_ESCAPE = 0x1B;
     public const int VK_S = 0x53;
     public const int VK_W = 0x57;
+    public const int VK_OEM_COMMA = 0xBC; // , key
     public const int VK_LMENU = 0xA4; // Left Alt
     public const int VK_RMENU = 0xA5; // Right Alt
 

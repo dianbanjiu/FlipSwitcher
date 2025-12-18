@@ -218,5 +218,14 @@ public partial class SettingsWindow : Window
             DragMove();
         }
     }
+
+    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+        {
+            Close();
+            e.Handled = true;
+        }
+    }
 }
 
