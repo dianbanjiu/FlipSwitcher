@@ -44,14 +44,13 @@ dotnet run --project FlipSwitcher
 
 ## ⌨️ Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Alt + Space` | Open/Close FlipSwitcher |
-| `↑` / `↓` | Navigate windows |
-| `Enter` | Switch to selected window |
-| `Esc` | Close FlipSwitcher |
-| `Tab` / `Shift+Tab` | Navigate windows |
-| Type anything | Filter windows |
+| Shortcut            | Action                                                |
+| ------------------- | ----------------------------------------------------- |
+| `Alt + Space`       | Open/Close FlipSwitcher                               |
+| `Alt + Tab`         | Open FlipSwitcher (optional, replaces system Alt+Tab) |
+| `Alt + S`           | Enter search mode (keep window open)                  |
+| `Alt + W`           | Close selected window                                 |
+| `Alt + ,`           | Open settings                                         |
 
 ## 🎨 Design
 
@@ -67,13 +66,21 @@ FlipSwitcher is built following Microsoft's [Fluent 2 Design System](https://flu
 
 ```
 FlipSwitcher/
-├── Core/           # Windows API interop
+├── Assets/         # Application icons and images
+├── Converters/     # WPF value converters
+├── Core/           # Windows API interop (NativeMethods)
 ├── Models/         # Data models (AppWindow)
-├── Services/       # Business logic (WindowService, HotkeyService)
-├── ViewModels/     # MVVM ViewModels
-├── Views/          # WPF Windows and UserControls
+├── Properties/     # Publish profiles
+├── Services/       # Business logic
+│   ├── AdminService.cs      # Administrator privileges
+│   ├── HotkeyService.cs     # Global hotkey handling
+│   ├── SettingsService.cs   # Application settings
+│   ├── StartupService.cs    # Windows startup registration
+│   ├── TrayIconService.cs   # System tray icon
+│   └── WindowService.cs     # Window enumeration
 ├── Themes/         # Fluent 2 styles and colors
-└── Converters/     # Value converters
+├── ViewModels/     # MVVM ViewModels
+└── Views/          # WPF Windows (MainWindow, SettingsWindow)
 ```
 
 ## 🛠️ Technology Stack
