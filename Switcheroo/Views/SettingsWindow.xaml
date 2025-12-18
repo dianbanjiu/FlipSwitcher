@@ -35,11 +35,12 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Header -->
+            <!-- Header (draggable) -->
             <Border Grid.Row="0"
                 Background="{StaticResource BackgroundSolidSecondaryBrush}"
                 CornerRadius="12,12,0,0"
-                Padding="20,16">
+                Padding="20,16"
+                MouseLeftButtonDown="Header_MouseLeftButtonDown">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
