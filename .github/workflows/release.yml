@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore FlipSwitcher/FlipSwitcher.csproj
+
+      # 不包含运行时的版本
+      - name: Build Framework-Dependent
+        run: |
+          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o publish/framework-dependent
+
+      - name: Rename Framework-Dependent exe
+        run: |
+          Move-Item -Path publish/framework-dependent/FlipSwitcher.exe -Destination publish/FlipSwitcher-windows-x64.exe
+
+      # 包含运行时的独立版本
+      - name: Build Self-Contained
+        run: |
+          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o publish/self-contained
+
+      - name: Rename Self-Contained exe
+        run: |
+          Move-Item -Path publish/self-contained/FlipSwitcher.exe -Destination publish/FlipSwitcher-windows-x64-SelfContained.exe
+
+      # 便携版本 (zip)
+      - name: Build Portable
+        run: |
+          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o publish/portable
+
+      - name: Create Portable zip
+        run: |
+          Compress-Archive -Path publish/portable/* -DestinationPath publish/FlipSwitcher-windows-x64-Portable.zip
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          $version = "${{ github.ref_name }}"
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: FlipSwitcher ${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            publish/FlipSwitcher-windows-x64.exe
+            publish/FlipSwitcher-windows-x64-SelfContained.exe
+            publish/FlipSwitcher-windows-x64-Portable.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
