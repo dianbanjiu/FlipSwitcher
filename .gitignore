@@ -25,6 +25,7 @@ bld/
 
 # Visual Studio Code files
 .vscode/
+.cursor/
 
 # NuGet packages
 *.nupkg
