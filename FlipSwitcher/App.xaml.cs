@@ -1,7 +1,7 @@
 using System.Windows;
-using Switcheroo.Services;
+using FlipSwitcher.Services;
 
-namespace Switcheroo;
+namespace FlipSwitcher;
 
 public partial class App : Application
 {
@@ -37,7 +37,7 @@ public partial class App : Application
         // Set up global exception handling
         DispatcherUnhandledException += (s, args) =>
         {
-            MessageBox.Show($"An error occurred: {args.Exception.Message}", "Switcheroo Error",
+            MessageBox.Show($"An error occurred: {args.Exception.Message}", "FlipSwitcher Error",
                 MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
@@ -50,4 +50,3 @@ public partial class App : Application
         base.OnExit(e);
     }
 }
-

@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Security.Principal;
 
-namespace Switcheroo.Services;
+namespace FlipSwitcher.Services;
 
 /// <summary>
 /// Service for handling administrator privileges

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
-using Switcheroo.Core;
-using Switcheroo.Models;
+using FlipSwitcher.Core;
+using FlipSwitcher.Models;
 
-namespace Switcheroo.Services;
+namespace FlipSwitcher.Services;
 
 /// <summary>
 /// Service for enumerating and managing windows

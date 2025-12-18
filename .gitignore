@@ -67,9 +67,6 @@ BenchmarkDotNet.Artifacts/
 # Publish output
 publish/
 
-# Application data
-%AppData%/Switcheroo/
-
 # OS generated files
 .DS_Store
 .DS_Store?

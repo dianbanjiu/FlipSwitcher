@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
-using Switcheroo.Core;
+using FlipSwitcher.Core;
 
-namespace Switcheroo.Services;
+namespace FlipSwitcher.Services;
 
 /// <summary>
 /// Navigation direction for Alt+Tab mode
@@ -48,11 +48,11 @@ public class HotkeyService : IDisposable
     private IntPtr _keyboardHookId = IntPtr.Zero;
     private NativeMethods.LowLevelKeyboardProc? _keyboardProc;
     private bool _useAltTab;
-    private bool _switcherooVisible;
+    private bool _isVisible;
     private bool _isSearchMode;
 
     /// <summary>
-    /// Fired when the activation hotkey is pressed (to show/hide Switcheroo)
+    /// Fired when the activation hotkey is pressed (to show/hide FlipSwitcher)
     /// </summary>
     public event EventHandler? HotkeyPressed;
     
@@ -89,11 +89,11 @@ public class HotkeyService : IDisposable
     }
 
     /// <summary>
-    /// Update the visibility state of Switcheroo (for keyboard hook logic)
+    /// Update the visibility state of FlipSwitcher (for keyboard hook logic)
     /// </summary>
-    public void SetSwitcherooVisible(bool visible)
+    public void SetVisible(bool visible)
     {
-        _switcherooVisible = visible;
+        _isVisible = visible;
         if (!visible)
         {
             _isSearchMode = false;
@@ -210,7 +210,7 @@ public class HotkeyService : IDisposable
             bool isKeyUp = msg == NativeMethods.WM_KEYUP || msg == NativeMethods.WM_SYSKEYUP;
 
             // Escape key - ALWAYS close window regardless of any modifier keys
-            if (isKeyDown && hookStruct.vkCode == NativeMethods.VK_ESCAPE && _switcherooVisible)
+            if (isKeyDown && hookStruct.vkCode == NativeMethods.VK_ESCAPE && _isVisible)
             {
                 Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -224,7 +224,7 @@ public class HotkeyService : IDisposable
                            hookStruct.vkCode == NativeMethods.VK_LMENU || 
                            hookStruct.vkCode == NativeMethods.VK_RMENU))
             {
-                if (_switcherooVisible)
+                if (_isVisible)
                 {
                     Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                     {
@@ -243,9 +243,9 @@ public class HotkeyService : IDisposable
                 {
                     bool shiftPressed = IsShiftPressed();
                     
-                    if (!_switcherooVisible)
+                    if (!_isVisible)
                     {
-                        // First Alt+Tab - show Switcheroo
+                        // First Alt+Tab - show FlipSwitcher
                         Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                         {
                             HotkeyPressed?.Invoke(this, EventArgs.Empty);
@@ -265,9 +265,9 @@ public class HotkeyService : IDisposable
                     return (IntPtr)1;
                 }
                 
-                // Arrow keys - navigate while Switcheroo is visible (but not in search mode)
+                // Arrow keys - navigate while FlipSwitcher is visible (but not in search mode)
                 // In search mode, let the window handle arrow keys directly
-                if (_switcherooVisible && !_isSearchMode)
+                if (_isVisible && !_isSearchMode)
                 {
                     if (hookStruct.vkCode == NativeMethods.VK_UP)
                     {
@@ -289,7 +289,7 @@ public class HotkeyService : IDisposable
                 }
 
                 // These shortcuts work regardless of search mode
-                if (_switcherooVisible)
+                if (_isVisible)
                 {
                     // Alt+W - close selected window
                     if (hookStruct.vkCode == NativeMethods.VK_W)

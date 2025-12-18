@@ -2,14 +2,14 @@ using System;
 using System.Diagnostics;
 using Microsoft.Win32;
 
-namespace Switcheroo.Services;
+namespace FlipSwitcher.Services;
 
 /// <summary>
 /// Service for managing Windows startup registration
 /// </summary>
 public static class StartupService
 {
-    private const string AppName = "Switcheroo";
+    private const string AppName = "FlipSwitcher";
     private const string RegistryKeyPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
 
     /// <summary>
@@ -158,7 +158,7 @@ public static class StartupService
                 var taskXml = $@"<?xml version=""1.0"" encoding=""UTF-16""?>
 <Task version=""1.2"" xmlns=""http://schemas.microsoft.com/windows/2004/02/mit/task"">
   <RegistrationInfo>
-    <Description>Start Switcheroo at logon with administrator privileges</Description>
+    <Description>Start FlipSwitcher at logon with administrator privileges</Description>
   </RegistrationInfo>
   <Triggers>
     <LogonTrigger>

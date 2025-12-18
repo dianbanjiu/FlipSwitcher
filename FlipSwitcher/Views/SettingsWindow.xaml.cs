@@ -4,9 +4,9 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Navigation;
-using Switcheroo.Services;
+using FlipSwitcher.Services;
 
-namespace Switcheroo.Views;
+namespace FlipSwitcher.Views;
 
 /// <summary>
 /// Settings window with Fluent 2 design
@@ -84,8 +84,8 @@ public partial class SettingsWindow : Window
         {
             var result = MessageBox.Show(
                 wantAdmin 
-                    ? "Switcheroo needs to restart with administrator privileges.\n\nRestart now?"
-                    : "Switcheroo needs to restart without administrator privileges.\n\nRestart now?",
+                    ? "FlipSwitcher needs to restart with administrator privileges.\n\nRestart now?"
+                    : "FlipSwitcher needs to restart without administrator privileges.\n\nRestart now?",
                 "Restart Required",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
@@ -132,7 +132,7 @@ public partial class SettingsWindow : Window
                 enable 
                     ? "Failed to enable startup with Windows. Please try running as administrator."
                     : "Failed to disable startup with Windows.",
-                "Switcheroo",
+                "FlipSwitcher",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
 
@@ -167,7 +167,7 @@ public partial class SettingsWindow : Window
             else
                 AltTabCheckBox.IsChecked = true;
 
-            MessageBox.Show("At least one hotkey must be enabled.", "Switcheroo",
+            MessageBox.Show("At least one hotkey must be enabled.", "FlipSwitcher",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }

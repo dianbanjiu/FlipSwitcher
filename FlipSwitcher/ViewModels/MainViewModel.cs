@@ -5,10 +5,10 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
-using Switcheroo.Models;
-using Switcheroo.Services;
+using FlipSwitcher.Models;
+using FlipSwitcher.Services;
 
-namespace Switcheroo.ViewModels;
+namespace FlipSwitcher.ViewModels;
 
 /// <summary>
 /// ViewModel for the main window switcher

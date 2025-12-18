@@ -1,7 +1,7 @@
-# Switcheroo
+# FlipSwitcher
 
 <p align="center">
-  <img src="docs/screenshot.png" alt="Switcheroo Screenshot" width="600"/>
+  <img src="docs/screenshot.png" alt="FlipSwitcher Screenshot" width="600"/>
 </p>
 
 A modern, beautiful Alt-Tab replacement for Windows, built with **Fluent 2 Design System**.
@@ -24,38 +24,38 @@ A modern, beautiful Alt-Tab replacement for Windows, built with **Fluent 2 Desig
 
 ### Installation
 
-1. Download the latest release from [Releases](https://github.com/your-repo/switcheroo/releases)
-2. Extract and run `Switcheroo.exe`
+1. Download the latest release from [Releases](https://github.com/dianbanjiu/FlipSwitcher/releases)
+2. Extract and run `FlipSwitcher.exe`
 3. The app will start in the system tray
 
 ### Building from Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-repo/switcheroo.git
-cd switcheroo
+git clone https://github.com/dianbanjiu/FlipSwitcher.git
+cd FlipSwitcher
 
 # Build the project
 dotnet build -c Release
 
 # Run
-dotnet run --project Switcheroo
+dotnet run --project FlipSwitcher
 ```
 
 ## ⌨️ Keyboard Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
-| `Alt + Space` | Open/Close Switcheroo |
+| `Alt + Space` | Open/Close FlipSwitcher |
 | `↑` / `↓` | Navigate windows |
 | `Enter` | Switch to selected window |
-| `Esc` | Close Switcheroo |
+| `Esc` | Close FlipSwitcher |
 | `Tab` / `Shift+Tab` | Navigate windows |
 | Type anything | Filter windows |
 
 ## 🎨 Design
 
-Switcheroo is built following Microsoft's [Fluent 2 Design System](https://fluent2.microsoft.design/):
+FlipSwitcher is built following Microsoft's [Fluent 2 Design System](https://fluent2.microsoft.design/):
 
 - **Mica Material** - Translucent background that adapts to desktop wallpaper
 - **Rounded Corners** - Consistent 8px/12px corner radius
@@ -66,7 +66,7 @@ Switcheroo is built following Microsoft's [Fluent 2 Design System](https://fluen
 ## 🏗️ Architecture
 
 ```
-Switcheroo/
+FlipSwitcher/
 ├── Core/           # Windows API interop
 ├── Models/         # Data models (AppWindow)
 ├── Services/       # Business logic (WindowService, HotkeyService)
@@ -98,4 +98,3 @@ MIT License - feel free to use this project for any purpose.
 <p align="center">
   Made with ❤️ for Windows power users
 </p>
-

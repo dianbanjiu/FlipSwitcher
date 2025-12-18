@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Switcheroo.Core;
+namespace FlipSwitcher.Core;
 
 /// <summary>
 /// Windows API declarations for window management

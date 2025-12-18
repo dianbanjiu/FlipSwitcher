@@ -7,9 +7,9 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Switcheroo.Core;
+using FlipSwitcher.Core;
 
-namespace Switcheroo.Models;
+namespace FlipSwitcher.Models;
 
 /// <summary>
 /// Represents a window that can be switched to

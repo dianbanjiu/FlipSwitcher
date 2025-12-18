@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Windows;
 using Hardcodet.Wpf.TaskbarNotification;
 
-namespace Switcheroo.Services;
+namespace FlipSwitcher.Services;
 
 /// <summary>
 /// Service for managing the system tray icon
@@ -21,14 +21,14 @@ public class TrayIconService : IDisposable
     {
         _trayIcon = new TaskbarIcon
         {
-            ToolTipText = "Switcheroo - Press Alt+Space to switch windows",
+            ToolTipText = "FlipSwitcher - Press Alt+Space to switch windows",
             Visibility = Visibility.Visible
         };
 
         // Try to load icon from resources, fallback to system icon
         try
         {
-            var iconUri = new Uri("pack://application:,,,/Assets/switcheroo.png", UriKind.Absolute);
+            var iconUri = new Uri("pack://application:,,,/Assets/flipswitcher.png", UriKind.Absolute);
             var iconStream = System.Windows.Application.GetResourceStream(iconUri);
             if (iconStream != null)
             {
@@ -50,7 +50,7 @@ public class TrayIconService : IDisposable
         // Create context menu
         var contextMenu = new System.Windows.Controls.ContextMenu();
 
-        var showItem = new System.Windows.Controls.MenuItem { Header = "Show Switcheroo" };
+        var showItem = new System.Windows.Controls.MenuItem { Header = "Show FlipSwitcher" };
         showItem.Click += (s, e) => ShowMainWindow();
 
         var settingsItem = new System.Windows.Controls.MenuItem { Header = "Settings" };
@@ -81,7 +81,7 @@ public class TrayIconService : IDisposable
 
     private void ShowSettings()
     {
-        var settingsWindow = new Switcheroo.Views.SettingsWindow();
+        var settingsWindow = new FlipSwitcher.Views.SettingsWindow();
         settingsWindow.Owner = System.Windows.Application.Current.MainWindow;
         settingsWindow.ShowDialog();
     }

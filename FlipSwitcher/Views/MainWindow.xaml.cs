@@ -3,11 +3,11 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
-using Switcheroo.Core;
-using Switcheroo.Services;
-using Switcheroo.ViewModels;
+using FlipSwitcher.Core;
+using FlipSwitcher.Services;
+using FlipSwitcher.ViewModels;
 
-namespace Switcheroo.Views;
+namespace FlipSwitcher.Views;
 
 /// <summary>
 /// Main window with Fluent 2 design for window switching
@@ -226,7 +226,7 @@ public partial class MainWindow : Window
         Activate();
 
         // Notify hotkey service that we're visible
-        _hotkeyService.SetSwitcherooVisible(true);
+        _hotkeyService.SetVisible(true);
 
         // Focus the search box (but don't select all in Alt+Tab mode)
         SearchBox.Focus();
@@ -249,7 +249,7 @@ public partial class MainWindow : Window
             _isSearchMode = false;
             
             // Notify hotkey service that we're hidden
-            _hotkeyService.SetSwitcherooVisible(false);
+            _hotkeyService.SetVisible(false);
             _hotkeyService.SetSearchMode(false);
         }
     }

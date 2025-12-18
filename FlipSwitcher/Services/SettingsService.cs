@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 
-namespace Switcheroo.Services;
+namespace FlipSwitcher.Services;
 
 /// <summary>
 /// Service for managing application settings
@@ -11,7 +11,7 @@ public class SettingsService
 {
     private static readonly string SettingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "Switcheroo",
+        "FlipSwitcher",
         "settings.json");
 
     private static SettingsService? _instance;
