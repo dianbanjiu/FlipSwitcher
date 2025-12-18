@@ -99,5 +99,10 @@ public class AppSettings
     /// Theme: 0 = Dark, 1 = Light, 2 = System
     /// </summary>
     public int Theme { get; set; } = 0;
+
+    /// <summary>
+    /// Run as Administrator (requires restart)
+    /// </summary>
+    public bool RunAsAdmin { get; set; } = false;
 }
 

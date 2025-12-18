@@ -12,6 +12,24 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Check if we need to restart with admin privileges
+        var settings = SettingsService.Instance.Settings;
+        bool isAdmin = AdminService.IsRunningAsAdmin();
+
+        if (settings.RunAsAdmin && !isAdmin)
+        {
+            // Setting says run as admin, but we're not admin - try to elevate
+            if (AdminService.RestartAsAdmin())
+            {
+                Shutdown();
+                return;
+            }
+            // If elevation failed (user cancelled UAC), continue running as normal user
+            // but update the setting to reflect reality
+            settings.RunAsAdmin = false;
+            SettingsService.Instance.Save();
+        }
+
         // Initialize services
         _hotkeyService = new HotkeyService();
         _trayIconService = new TrayIconService();

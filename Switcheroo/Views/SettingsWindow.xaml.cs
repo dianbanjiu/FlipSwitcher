@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Navigation;
 using Switcheroo.Services;
 
@@ -17,6 +18,7 @@ public partial class SettingsWindow : Window
     {
         InitializeComponent();
         LoadSettings();
+        UpdateAdminStatusDisplay();
         _isInitializing = false;
     }
 
@@ -25,7 +27,71 @@ public partial class SettingsWindow : Window
         var settings = SettingsService.Instance.Settings;
         AltSpaceCheckBox.IsChecked = settings.UseAltSpace;
         AltTabCheckBox.IsChecked = settings.UseAltTab;
+        RunAsAdminCheckBox.IsChecked = settings.RunAsAdmin;
         UpdateCurrentHotkeyDisplay();
+    }
+
+    private void UpdateAdminStatusDisplay()
+    {
+        bool isAdmin = AdminService.IsRunningAsAdmin();
+        
+        if (isAdmin)
+        {
+            AdminStatusBadge.Background = (Brush)FindResource("AccentDefaultBrush");
+            AdminStatusText.Text = "Active";
+            AdminStatusText.Foreground = (Brush)FindResource("TextOnAccentBrush");
+        }
+        else
+        {
+            AdminStatusBadge.Background = (Brush)FindResource("ControlDefaultBrush");
+            AdminStatusText.Text = "Inactive";
+            AdminStatusText.Foreground = (Brush)FindResource("TextSecondaryBrush");
+        }
+    }
+
+    private void RunAsAdminCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        bool wantAdmin = RunAsAdminCheckBox.IsChecked == true;
+        bool isCurrentlyAdmin = AdminService.IsRunningAsAdmin();
+
+        // Save the setting
+        var settings = SettingsService.Instance.Settings;
+        settings.RunAsAdmin = wantAdmin;
+        SettingsService.Instance.Save();
+
+        // If the setting changed and requires a restart
+        if (wantAdmin != isCurrentlyAdmin)
+        {
+            var result = MessageBox.Show(
+                wantAdmin 
+                    ? "Switcheroo needs to restart with administrator privileges.\n\nRestart now?"
+                    : "Switcheroo needs to restart without administrator privileges.\n\nRestart now?",
+                "Restart Required",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                bool restartSuccess = wantAdmin 
+                    ? AdminService.RestartAsAdmin() 
+                    : AdminService.RestartAsNormalUser();
+
+                if (restartSuccess)
+                {
+                    Application.Current.Shutdown();
+                }
+                else
+                {
+                    MessageBox.Show(
+                        "Failed to restart the application. Please restart manually.",
+                        "Restart Failed",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
+            }
+        }
     }
 
     private void HotkeyCheckBox_Changed(object sender, RoutedEventArgs e)
