@@ -7,7 +7,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>FlipSwitcher</AssemblyName>
     <RootNamespace>FlipSwitcher</RootNamespace>
-    <Version>2.0.0</Version>
+    <Version>0.0.0-preview</Version>
     <Authors>FlipSwitcher Team</Authors>
     <Description>A modern Alt-Tab replacement with Fluent 2 Design</Description>
     <ApplicationManifest>app.manifest</ApplicationManifest>

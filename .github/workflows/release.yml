@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build:
@@ -16,7 +16,15 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: "8.0.x"
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag -replace '^v', ''
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "TAG=$tag" >> $env:GITHUB_OUTPUT
 
       - name: Restore dependencies
         run: dotnet restore FlipSwitcher/FlipSwitcher.csproj
@@ -24,7 +32,7 @@ jobs:
       # 不包含运行时的版本
       - name: Build Framework-Dependent
         run: |
-          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o publish/framework-dependent
+          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.get_version.outputs.VERSION }} -o publish/framework-dependent
 
       - name: Rename Framework-Dependent exe
         run: |
@@ -33,7 +41,7 @@ jobs:
       # 包含运行时的独立版本
       - name: Build Self-Contained
         run: |
-          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o publish/self-contained
+          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.get_version.outputs.VERSION }} -o publish/self-contained
 
       - name: Rename Self-Contained exe
         run: |
@@ -42,22 +50,16 @@ jobs:
       # 便携版本 (zip)
       - name: Build Portable
         run: |
-          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o publish/portable
+          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.get_version.outputs.VERSION }} -o publish/portable
 
       - name: Create Portable zip
         run: |
           Compress-Archive -Path publish/portable/* -DestinationPath publish/FlipSwitcher-windows-x64-Portable.zip
 
-      - name: Get version from tag
-        id: get_version
-        run: |
-          $version = "${{ github.ref_name }}"
-          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: FlipSwitcher ${{ steps.get_version.outputs.VERSION }}
+          name: FlipSwitcher ${{ steps.get_version.outputs.TAG }}
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
@@ -67,4 +69,3 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

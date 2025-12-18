@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -20,7 +21,15 @@ public partial class SettingsWindow : Window
         InitializeComponent();
         LoadSettings();
         UpdateAdminStatusDisplay();
+        UpdateVersionDisplay();
         _isInitializing = false;
+    }
+
+    private void UpdateVersionDisplay()
+    {
+        var version = Assembly.GetExecutingAssembly().GetName().Version;
+        var versionStr = version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "preview";
+        VersionText.Text = $"FlipSwitcher v{versionStr}";
     }
 
     private void LoadSettings()
