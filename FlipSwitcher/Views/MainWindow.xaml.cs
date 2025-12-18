@@ -347,9 +347,13 @@ public partial class MainWindow : Window
         }
     }
 
-    private void WindowList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    private void WindowList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        _viewModel.ActivateSelected();
+        // 单击时直接激活选中的窗口
+        if (_viewModel.SelectedWindow != null)
+        {
+            _viewModel.ActivateSelected();
+        }
     }
 
     private void ViewModel_WindowActivated(object? sender, EventArgs e)
