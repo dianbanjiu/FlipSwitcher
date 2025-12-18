@@ -28,6 +28,16 @@ public partial class SettingsWindow : Window
         AltSpaceCheckBox.IsChecked = settings.UseAltSpace;
         AltTabCheckBox.IsChecked = settings.UseAltTab;
         RunAsAdminCheckBox.IsChecked = settings.RunAsAdmin;
+        
+        // Sync startup setting with actual registry/Task Scheduler state
+        bool actualStartupEnabled = StartupService.IsStartupEnabled();
+        if (settings.StartWithWindows != actualStartupEnabled)
+        {
+            settings.StartWithWindows = actualStartupEnabled;
+            SettingsService.Instance.Save();
+        }
+        StartWithWindowsCheckBox.IsChecked = settings.StartWithWindows;
+        
         UpdateCurrentHotkeyDisplay();
     }
 
@@ -61,6 +71,12 @@ public partial class SettingsWindow : Window
         settings.RunAsAdmin = wantAdmin;
         SettingsService.Instance.Save();
 
+        // Update startup registration if enabled (switches between registry and Task Scheduler)
+        if (settings.StartWithWindows)
+        {
+            StartupService.SetStartupEnabled(true);
+        }
+
         // If the setting changed and requires a restart
         if (wantAdmin != isCurrentlyAdmin)
         {
@@ -91,6 +107,39 @@ public partial class SettingsWindow : Window
                         MessageBoxImage.Warning);
                 }
             }
+        }
+    }
+
+    private void StartWithWindowsCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        bool enable = StartWithWindowsCheckBox.IsChecked == true;
+
+        // Save setting first
+        var settings = SettingsService.Instance.Settings;
+        settings.StartWithWindows = enable;
+        SettingsService.Instance.Save();
+
+        // Update registry/Task Scheduler
+        bool success = StartupService.SetStartupEnabled(enable);
+        
+        if (!success)
+        {
+            MessageBox.Show(
+                enable 
+                    ? "Failed to enable startup with Windows. Please try running as administrator."
+                    : "Failed to disable startup with Windows.",
+                "Switcheroo",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            // Revert the checkbox
+            _isInitializing = true;
+            StartWithWindowsCheckBox.IsChecked = !enable;
+            settings.StartWithWindows = !enable;
+            SettingsService.Instance.Save();
+            _isInitializing = false;
         }
     }
 

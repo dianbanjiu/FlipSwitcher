@@ -294,9 +294,11 @@
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
-                                <CheckBox Grid.Column="1"
+                                <CheckBox x:Name="StartWithWindowsCheckBox"
+                                    Grid.Column="1"
                                     IsChecked="False"
-                                    IsEnabled="False"
+                                    Checked="StartWithWindowsCheckBox_Changed"
+                                    Unchecked="StartWithWindowsCheckBox_Changed"
                                     Style="{StaticResource FluentCheckBoxStyle}" />
                             </Grid>
 
