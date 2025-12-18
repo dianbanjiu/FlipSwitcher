@@ -12,6 +12,7 @@
     <Description>A modern Alt-Tab replacement with Fluent 2 Design</Description>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationIcon>Assets\flipswitcher.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +22,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\flipswitcher.png" Condition="Exists('Assets\flipswitcher.png')" />
+    <Resource Include="Assets\flipswitcher.ico" Condition="Exists('Assets\flipswitcher.ico')" />
   </ItemGroup>
 
 </Project>
