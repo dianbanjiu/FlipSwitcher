@@ -262,19 +262,22 @@ public partial class MainWindow : Window
             return;
         }
         
-        // In search mode, try to regain focus instead of hiding
-        if (_isSearchMode)
+        // Check if HideOnFocusLost setting is enabled
+        if (!SettingsService.Instance.Settings.HideOnFocusLost)
         {
-            // Use Dispatcher to re-activate after the deactivation completes
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
+            // In search mode with HideOnFocusLost disabled, try to regain focus
+            if (_isSearchMode)
             {
-                if (_isSearchMode && IsVisible)
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
                 {
-                    ForceActivateWindow();
-                    SearchBox.Focus();
-                    Keyboard.Focus(SearchBox);
-                }
-            }));
+                    if (_isSearchMode && IsVisible)
+                    {
+                        ForceActivateWindow();
+                        SearchBox.Focus();
+                        Keyboard.Focus(SearchBox);
+                    }
+                }));
+            }
             return;
         }
         

@@ -318,9 +318,11 @@
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
-                                <CheckBox Grid.Column="1"
+                                <CheckBox x:Name="HideOnFocusLostCheckBox"
+                                    Grid.Column="1"
                                     IsChecked="True"
-                                    IsEnabled="False"
+                                    Checked="HideOnFocusLostCheckBox_Changed"
+                                    Unchecked="HideOnFocusLostCheckBox_Changed"
                                     Style="{StaticResource FluentCheckBoxStyle}" />
                             </Grid>
                         </StackPanel>

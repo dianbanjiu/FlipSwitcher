@@ -38,6 +38,7 @@ public partial class SettingsWindow : Window
             SettingsService.Instance.Save();
         }
         StartWithWindowsCheckBox.IsChecked = settings.StartWithWindows;
+        HideOnFocusLostCheckBox.IsChecked = settings.HideOnFocusLost;
         
         UpdateCurrentHotkeyDisplay();
     }
@@ -142,6 +143,15 @@ public partial class SettingsWindow : Window
             SettingsService.Instance.Save();
             _isInitializing = false;
         }
+    }
+
+    private void HideOnFocusLostCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        var settings = SettingsService.Instance.Settings;
+        settings.HideOnFocusLost = HideOnFocusLostCheckBox.IsChecked == true;
+        SettingsService.Instance.Save();
     }
 
     private void HotkeyCheckBox_Changed(object sender, RoutedEventArgs e)
