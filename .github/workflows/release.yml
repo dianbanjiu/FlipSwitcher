@@ -32,15 +32,6 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore FlipSwitcher/FlipSwitcher.csproj
 
-      # 不包含运行时的版本
-      - name: Build Framework-Dependent
-        run: |
-          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.get_version.outputs.VERSION }} -o publish/framework-dependent
-
-      - name: Rename Framework-Dependent exe
-        run: |
-          Move-Item -Path publish/framework-dependent/FlipSwitcher.exe -Destination publish/FlipSwitcher-windows-x64.exe
-
       # 包含运行时的独立版本
       - name: Build Self-Contained
         run: |
@@ -66,7 +57,6 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
-            publish/FlipSwitcher-windows-x64.exe
             publish/FlipSwitcher-windows-x64-SelfContained.exe
             publish/FlipSwitcher-windows-x64-Portable.zip
           generate_release_notes: true
