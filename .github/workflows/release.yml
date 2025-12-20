@@ -31,7 +31,7 @@ jobs:
 
       - name: Install WiX Toolset
         run: |
-          choco install wix --yes --no-progress
+          choco install wixtoolset --yes --no-progress
 
       - name: Restore dependencies
         run: dotnet restore FlipSwitcher/FlipSwitcher.csproj
@@ -57,10 +57,31 @@ jobs:
       - name: Build MSI Installer
         run: |
           $version = "${{ steps.get_version.outputs.VERSION }}"
-          $wixPath = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
-          if (Test-Path "C:\Program Files\WiX Toolset v3.11\bin") {
-            $wixPath = "C:\Program Files\WiX Toolset v3.11\bin"
+          # Find WiX installation path
+          $wixPath = $null
+          $possiblePaths = @(
+            "C:\Program Files (x86)\WiX Toolset v3.11\bin",
+            "C:\Program Files\WiX Toolset v3.11\bin",
+            "C:\Program Files (x86)\WiX Toolset v3.14\bin",
+            "C:\Program Files\WiX Toolset v3.14\bin"
+          )
+          foreach ($path in $possiblePaths) {
+            if (Test-Path "$path\candle.exe") {
+              $wixPath = $path
+              break
+            }
           }
+          if (-not $wixPath) {
+            # Try to find from PATH
+            $candlePath = Get-Command candle.exe -ErrorAction SilentlyContinue
+            if ($candlePath) {
+              $wixPath = Split-Path $candlePath.Source
+            } else {
+              Write-Error "WiX Toolset not found. Please install it."
+              exit 1
+            }
+          }
+          Write-Host "Using WiX Toolset from: $wixPath"
           # Generate file list using Heat
           & "$wixPath\heat.exe" dir publish\msi -cg ProductFiles -gg -sfrag -srd -scom -sreg -dr INSTALLFOLDER -var var.PublishDir -out publish\ProductFiles.wxs
           # Compile WiX files
