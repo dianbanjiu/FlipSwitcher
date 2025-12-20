@@ -9,6 +9,7 @@
                 <ResourceDictionary Source="Themes/FluentColors.xaml"/>
                 <ResourceDictionary Source="Themes/FluentStyles.xaml"/>
                 <ResourceDictionary Source="Themes/FluentAnimations.xaml"/>
+                <ResourceDictionary Source="Resources/Strings.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

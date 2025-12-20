@@ -105,7 +105,7 @@
                                     
                                     <!-- Placeholder -->
                                     <TextBlock x:Name="Placeholder"
-                                               Text="Type to search windows..."
+                                               Text="{DynamicResource SearchPlaceholder}"
                                                Foreground="{StaticResource TextTertiaryBrush}"
                                                VerticalAlignment="Center"
                                                IsHitTestVisible="False"

@@ -30,6 +30,9 @@ public partial class App : Application
             SettingsService.Instance.Save();
         }
 
+        // Initialize language service
+        LanguageService.Instance.Initialize();
+
         // Initialize services
         _hotkeyService = new HotkeyService();
         _trayIconService = new TrayIconService();

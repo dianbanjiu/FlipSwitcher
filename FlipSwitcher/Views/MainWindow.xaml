@@ -90,7 +90,7 @@
                         <TextBlock Style="{StaticResource CaptionTextStyle}"
                             Foreground="{StaticResource TextOnAccentBrush}">
                             <Run Text="{Binding WindowCount, Mode=OneWay}" />
-                            <Run Text="windows" />
+                            <Run Text="{DynamicResource WindowsCount}" />
                         </TextBlock>
                     </Border>
                 </Grid>
@@ -165,7 +165,7 @@
                                         Padding="8,4"
                                         Margin="8,0,0,0"
                                         VerticalAlignment="Center">
-                                        <TextBlock Text="Minimized"
+                                        <TextBlock Text="{DynamicResource Minimized}"
                                             Style="{StaticResource CaptionTextStyle}"
                                             Foreground="{StaticResource TextTertiaryBrush}" />
                                     </Border>
@@ -193,11 +193,11 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center" />
                         </Border>
-                        <TextBlock Text="No windows found"
+                        <TextBlock Text="{DynamicResource NoWindowsFound}"
                             Style="{StaticResource SubtitleTextStyle}"
                             Foreground="{StaticResource TextSecondaryBrush}"
                             HorizontalAlignment="Center" />
-                        <TextBlock Text="Try a different search term"
+                        <TextBlock Text="{DynamicResource TryDifferentSearch}"
                             Style="{StaticResource CaptionTextStyle}"
                             HorizontalAlignment="Center"
                             Margin="0,4,0,0" />
@@ -212,38 +212,6 @@
                 Padding="16,10">
                 <Grid>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                        <!-- Enter Key Hint -->
-                        <Border Background="{StaticResource ControlDefaultBrush}"
-                            CornerRadius="4"
-                            Padding="6,3"
-                            Margin="0,0,4,0">
-                            <TextBlock Text="Enter"
-                                Style="{StaticResource CaptionTextStyle}"
-                                FontSize="11"
-                                Foreground="{StaticResource TextSecondaryBrush}" />
-                        </Border>
-                        <TextBlock Text="Switch"
-                            Style="{StaticResource CaptionTextStyle}"
-                            FontSize="11"
-                            VerticalAlignment="Center"
-                            Margin="0,0,12,0" />
-
-                        <!-- Arrow Keys Hint -->
-                        <Border Background="{StaticResource ControlDefaultBrush}"
-                            CornerRadius="4"
-                            Padding="6,3"
-                            Margin="0,0,4,0">
-                            <TextBlock Text="↑↓"
-                                Style="{StaticResource CaptionTextStyle}"
-                                FontSize="11"
-                                Foreground="{StaticResource TextSecondaryBrush}" />
-                        </Border>
-                        <TextBlock Text="Nav"
-                            Style="{StaticResource CaptionTextStyle}"
-                            FontSize="11"
-                            VerticalAlignment="Center"
-                            Margin="0,0,12,0" />
-
                         <!-- Alt+S Search Hint -->
                         <Border Background="{StaticResource ControlDefaultBrush}"
                             CornerRadius="4"
@@ -254,7 +222,7 @@
                                 FontSize="11"
                                 Foreground="{StaticResource TextSecondaryBrush}" />
                         </Border>
-                        <TextBlock Text="Search"
+                        <TextBlock Text="{DynamicResource HintSearch}"
                             Style="{StaticResource CaptionTextStyle}"
                             FontSize="11"
                             VerticalAlignment="Center"
@@ -270,26 +238,27 @@
                                 FontSize="11"
                                 Foreground="{StaticResource TextSecondaryBrush}" />
                         </Border>
-                        <TextBlock Text="Close"
+                        <TextBlock Text="{DynamicResource HintClose}"
                             Style="{StaticResource CaptionTextStyle}"
                             FontSize="11"
                             VerticalAlignment="Center"
                             Margin="0,0,12,0" />
 
-                        <!-- Escape Key Hint -->
+                        <!-- Alt+, Settings Hint -->
                         <Border Background="{StaticResource ControlDefaultBrush}"
                             CornerRadius="4"
                             Padding="6,3"
                             Margin="0,0,4,0">
-                            <TextBlock Text="Esc"
+                            <TextBlock Text="Alt+,"
                                 Style="{StaticResource CaptionTextStyle}"
                                 FontSize="11"
                                 Foreground="{StaticResource TextSecondaryBrush}" />
                         </Border>
-                        <TextBlock Text="Exit"
+                        <TextBlock Text="{DynamicResource HintSettings}"
                             Style="{StaticResource CaptionTextStyle}"
                             FontSize="11"
-                            VerticalAlignment="Center" />
+                            VerticalAlignment="Center"
+                            Margin="0,0,12,0" />
                     </StackPanel>
 
                     <!-- Hotkey Reminder -->

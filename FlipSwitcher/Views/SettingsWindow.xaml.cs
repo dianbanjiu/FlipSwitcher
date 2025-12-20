@@ -39,6 +39,9 @@ public partial class SettingsWindow : Window
         AltTabCheckBox.IsChecked = settings.UseAltTab;
         RunAsAdminCheckBox.IsChecked = settings.RunAsAdmin;
         
+        // Load language setting
+        LanguageComboBox.SelectedIndex = settings.Language;
+        
         // Sync startup setting with actual registry/Task Scheduler state
         bool actualStartupEnabled = StartupService.IsStartupEnabled();
         if (settings.StartWithWindows != actualStartupEnabled)
@@ -59,15 +62,30 @@ public partial class SettingsWindow : Window
         if (isAdmin)
         {
             AdminStatusBadge.Background = (Brush)FindResource("AccentDefaultBrush");
-            AdminStatusText.Text = "Active";
+            AdminStatusText.Text = LanguageService.GetString("SettingsAdminEnabled");
             AdminStatusText.Foreground = (Brush)FindResource("TextOnAccentBrush");
         }
         else
         {
             AdminStatusBadge.Background = (Brush)FindResource("ControlDefaultBrush");
-            AdminStatusText.Text = "Inactive";
+            AdminStatusText.Text = LanguageService.GetString("SettingsAdminDisabled");
             AdminStatusText.Foreground = (Brush)FindResource("TextSecondaryBrush");
         }
+    }
+
+    private void LanguageComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        var settings = SettingsService.Instance.Settings;
+        settings.Language = LanguageComboBox.SelectedIndex;
+        SettingsService.Instance.Save();
+
+        // Apply language change
+        LanguageService.Instance.SetLanguage((AppLanguage)settings.Language);
+        
+        // Update admin status text with new language
+        UpdateAdminStatusDisplay();
     }
 
     private void RunAsAdminCheckBox_Changed(object sender, RoutedEventArgs e)

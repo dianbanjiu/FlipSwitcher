@@ -62,7 +62,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center" />
                         </Border>
-                        <TextBlock Text="Settings"
+                        <TextBlock Text="{DynamicResource Settings}"
                             Style="{StaticResource TitleTextStyle}"
                             VerticalAlignment="Center" />
                     </StackPanel>
@@ -82,8 +82,46 @@
                 Style="{StaticResource FluentScrollViewerStyle}">
                 <StackPanel>
 
+                    <!-- Language Section -->
+                    <TextBlock Text="{DynamicResource SettingsLanguage}"
+                        Style="{StaticResource SubtitleTextStyle}"
+                        Margin="0,0,0,12" />
+
+                    <Border Background="{StaticResource CardBackgroundBrush}"
+                        BorderBrush="{StaticResource SurfaceStrokeDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16"
+                        Margin="0,0,0,24">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="{DynamicResource SettingsLanguage}"
+                                    Style="{StaticResource BodyStrongTextStyle}" />
+                                <TextBlock Text="{DynamicResource SettingsLanguageDesc}"
+                                    Style="{StaticResource CaptionTextStyle}"
+                                    Margin="0,4,0,0" />
+                            </StackPanel>
+
+                            <ComboBox x:Name="LanguageComboBox"
+                                Grid.Column="1"
+                                Width="120"
+                                SelectedIndex="0"
+                                SelectionChanged="LanguageComboBox_SelectionChanged"
+                                Style="{StaticResource FluentComboBoxStyle}"
+                                ItemContainerStyle="{StaticResource FluentComboBoxItemStyle}">
+                                <ComboBoxItem Content="{DynamicResource LanguageEnglish}" Tag="0" />
+                                <ComboBoxItem Content="{DynamicResource LanguageChinese}" Tag="1" />
+                            </ComboBox>
+                        </Grid>
+                    </Border>
+
                     <!-- Hotkey Section -->
-                    <TextBlock Text="Hotkey"
+                    <TextBlock Text="{DynamicResource SettingsHotkey}"
                         Style="{StaticResource SubtitleTextStyle}"
                         Margin="0,0,0,12" />
 
@@ -102,9 +140,9 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Alt + Space"
+                                    <TextBlock Text="{DynamicResource SettingsAltSpace}"
                                         Style="{StaticResource BodyStrongTextStyle}" />
-                                    <TextBlock Text="Use Alt + Space to activate FlipSwitcher"
+                                    <TextBlock Text="{DynamicResource SettingsAltSpaceDesc}"
                                         Style="{StaticResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
@@ -126,20 +164,20 @@
 
                                 <StackPanel Grid.Column="0">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Alt + Tab"
+                                        <TextBlock Text="{DynamicResource SettingsAltTab}"
                                             Style="{StaticResource BodyStrongTextStyle}" />
                                         <Border Background="{StaticResource AccentDefaultBrush}"
                                             CornerRadius="4"
                                             Padding="6,2"
                                             Margin="8,0,0,0"
                                             VerticalAlignment="Center">
-                                            <TextBlock Text="Replaces System"
+                                            <TextBlock Text="{DynamicResource SettingsReplacesSystem}"
                                                 Style="{StaticResource CaptionTextStyle}"
                                                 FontSize="10"
                                                 Foreground="{StaticResource TextOnAccentBrush}" />
                                         </Border>
                                     </StackPanel>
-                                    <TextBlock Text="Replace Windows Alt+Tab with FlipSwitcher"
+                                    <TextBlock Text="{DynamicResource SettingsAltTabDesc}"
                                         Style="{StaticResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
@@ -158,7 +196,7 @@
                                 Padding="12,8"
                                 Margin="0,16,0,0">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Active Hotkey:"
+                                    <TextBlock Text="{DynamicResource SettingsActiveHotkey}"
                                         Style="{StaticResource CaptionTextStyle}"
                                         Foreground="{StaticResource TextSecondaryBrush}"
                                         VerticalAlignment="Center"
@@ -174,7 +212,7 @@
                     </Border>
 
                     <!-- Appearance Section -->
-                    <TextBlock Text="Appearance"
+                    <TextBlock Text="{DynamicResource SettingsAppearance}"
                         Style="{StaticResource SubtitleTextStyle}"
                         Margin="0,0,0,12" />
 
@@ -193,9 +231,9 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Theme"
+                                    <TextBlock Text="{DynamicResource SettingsTheme}"
                                         Style="{StaticResource BodyStrongTextStyle}" />
-                                    <TextBlock Text="Choose between light and dark mode"
+                                    <TextBlock Text="{DynamicResource SettingsThemeDesc}"
                                         Style="{StaticResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
@@ -206,9 +244,9 @@
                                     IsEnabled="False"
                                     Style="{StaticResource FluentComboBoxStyle}"
                                     ItemContainerStyle="{StaticResource FluentComboBoxItemStyle}">
-                                    <ComboBoxItem Content="Dark" />
-                                    <ComboBoxItem Content="Light" />
-                                    <ComboBoxItem Content="System" />
+                                    <ComboBoxItem Content="{DynamicResource ThemeDark}" />
+                                    <ComboBoxItem Content="{DynamicResource ThemeLight}" />
+                                    <ComboBoxItem Content="{DynamicResource ThemeSystem}" />
                                 </ComboBox>
                             </Grid>
 
@@ -220,9 +258,9 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Mica Effect"
+                                    <TextBlock Text="{DynamicResource SettingsMicaEffect}"
                                         Style="{StaticResource BodyStrongTextStyle}" />
-                                    <TextBlock Text="Enable translucent background (Windows 11)"
+                                    <TextBlock Text="{DynamicResource SettingsMicaEffectDesc}"
                                         Style="{StaticResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
@@ -236,7 +274,7 @@
                     </Border>
 
                     <!-- Behavior Section -->
-                    <TextBlock Text="Behavior"
+                    <TextBlock Text="{DynamicResource SettingsBehavior}"
                         Style="{StaticResource SubtitleTextStyle}"
                         Margin="0,0,0,12" />
 
@@ -256,7 +294,7 @@
 
                                 <StackPanel Grid.Column="0">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Run as Administrator"
+                                        <TextBlock Text="{DynamicResource SettingsRunAsAdmin}"
                                             Style="{StaticResource BodyStrongTextStyle}" />
                                         <Border x:Name="AdminStatusBadge"
                                             CornerRadius="4"
@@ -269,7 +307,7 @@
                                         </Border>
                                     </StackPanel>
                                     <TextBlock
-                                        Text="Required to switch to elevated windows (requires restart)"
+                                        Text="{DynamicResource SettingsRunAsAdminDesc}"
                                         Style="{StaticResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
@@ -290,9 +328,9 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Start with Windows"
+                                    <TextBlock Text="{DynamicResource SettingsStartWithWindows}"
                                         Style="{StaticResource BodyStrongTextStyle}" />
-                                    <TextBlock Text="Launch FlipSwitcher when you sign in"
+                                    <TextBlock Text="{DynamicResource SettingsStartWithWindowsDesc}"
                                         Style="{StaticResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
@@ -313,9 +351,9 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Hide on Focus Lost"
+                                    <TextBlock Text="{DynamicResource SettingsHideOnFocusLost}"
                                         Style="{StaticResource BodyStrongTextStyle}" />
-                                    <TextBlock Text="Automatically hide when clicking outside"
+                                    <TextBlock Text="{DynamicResource SettingsHideOnFocusLostDesc}"
                                         Style="{StaticResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
@@ -331,7 +369,7 @@
                     </Border>
 
                     <!-- About Section -->
-                    <TextBlock Text="About"
+                    <TextBlock Text="{DynamicResource SettingsAbout}"
                         Style="{StaticResource SubtitleTextStyle}"
                         Margin="0,0,0,12" />
 
@@ -343,14 +381,14 @@
                         <StackPanel>
                             <TextBlock x:Name="VersionText"
                                 Style="{StaticResource BodyStrongTextStyle}" />
-                            <TextBlock Text="A modern Alt-Tab replacement with Fluent 2 Design"
+                            <TextBlock Text="{DynamicResource SettingsAboutDesc}"
                                 Style="{StaticResource CaptionTextStyle}"
                                 Margin="0,4,0,8" />
                             <TextBlock Style="{StaticResource CaptionTextStyle}"
                                 Foreground="{StaticResource AccentDefaultBrush}">
                                 <Hyperlink NavigateUri="https://github.com/dianbanjiu/FlipSwitcher"
                                     RequestNavigate="Hyperlink_RequestNavigate">
-                                    View on GitHub
+                                    <Run Text="{DynamicResource SettingsViewOnGitHub}" />
                                 </Hyperlink>
                             </TextBlock>
                         </StackPanel>
@@ -364,7 +402,7 @@
                 CornerRadius="0,0,12,12"
                 Padding="20,12">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Close"
+                    <Button Content="{DynamicResource SettingsClose}"
                         Style="{StaticResource FluentButtonStyle}"
                         Click="CloseButton_Click"
                         Width="100" />

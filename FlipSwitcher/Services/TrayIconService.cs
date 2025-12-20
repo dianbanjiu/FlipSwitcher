@@ -11,17 +11,36 @@ namespace FlipSwitcher.Services;
 public class TrayIconService : IDisposable
 {
     private TaskbarIcon? _trayIcon;
+    private System.Windows.Controls.MenuItem? _showItem;
+    private System.Windows.Controls.MenuItem? _settingsItem;
+    private System.Windows.Controls.MenuItem? _exitItem;
 
     public TrayIconService()
     {
         InitializeTrayIcon();
+        LanguageService.Instance.LanguageChanged += OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        UpdateMenuTexts();
+    }
+
+    private void UpdateMenuTexts()
+    {
+        if (_showItem != null)
+            _showItem.Header = LanguageService.GetString("TrayShow");
+        if (_settingsItem != null)
+            _settingsItem.Header = LanguageService.GetString("TraySettings");
+        if (_exitItem != null)
+            _exitItem.Header = LanguageService.GetString("TrayExit");
     }
 
     private void InitializeTrayIcon()
     {
         _trayIcon = new TaskbarIcon
         {
-            ToolTipText = "FlipSwitcher - Press Alt+Space to switch windows",
+            ToolTipText = "FlipSwitcher",
             Visibility = Visibility.Visible
         };
 
@@ -50,20 +69,20 @@ public class TrayIconService : IDisposable
         // Create context menu
         var contextMenu = new System.Windows.Controls.ContextMenu();
 
-        var showItem = new System.Windows.Controls.MenuItem { Header = "Show FlipSwitcher" };
-        showItem.Click += (s, e) => ShowMainWindow();
+        _showItem = new System.Windows.Controls.MenuItem { Header = LanguageService.GetString("TrayShow") };
+        _showItem.Click += (s, e) => ShowMainWindow();
 
-        var settingsItem = new System.Windows.Controls.MenuItem { Header = "Settings" };
-        settingsItem.Click += (s, e) => ShowSettings();
+        _settingsItem = new System.Windows.Controls.MenuItem { Header = LanguageService.GetString("TraySettings") };
+        _settingsItem.Click += (s, e) => ShowSettings();
 
-        var exitItem = new System.Windows.Controls.MenuItem { Header = "Exit" };
-        exitItem.Click += (s, e) => ExitApplication();
+        _exitItem = new System.Windows.Controls.MenuItem { Header = LanguageService.GetString("TrayExit") };
+        _exitItem.Click += (s, e) => ExitApplication();
 
-        contextMenu.Items.Add(showItem);
+        contextMenu.Items.Add(_showItem);
         contextMenu.Items.Add(new System.Windows.Controls.Separator());
-        contextMenu.Items.Add(settingsItem);
+        contextMenu.Items.Add(_settingsItem);
         contextMenu.Items.Add(new System.Windows.Controls.Separator());
-        contextMenu.Items.Add(exitItem);
+        contextMenu.Items.Add(_exitItem);
 
         _trayIcon.ContextMenu = contextMenu;
         _trayIcon.TrayMouseDoubleClick += (s, e) => ShowMainWindow();
@@ -94,6 +113,7 @@ public class TrayIconService : IDisposable
 
     public void Dispose()
     {
+        LanguageService.Instance.LanguageChanged -= OnLanguageChanged;
         _trayIcon?.Dispose();
     }
 }

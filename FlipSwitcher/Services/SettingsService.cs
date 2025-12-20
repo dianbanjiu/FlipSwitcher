@@ -104,5 +104,10 @@ public class AppSettings
     /// Run as Administrator (requires restart)
     /// </summary>
     public bool RunAsAdmin { get; set; } = false;
+
+    /// <summary>
+    /// Language: 0 = English, 1 = Chinese
+    /// </summary>
+    public int Language { get; set; } = 0;
 }
 
