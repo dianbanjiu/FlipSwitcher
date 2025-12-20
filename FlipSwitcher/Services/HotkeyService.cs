@@ -50,6 +50,7 @@ public class HotkeyService : IDisposable
     private bool _useAltTab;
     private bool _isVisible;
     private bool _isSearchMode;
+    private bool _isSettingsWindowOpen;
 
     /// <summary>
     /// Fired when the activation hotkey is pressed (to show/hide FlipSwitcher)
@@ -121,6 +122,14 @@ public class HotkeyService : IDisposable
     public void SetSearchMode(bool searchMode)
     {
         _isSearchMode = searchMode;
+    }
+
+    /// <summary>
+    /// Set settings window open state - when true, Alt+Esc will close settings window
+    /// </summary>
+    public void SetSettingsWindowOpen(bool isOpen)
+    {
+        _isSettingsWindowOpen = isOpen;
     }
 
     public void RegisterHotkeys(Window window, bool useAltSpace = true, bool useAltTab = false)
@@ -225,13 +234,26 @@ public class HotkeyService : IDisposable
             bool isKeyUp = msg == NativeMethods.WM_KEYUP || msg == NativeMethods.WM_SYSKEYUP;
 
             // Escape key - ALWAYS close window regardless of any modifier keys
-            if (isKeyDown && hookStruct.vkCode == NativeMethods.VK_ESCAPE && _isVisible)
+            if (isKeyDown && hookStruct.vkCode == NativeMethods.VK_ESCAPE)
             {
-                Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                // If settings window is open and Alt is pressed, close settings window
+                if (_isSettingsWindowOpen && IsAltPressed())
                 {
-                    EscapePressed?.Invoke(this, EventArgs.Empty);
-                }));
-                return (IntPtr)1;
+                    Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        EscapePressed?.Invoke(this, EventArgs.Empty);
+                    }));
+                    return (IntPtr)1;
+                }
+                // Otherwise, only close if main window is visible
+                else if (_isVisible)
+                {
+                    Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        EscapePressed?.Invoke(this, EventArgs.Empty);
+                    }));
+                    return (IntPtr)1;
+                }
             }
 
             // Check for Alt key release - confirm selection

@@ -239,8 +239,10 @@ public partial class MainWindow : Window
     {
         // Hide main window and open settings
         HideWindow();
-        var settingsWindow = new SettingsWindow();
+        _hotkeyService.SetSettingsWindowOpen(true);
+        var settingsWindow = new SettingsWindow(_hotkeyService);
         settingsWindow.Owner = this;
+        settingsWindow.Closed += (s, args) => _hotkeyService.SetSettingsWindowOpen(false);
         settingsWindow.ShowDialog();
     }
 

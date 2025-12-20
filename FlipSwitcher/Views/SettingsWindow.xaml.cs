@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
@@ -5,6 +6,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Navigation;
+using FlipSwitcher.Core;
 using FlipSwitcher.Services;
 
 namespace FlipSwitcher.Views;
@@ -15,6 +17,7 @@ namespace FlipSwitcher.Views;
 public partial class SettingsWindow : Window
 {
     private bool _isInitializing = true;
+    private HotkeyService? _hotkeyService;
 
     public SettingsWindow()
     {
@@ -23,6 +26,20 @@ public partial class SettingsWindow : Window
         UpdateAdminStatusDisplay();
         UpdateVersionDisplay();
         _isInitializing = false;
+    }
+
+    public SettingsWindow(HotkeyService? hotkeyService = null) : this()
+    {
+        _hotkeyService = hotkeyService;
+        // 如果没有传递 HotkeyService，尝试从 MainWindow 获取
+        if (_hotkeyService == null && Application.Current.MainWindow is MainWindow mainWindow)
+        {
+            _hotkeyService = mainWindow.HotkeyService;
+        }
+        if (_hotkeyService != null)
+        {
+            _hotkeyService.EscapePressed += HotkeyService_EscapePressed;
+        }
     }
 
     private void UpdateVersionDisplay()
@@ -268,11 +285,47 @@ public partial class SettingsWindow : Window
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // 支持 Esc 或 Alt+Esc 关闭（即使 Alt 键未松开）
         if (e.Key == Key.Escape)
         {
             Close();
             e.Handled = true;
         }
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        // 使用 OnKeyDown 作为备用，确保 Alt+Esc 能被捕获
+        if (e.Key == Key.Escape)
+        {
+            // 检查 Alt 键是否被按下（即使 WPF 的 Keyboard.Modifiers 可能检测不到）
+            bool altPressed = (NativeMethods.GetAsyncKeyState(NativeMethods.VK_MENU) & 0x8000) != 0 ||
+                              (NativeMethods.GetAsyncKeyState(NativeMethods.VK_LMENU) & 0x8000) != 0 ||
+                              (NativeMethods.GetAsyncKeyState(NativeMethods.VK_RMENU) & 0x8000) != 0;
+            
+            // 无论 Alt 键是否被按下，都关闭窗口
+            Close();
+            e.Handled = true;
+        }
+        base.OnKeyDown(e);
+    }
+
+    private void HotkeyService_EscapePressed(object? sender, EventArgs e)
+    {
+        // 当 Alt+Esc 被按下时关闭设置窗口
+        if (IsLoaded)
+        {
+            Close();
+        }
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        if (_hotkeyService != null)
+        {
+            _hotkeyService.EscapePressed -= HotkeyService_EscapePressed;
+        }
+        base.OnClosed(e);
     }
 }
 

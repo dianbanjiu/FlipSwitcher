@@ -106,8 +106,21 @@ public class TrayIconService : IDisposable
 
     private void ShowSettings()
     {
-        var settingsWindow = new FlipSwitcher.Views.SettingsWindow();
+        var mainWindow = System.Windows.Application.Current.MainWindow as FlipSwitcher.Views.MainWindow;
+        var hotkeyService = mainWindow?.HotkeyService;
+        if (hotkeyService != null)
+        {
+            hotkeyService.SetSettingsWindowOpen(true);
+        }
+        var settingsWindow = new FlipSwitcher.Views.SettingsWindow(hotkeyService);
         settingsWindow.Owner = System.Windows.Application.Current.MainWindow;
+        settingsWindow.Closed += (s, e) =>
+        {
+            if (hotkeyService != null)
+            {
+                hotkeyService.SetSettingsWindowOpen(false);
+            }
+        };
         settingsWindow.ShowDialog();
     }
 
