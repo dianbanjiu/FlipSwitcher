@@ -1,5 +1,9 @@
 # FlipSwitcher
 
+<p align="center">
+  <img src="docs/screenshot.png" alt="FlipSwitcher Screenshot" width="600"/>
+</p>
+
 A modern, beautiful Alt-Tab replacement for Windows, built with **Fluent 2 Design System**.
 
 ## ✨ Features
