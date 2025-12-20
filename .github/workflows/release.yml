@@ -82,12 +82,30 @@ jobs:
             }
           }
           Write-Host "Using WiX Toolset from: $wixPath"
+          $publishDir = Join-Path $PWD "publish"
+          $msiDir = Join-Path $publishDir "msi"
+          $wxsDir = Join-Path $PWD "FlipSwitcher"
+
           # Generate file list using Heat
-          & "$wixPath\heat.exe" dir publish\msi -cg ProductFiles -gg -sfrag -srd -scom -sreg -dr INSTALLFOLDER -var var.PublishDir -out publish\ProductFiles.wxs
+          & "$wixPath\heat.exe" dir "$msiDir" -cg ProductFiles -gg -sfrag -srd -scom -sreg -dr INSTALLFOLDER -var var.PublishDir -out "$publishDir\ProductFiles.wxs"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Heat failed"
+            exit 1
+          }
+
           # Compile WiX files
-          & "$wixPath\candle.exe" -nologo -arch x64 -dVersion="$version" -dPublishDir="publish\msi" FlipSwitcher\FlipSwitcher.wxs publish\ProductFiles.wxs -out publish\
+          & "$wixPath\candle.exe" -nologo -arch x64 -dVersion="$version" -dPublishDir="$msiDir" "$wxsDir\FlipSwitcher.wxs" "$publishDir\ProductFiles.wxs" -out "$publishDir\"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "WiX compilation failed"
+            exit 1
+          }
+
           # Link and create MSI
-          & "$wixPath\light.exe" -nologo -ext WixUIExtension -out publish\FlipSwitcher-windows-x64.msi publish\FlipSwitcher.wixobj publish\ProductFiles.wixobj
+          & "$wixPath\light.exe" -nologo -ext WixUIExtension -out "$publishDir\FlipSwitcher-windows-x64.msi" "$publishDir\FlipSwitcher.wixobj" "$publishDir\ProductFiles.wixobj"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "WiX linking failed"
+            exit 1
+          }
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
