@@ -29,6 +29,10 @@ jobs:
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
 
+      - name: Install WiX Toolset
+        run: |
+          choco install wix --yes --no-progress
+
       - name: Restore dependencies
         run: dotnet restore FlipSwitcher/FlipSwitcher.csproj
 
@@ -45,14 +49,24 @@ jobs:
         run: |
           Compress-Archive -Path publish/FlipSwitcher-windows-x64-SelfContained.exe -DestinationPath publish/FlipSwitcher-windows-x64-SelfContained.exe.zip
 
-      # Portable version (zip)
-      - name: Build Portable
+      # MSI Installer
+      - name: Build for MSI
         run: |
-          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.get_version.outputs.VERSION }} -o publish/portable
+          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.get_version.outputs.VERSION }} -o publish/msi
 
-      - name: Create Portable zip
+      - name: Build MSI Installer
         run: |
-          Compress-Archive -Path publish/portable/* -DestinationPath publish/FlipSwitcher-windows-x64-Portable.zip
+          $version = "${{ steps.get_version.outputs.VERSION }}"
+          $wixPath = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          if (Test-Path "C:\Program Files\WiX Toolset v3.11\bin") {
+            $wixPath = "C:\Program Files\WiX Toolset v3.11\bin"
+          }
+          # Generate file list using Heat
+          & "$wixPath\heat.exe" dir publish\msi -cg ProductFiles -gg -sfrag -srd -scom -sreg -dr INSTALLFOLDER -var var.PublishDir -out publish\ProductFiles.wxs
+          # Compile WiX files
+          & "$wixPath\candle.exe" -nologo -arch x64 -dVersion="$version" -dPublishDir="publish\msi" FlipSwitcher\FlipSwitcher.wxs publish\ProductFiles.wxs -out publish\
+          # Link and create MSI
+          & "$wixPath\light.exe" -nologo -ext WixUIExtension -out publish\FlipSwitcher-windows-x64.msi publish\FlipSwitcher.wixobj publish\ProductFiles.wixobj
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -63,6 +77,6 @@ jobs:
           generate_release_notes: true
           files: |
             publish/FlipSwitcher-windows-x64-SelfContained.exe.zip
-            publish/FlipSwitcher-windows-x64-Portable.zip
+            publish/FlipSwitcher-windows-x64.msi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
