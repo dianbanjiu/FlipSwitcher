@@ -116,6 +116,7 @@
                                 ItemContainerStyle="{StaticResource FluentComboBoxItemStyle}">
                                 <ComboBoxItem Content="{DynamicResource LanguageEnglish}" Tag="0" />
                                 <ComboBoxItem Content="{DynamicResource LanguageChinese}" Tag="1" />
+                                <ComboBoxItem Content="{DynamicResource LanguageChineseTraditional}" Tag="2" />
                             </ComboBox>
                         </Grid>
                     </Border>

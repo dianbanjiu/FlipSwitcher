@@ -1,0 +1,75 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+    <!-- Chinese Traditional -->
+    
+    <!-- Main Window -->
+    <system:String x:Key="AppTitle">FlipSwitcher</system:String>
+    <system:String x:Key="WindowsCount">個視窗</system:String>
+    <system:String x:Key="SearchPlaceholder">搜尋視窗...</system:String>
+    <system:String x:Key="NoWindowsFound">未找到視窗</system:String>
+    <system:String x:Key="TryDifferentSearch">嘗試其他搜尋詞</system:String>
+    <system:String x:Key="Minimized">已最小化</system:String>
+    
+    <!-- Footer Hints -->
+    <system:String x:Key="HintEnter">Enter</system:String>
+    <system:String x:Key="HintSwitch">切換</system:String>
+    <system:String x:Key="HintNav">導航</system:String>
+    <system:String x:Key="HintSearch">搜尋</system:String>
+    <system:String x:Key="HintClose">關閉</system:String>
+    <system:String x:Key="HintSettings">設定</system:String>
+    <system:String x:Key="HintExit">結束</system:String>
+    
+    <!-- Settings Window -->
+    <system:String x:Key="Settings">設定</system:String>
+    <system:String x:Key="SettingsClose">關閉</system:String>
+    
+    <!-- Settings - Language -->
+    <system:String x:Key="SettingsLanguage">語言</system:String>
+    <system:String x:Key="SettingsLanguageDesc">選擇您偏好的語言</system:String>
+    <system:String x:Key="LanguageEnglish">English</system:String>
+    <system:String x:Key="LanguageChinese">简体中文</system:String>
+    <system:String x:Key="LanguageChineseTraditional">繁體中文</system:String>
+    
+    <!-- Settings - Hotkey -->
+    <system:String x:Key="SettingsHotkey">快速鍵</system:String>
+    <system:String x:Key="SettingsAltSpace">Alt + Space</system:String>
+    <system:String x:Key="SettingsAltSpaceDesc">使用 Alt + Space 啟動 FlipSwitcher</system:String>
+    <system:String x:Key="SettingsAltTab">Alt + Tab</system:String>
+    <system:String x:Key="SettingsAltTabDesc">使用 FlipSwitcher 取代系統 Alt+Tab</system:String>
+    <system:String x:Key="SettingsReplacesSystem">取代系統</system:String>
+    <system:String x:Key="SettingsActiveHotkey">目前快速鍵:</system:String>
+    
+    <!-- Settings - Appearance -->
+    <system:String x:Key="SettingsAppearance">外觀</system:String>
+    <system:String x:Key="SettingsTheme">主題</system:String>
+    <system:String x:Key="SettingsThemeDesc">選擇淺色或深色模式</system:String>
+    <system:String x:Key="ThemeDark">深色</system:String>
+    <system:String x:Key="ThemeLight">淺色</system:String>
+    <system:String x:Key="ThemeSystem">跟隨系統</system:String>
+    <system:String x:Key="SettingsMicaEffect">雲母效果</system:String>
+    <system:String x:Key="SettingsMicaEffectDesc">啟用半透明背景 (Windows 11)</system:String>
+    
+    <!-- Settings - Behavior -->
+    <system:String x:Key="SettingsBehavior">行為</system:String>
+    <system:String x:Key="SettingsRunAsAdmin">以系統管理員身分執行</system:String>
+    <system:String x:Key="SettingsRunAsAdminDesc">切換到提升權限視窗時需要 (需重新啟動)</system:String>
+    <system:String x:Key="SettingsAdminEnabled">已啟用</system:String>
+    <system:String x:Key="SettingsAdminDisabled">未啟用</system:String>
+    <system:String x:Key="SettingsStartWithWindows">開機自動啟動</system:String>
+    <system:String x:Key="SettingsStartWithWindowsDesc">登入時自動啟動 FlipSwitcher</system:String>
+    <system:String x:Key="SettingsHideOnFocusLost">失去焦點時隱藏</system:String>
+    <system:String x:Key="SettingsHideOnFocusLostDesc">點擊外部區域時自動隱藏</system:String>
+    
+    <!-- Settings - About -->
+    <system:String x:Key="SettingsAbout">關於</system:String>
+    <system:String x:Key="SettingsAboutDesc">採用 Fluent 2 設計的現代 Alt-Tab 替代品</system:String>
+    <system:String x:Key="SettingsViewOnGitHub">在 GitHub 上查看</system:String>
+    
+    <!-- Tray Menu -->
+    <system:String x:Key="TrayShow">顯示</system:String>
+    <system:String x:Key="TraySettings">設定</system:String>
+    <system:String x:Key="TrayExit">結束</system:String>
+
+</ResourceDictionary>

@@ -30,6 +30,7 @@
     <system:String x:Key="SettingsLanguageDesc">Choose your preferred language</system:String>
     <system:String x:Key="LanguageEnglish">English</system:String>
     <system:String x:Key="LanguageChinese">简体中文</system:String>
+    <system:String x:Key="LanguageChineseTraditional">繁體中文</system:String>
     
     <!-- Settings - Hotkey -->
     <system:String x:Key="SettingsHotkey">Hotkey</system:String>

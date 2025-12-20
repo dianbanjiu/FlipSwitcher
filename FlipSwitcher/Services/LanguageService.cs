@@ -9,7 +9,8 @@ namespace FlipSwitcher.Services;
 public enum AppLanguage
 {
     English,
-    Chinese
+    Chinese,
+    ChineseTraditional
 }
 
 /// <summary>
@@ -22,6 +23,7 @@ public class LanguageService
 
     private const string EnglishResourcePath = "Resources/Strings.xaml";
     private const string ChineseResourcePath = "Resources/Strings.zh-CN.xaml";
+    private const string ChineseTraditionalResourcePath = "Resources/Strings.zh-TW.xaml";
 
     public event EventHandler? LanguageChanged;
 
@@ -50,6 +52,7 @@ public class LanguageService
         var resourcePath = language switch
         {
             AppLanguage.Chinese => ChineseResourcePath,
+            AppLanguage.ChineseTraditional => ChineseTraditionalResourcePath,
             _ => EnglishResourcePath
         };
 
