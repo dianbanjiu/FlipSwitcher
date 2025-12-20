@@ -41,6 +41,10 @@ jobs:
         run: |
           Move-Item -Path publish/self-contained/FlipSwitcher.exe -Destination publish/FlipSwitcher-windows-x64-SelfContained.exe
 
+      - name: Create Self-Contained zip
+        run: |
+          Compress-Archive -Path publish/FlipSwitcher-windows-x64-SelfContained.exe -DestinationPath publish/FlipSwitcher-windows-x64-SelfContained.exe.zip
+
       # Portable version (zip)
       - name: Build Portable
         run: |
@@ -58,7 +62,7 @@ jobs:
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
           files: |
-            publish/FlipSwitcher-windows-x64-SelfContained.exe
+            publish/FlipSwitcher-windows-x64-SelfContained.exe.zip
             publish/FlipSwitcher-windows-x64-Portable.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
