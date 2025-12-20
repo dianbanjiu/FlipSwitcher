@@ -86,8 +86,8 @@ jobs:
           $msiDir = Join-Path $publishDir "msi"
           $wxsDir = Join-Path $PWD "FlipSwitcher"
 
-          # Generate file list using Heat
-          & "$wixPath\heat.exe" dir "$msiDir" -cg ProductFiles -gg -sfrag -srd -scom -sreg -dr INSTALLFOLDER -var var.PublishDir -out "$publishDir\ProductFiles.wxs"
+          # Generate file list using Heat (64-bit)
+          & "$wixPath\heat.exe" dir "$msiDir" -cg ProductFiles -gg -sfrag -srd -scom -sreg -platform x64 -dr INSTALLFOLDER -var var.PublishDir -out "$publishDir\ProductFiles.wxs"
           if ($LASTEXITCODE -ne 0) {
             Write-Error "Heat failed"
             exit 1
