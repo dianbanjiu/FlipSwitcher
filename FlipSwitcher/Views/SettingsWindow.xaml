@@ -232,22 +232,34 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{DynamicResource SettingsTheme}"
-                                        Style="{StaticResource BodyStrongTextStyle}" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{DynamicResource SettingsTheme}"
+                                            Style="{StaticResource BodyStrongTextStyle}" />
+                                        <Border Background="{StaticResource AccentDefaultBrush}"
+                                            CornerRadius="4"
+                                            Padding="6,2"
+                                            Margin="8,0,0,0"
+                                            VerticalAlignment="Center">
+                                            <TextBlock Text="重启生效"
+                                                Style="{StaticResource CaptionTextStyle}"
+                                                FontSize="10"
+                                                Foreground="{StaticResource TextOnAccentBrush}" />
+                                        </Border>
+                                    </StackPanel>
                                     <TextBlock Text="{DynamicResource SettingsThemeDesc}"
                                         Style="{StaticResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
-                                <ComboBox Grid.Column="1"
+                                <ComboBox x:Name="ThemeComboBox"
+                                    Grid.Column="1"
                                     Width="120"
                                     SelectedIndex="0"
-                                    IsEnabled="False"
+                                    SelectionChanged="ThemeComboBox_SelectionChanged"
                                     Style="{StaticResource FluentComboBoxStyle}"
                                     ItemContainerStyle="{StaticResource FluentComboBoxItemStyle}">
                                     <ComboBoxItem Content="{DynamicResource ThemeDark}" />
                                     <ComboBoxItem Content="{DynamicResource ThemeLight}" />
-                                    <ComboBoxItem Content="{DynamicResource ThemeSystem}" />
                                 </ComboBox>
                             </Grid>
 

@@ -52,6 +52,7 @@ public partial class SettingsWindow : Window
         StartWithWindowsCheckBox.IsChecked = settings.StartWithWindows;
         HideOnFocusLostCheckBox.IsChecked = settings.HideOnFocusLost;
         MicaEffectCheckBox.IsChecked = settings.EnableMicaEffect;
+        ThemeComboBox.SelectedIndex = settings.Theme;
         
         UpdateCurrentHotkeyDisplay();
     }
@@ -188,6 +189,15 @@ public partial class SettingsWindow : Window
 
         var settings = SettingsService.Instance.Settings;
         settings.EnableMicaEffect = MicaEffectCheckBox.IsChecked == true;
+        SettingsService.Instance.Save();
+    }
+
+    private void ThemeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        var settings = SettingsService.Instance.Settings;
+        settings.Theme = ThemeComboBox.SelectedIndex;
         SettingsService.Instance.Save();
     }
 

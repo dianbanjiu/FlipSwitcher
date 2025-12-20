@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Windows;
 using Hardcodet.Wpf.TaskbarNotification;
@@ -13,6 +14,7 @@ public class TrayIconService : IDisposable
     private TaskbarIcon? _trayIcon;
     private System.Windows.Controls.MenuItem? _showItem;
     private System.Windows.Controls.MenuItem? _settingsItem;
+    private System.Windows.Controls.MenuItem? _restartItem;
     private System.Windows.Controls.MenuItem? _exitItem;
 
     public TrayIconService()
@@ -75,12 +77,16 @@ public class TrayIconService : IDisposable
         _settingsItem = new System.Windows.Controls.MenuItem { Header = LanguageService.GetString("TraySettings") };
         _settingsItem.Click += (s, e) => ShowSettings();
 
+        _restartItem = new System.Windows.Controls.MenuItem { Header = "重启" };
+        _restartItem.Click += (s, e) => RestartApplication();
+
         _exitItem = new System.Windows.Controls.MenuItem { Header = LanguageService.GetString("TrayExit") };
         _exitItem.Click += (s, e) => ExitApplication();
 
         contextMenu.Items.Add(_showItem);
         contextMenu.Items.Add(new System.Windows.Controls.Separator());
         contextMenu.Items.Add(_settingsItem);
+        contextMenu.Items.Add(_restartItem);
         contextMenu.Items.Add(new System.Windows.Controls.Separator());
         contextMenu.Items.Add(_exitItem);
 
@@ -103,6 +109,39 @@ public class TrayIconService : IDisposable
         var settingsWindow = new FlipSwitcher.Views.SettingsWindow();
         settingsWindow.Owner = System.Windows.Application.Current.MainWindow;
         settingsWindow.ShowDialog();
+    }
+
+    private void RestartApplication()
+    {
+        try
+        {
+            var exePath = Environment.ProcessPath;
+            if (string.IsNullOrEmpty(exePath))
+            {
+                exePath = Process.GetCurrentProcess().MainModule?.FileName;
+            }
+
+            if (string.IsNullOrEmpty(exePath))
+            {
+                return;
+            }
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = exePath,
+                UseShellExecute = true
+            };
+
+            Process.Start(startInfo);
+            
+            // Close current application
+            _trayIcon?.Dispose();
+            System.Windows.Application.Current.Shutdown();
+        }
+        catch
+        {
+            // Ignore errors
+        }
     }
 
     private void ExitApplication()

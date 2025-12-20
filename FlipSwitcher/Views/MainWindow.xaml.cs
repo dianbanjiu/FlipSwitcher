@@ -88,8 +88,14 @@ public partial class MainWindow : Window
 
         try
         {
-            // Enable dark mode for title bar
-            int darkMode = 1;
+            // Set dark mode based on current theme
+            bool isDark = settings.Theme switch
+            {
+                0 => true,  // Dark
+                1 => false, // Light
+                _ => true
+            };
+            int darkMode = isDark ? 1 : 0;
             NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
 
             // Apply Mica effect only if enabled in settings

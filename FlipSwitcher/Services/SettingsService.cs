@@ -96,7 +96,7 @@ public class AppSettings
     public bool EnableMicaEffect { get; set; } = true;
 
     /// <summary>
-    /// Theme: 0 = Dark, 1 = Light, 2 = System
+    /// Theme: 0 = Dark, 1 = Light
     /// </summary>
     public int Theme { get; set; } = 0;
 

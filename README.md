@@ -9,6 +9,7 @@ A modern, beautiful Alt-Tab replacement for Windows, built with **Fluent 2 Desig
 ## ✨ Features
 
 - 🎨 **Fluent 2 Design** - Modern dark theme with Mica/Acrylic effects
+- 🌓 **Theme Support** - Switch between dark and light themes (requires restart)
 - ⚡ **Fast Window Switching** - Instantly switch between open windows
 - 🔍 **Live Search** - Filter windows by title or process name as you type
 - ⌨️ **Keyboard-First** - Designed for power users who love keyboard shortcuts
@@ -51,6 +52,8 @@ dotnet run --project FlipSwitcher
 | `Alt + S`     | Enter search mode (keep window open)                  |
 | `Alt + W`     | Close selected window                                 |
 | `Alt + ,`     | Open settings                                         |
+| `Alt + ->`    | Summary selected app                                  |
+| `Alt + <-`    | Back to windows list                                  |
 
 ## 🎨 Design
 
@@ -59,7 +62,7 @@ FlipSwitcher is built following Microsoft's [Fluent 2 Design System](https://flu
 - **Mica Material** - Translucent background that adapts to desktop wallpaper
 - **Rounded Corners** - Consistent 8px/12px corner radius
 - **Segoe UI Variable** - Modern variable font for crisp typography
-- **Dark Theme** - Easy on the eyes, perfect for late-night coding
+- **Theme Support** - Choose between dark and light themes in settings (restart required)
 - **Subtle Animations** - Smooth transitions and hover effects
 
 ## 🏗️ Architecture
@@ -76,9 +79,10 @@ FlipSwitcher/
 │   ├── HotkeyService.cs     # Global hotkey handling
 │   ├── SettingsService.cs   # Application settings
 │   ├── StartupService.cs    # Windows startup registration
+│   ├── ThemeService.cs      # Theme management (dark/light)
 │   ├── TrayIconService.cs   # System tray icon
 │   └── WindowService.cs     # Window enumeration
-├── Themes/         # Fluent 2 styles and colors
+├── Themes/         # Fluent 2 styles and colors (dark/light themes)
 ├── ViewModels/     # MVVM ViewModels
 └── Views/          # WPF Windows (MainWindow, SettingsWindow)
 ```

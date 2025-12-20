@@ -50,6 +50,9 @@ public partial class App : Application
         // Initialize language service
         LanguageService.Instance.Initialize();
 
+        // Initialize theme service and apply theme
+        ThemeService.Instance.ApplyTheme((AppTheme)settings.Theme);
+
         // Initialize services
         _hotkeyService = new HotkeyService();
         _trayIconService = new TrayIconService();
@@ -68,6 +71,7 @@ public partial class App : Application
     {
         _hotkeyService?.Dispose();
         _trayIconService?.Dispose();
+        ThemeService.Instance.Dispose();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();
         base.OnExit(e);

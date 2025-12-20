@@ -1,0 +1,95 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Fluent 2 Design System Colors - Light Theme -->
+    
+    <!-- Background Colors - Mica/Acrylic Effect Base -->
+    <Color x:Key="BackgroundAcrylicBase">#E6F3F3F3</Color>
+    <Color x:Key="BackgroundAcrylicDefault">#CCFFFFFF</Color>
+    <Color x:Key="BackgroundSolidBase">#FFFFFFFF</Color>
+    <Color x:Key="BackgroundSolidSecondary">#FFF3F3F3</Color>
+    <Color x:Key="BackgroundSolidTertiary">#FFE5E5E5</Color>
+    
+    <!-- Surface Colors -->
+    <Color x:Key="SurfaceStroke">#1A000000</Color>
+    <Color x:Key="SurfaceStrokeDefault">#0F000000</Color>
+    <Color x:Key="CardBackground">#FFF3F3F3</Color>
+    <Color x:Key="CardBackgroundHover">#FFE5E5E5</Color>
+    <Color x:Key="CardBackgroundPressed">#FFD9D9D9</Color>
+    <Color x:Key="CardBackgroundSelected">#FF0078D4</Color>
+    
+    <!-- Text Colors -->
+    <Color x:Key="TextPrimary">#FF000000</Color>
+    <Color x:Key="TextSecondary">#B3000000</Color>
+    <Color x:Key="TextTertiary">#66000000</Color>
+    <Color x:Key="TextDisabled">#33000000</Color>
+    <Color x:Key="TextOnAccent">#FFFFFFFF</Color>
+    
+    <!-- Accent Colors - Microsoft Blue -->
+    <Color x:Key="AccentDefault">#FF0078D4</Color>
+    <Color x:Key="AccentLight1">#FF429CE3</Color>
+    <Color x:Key="AccentLight2">#FF6BB9F0</Color>
+    <Color x:Key="AccentLight3">#FF99D1FA</Color>
+    <Color x:Key="AccentDark1">#FF005A9E</Color>
+    <Color x:Key="AccentDark2">#FF003F6E</Color>
+    <Color x:Key="AccentDark3">#FF002642</Color>
+    
+    <!-- Control Colors -->
+    <Color x:Key="ControlDefault">#0F000000</Color>
+    <Color x:Key="ControlSecondary">#15000000</Color>
+    <Color x:Key="ControlTertiary">#08000000</Color>
+    <Color x:Key="ControlInputActive">#B3FFFFFF</Color>
+    <Color x:Key="ControlStrongDefault">#8B000000</Color>
+    <Color x:Key="ControlStrongDisabled">#3D000000</Color>
+    
+    <!-- Subtle Colors -->
+    <Color x:Key="SubtleTransparent">#00FFFFFF</Color>
+    <Color x:Key="SubtleSecondary">#0F000000</Color>
+    
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="BackgroundAcrylicBaseBrush" Color="{StaticResource BackgroundAcrylicBase}"/>
+    <SolidColorBrush x:Key="BackgroundAcrylicDefaultBrush" Color="{StaticResource BackgroundAcrylicDefault}"/>
+    <SolidColorBrush x:Key="BackgroundSolidBaseBrush" Color="{StaticResource BackgroundSolidBase}"/>
+    <SolidColorBrush x:Key="BackgroundSolidSecondaryBrush" Color="{StaticResource BackgroundSolidSecondary}"/>
+    <SolidColorBrush x:Key="BackgroundSolidTertiaryBrush" Color="{StaticResource BackgroundSolidTertiary}"/>
+    
+    <SolidColorBrush x:Key="SurfaceStrokeBrush" Color="{StaticResource SurfaceStroke}"/>
+    <SolidColorBrush x:Key="SurfaceStrokeDefaultBrush" Color="{StaticResource SurfaceStrokeDefault}"/>
+    <SolidColorBrush x:Key="CardBackgroundBrush" Color="{StaticResource CardBackground}"/>
+    <SolidColorBrush x:Key="CardBackgroundHoverBrush" Color="{StaticResource CardBackgroundHover}"/>
+    <SolidColorBrush x:Key="CardBackgroundPressedBrush" Color="{StaticResource CardBackgroundPressed}"/>
+    <SolidColorBrush x:Key="CardBackgroundSelectedBrush" Color="{StaticResource CardBackgroundSelected}"/>
+    
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}"/>
+    <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiary}"/>
+    <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabled}"/>
+    <SolidColorBrush x:Key="TextOnAccentBrush" Color="{StaticResource TextOnAccent}"/>
+    
+    <SolidColorBrush x:Key="AccentDefaultBrush" Color="{StaticResource AccentDefault}"/>
+    <SolidColorBrush x:Key="AccentLight1Brush" Color="{StaticResource AccentLight1}"/>
+    <SolidColorBrush x:Key="AccentLight2Brush" Color="{StaticResource AccentLight2}"/>
+    <SolidColorBrush x:Key="AccentLight3Brush" Color="{StaticResource AccentLight3}"/>
+    <SolidColorBrush x:Key="AccentDark1Brush" Color="{StaticResource AccentDark1}"/>
+    
+    <SolidColorBrush x:Key="ControlDefaultBrush" Color="{StaticResource ControlDefault}"/>
+    <SolidColorBrush x:Key="ControlSecondaryBrush" Color="{StaticResource ControlSecondary}"/>
+    <SolidColorBrush x:Key="ControlTertiaryBrush" Color="{StaticResource ControlTertiary}"/>
+    <SolidColorBrush x:Key="ControlInputActiveBrush" Color="{StaticResource ControlInputActive}"/>
+    <SolidColorBrush x:Key="ControlStrongDefaultBrush" Color="{StaticResource ControlStrongDefault}"/>
+    
+    <SolidColorBrush x:Key="SubtleTransparentBrush" Color="{StaticResource SubtleTransparent}"/>
+    <SolidColorBrush x:Key="SubtleSecondaryBrush" Color="{StaticResource SubtleSecondary}"/>
+    
+    <!-- Gradient Brushes for Fluent Effects -->
+    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource AccentLight1}" Offset="0"/>
+        <GradientStop Color="{StaticResource AccentDefault}" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <LinearGradientBrush x:Key="CardGradientBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFE5E5E5" Offset="0"/>
+        <GradientStop Color="#FFF3F3F3" Offset="1"/>
+    </LinearGradientBrush>
+
+</ResourceDictionary>
