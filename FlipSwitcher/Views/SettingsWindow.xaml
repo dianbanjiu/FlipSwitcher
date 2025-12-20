@@ -15,7 +15,7 @@
     PreviewKeyDown="Window_PreviewKeyDown">
 
     <!-- Main Container -->
-    <Border Background="{StaticResource BackgroundAcrylicBaseBrush}"
+    <Border Background="{StaticResource BackgroundSolidBaseBrush}"
         BorderBrush="{StaticResource SurfaceStrokeBrush}"
         BorderThickness="1"
         CornerRadius="12"
