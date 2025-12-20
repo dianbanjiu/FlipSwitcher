@@ -29,9 +29,9 @@ jobs:
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
 
-      - name: Install WiX Toolset
+      - name: Install Inno Setup
         run: |
-          choco install wixtoolset --yes --no-progress
+          choco install innosetup --yes --no-progress
 
       - name: Restore dependencies
         run: dotnet restore FlipSwitcher/FlipSwitcher.csproj
@@ -49,61 +49,48 @@ jobs:
         run: |
           Compress-Archive -Path publish/FlipSwitcher-windows-x64-SelfContained.exe -DestinationPath publish/FlipSwitcher-windows-x64-SelfContained.exe.zip
 
-      # MSI Installer
-      - name: Build for MSI
+      # Setup Installer (Inno Setup)
+      - name: Build for Setup
         run: |
-          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.get_version.outputs.VERSION }} -o publish/msi
+          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.get_version.outputs.VERSION }} -o publish/setup
 
-      - name: Build MSI Installer
+      - name: Build Setup Installer
         run: |
           $version = "${{ steps.get_version.outputs.VERSION }}"
-          # Find WiX installation path
-          $wixPath = $null
+          $publishDir = Join-Path $PWD "publish"
+          $setupDir = Join-Path $publishDir "setup"
+          $issFile = Join-Path $PWD "FlipSwitcher\FlipSwitcher.iss"
+
+          # Find Inno Setup installation path
+          $innoPath = $null
           $possiblePaths = @(
-            "C:\Program Files (x86)\WiX Toolset v3.11\bin",
-            "C:\Program Files\WiX Toolset v3.11\bin",
-            "C:\Program Files (x86)\WiX Toolset v3.14\bin",
-            "C:\Program Files\WiX Toolset v3.14\bin"
+            "C:\Program Files (x86)\Inno Setup 6",
+            "C:\Program Files\Inno Setup 6",
+            "C:\Program Files (x86)\Inno Setup 5",
+            "C:\Program Files\Inno Setup 5"
           )
           foreach ($path in $possiblePaths) {
-            if (Test-Path "$path\candle.exe") {
-              $wixPath = $path
+            if (Test-Path "$path\ISCC.exe") {
+              $innoPath = $path
               break
             }
           }
-          if (-not $wixPath) {
+          if (-not $innoPath) {
             # Try to find from PATH
-            $candlePath = Get-Command candle.exe -ErrorAction SilentlyContinue
-            if ($candlePath) {
-              $wixPath = Split-Path $candlePath.Source
+            $isccPath = Get-Command ISCC.exe -ErrorAction SilentlyContinue
+            if ($isccPath) {
+              $innoPath = Split-Path $isccPath.Source
             } else {
-              Write-Error "WiX Toolset not found. Please install it."
+              Write-Error "Inno Setup not found. Please install it."
               exit 1
             }
           }
-          Write-Host "Using WiX Toolset from: $wixPath"
-          $publishDir = Join-Path $PWD "publish"
-          $msiDir = Join-Path $publishDir "msi"
-          $wxsDir = Join-Path $PWD "FlipSwitcher"
+          Write-Host "Using Inno Setup from: $innoPath"
 
-          # Generate file list using Heat (64-bit)
-          & "$wixPath\heat.exe" dir "$msiDir" -cg ProductFiles -gg -sfrag -srd -scom -sreg -platform x64 -dr INSTALLFOLDER -var var.PublishDir -out "$publishDir\ProductFiles.wxs"
+          # Compile Inno Setup script
+          & "$innoPath\ISCC.exe" /DVersion="$version" /DPublishDir="$setupDir" "$issFile"
           if ($LASTEXITCODE -ne 0) {
-            Write-Error "Heat failed"
-            exit 1
-          }
-
-          # Compile WiX files
-          & "$wixPath\candle.exe" -nologo -arch x64 -dVersion="$version" -dPublishDir="$msiDir" "$wxsDir\FlipSwitcher.wxs" "$publishDir\ProductFiles.wxs" -out "$publishDir\"
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "WiX compilation failed"
-            exit 1
-          }
-
-          # Link and create MSI
-          & "$wixPath\light.exe" -nologo -ext WixUIExtension -out "$publishDir\FlipSwitcher-windows-x64.msi" "$publishDir\FlipSwitcher.wixobj" "$publishDir\ProductFiles.wixobj"
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "WiX linking failed"
+            Write-Error "Inno Setup compilation failed"
             exit 1
           }
 
@@ -116,6 +103,6 @@ jobs:
           generate_release_notes: true
           files: |
             publish/FlipSwitcher-windows-x64-SelfContained.exe.zip
-            publish/FlipSwitcher-windows-x64.msi
+            publish/FlipSwitcher-windows-x64-Setup.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
