@@ -51,6 +51,7 @@ public partial class SettingsWindow : Window
         }
         StartWithWindowsCheckBox.IsChecked = settings.StartWithWindows;
         HideOnFocusLostCheckBox.IsChecked = settings.HideOnFocusLost;
+        MicaEffectCheckBox.IsChecked = settings.EnableMicaEffect;
         
         UpdateCurrentHotkeyDisplay();
     }
@@ -178,6 +179,15 @@ public partial class SettingsWindow : Window
 
         var settings = SettingsService.Instance.Settings;
         settings.HideOnFocusLost = HideOnFocusLostCheckBox.IsChecked == true;
+        SettingsService.Instance.Save();
+    }
+
+    private void MicaEffectCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        var settings = SettingsService.Instance.Settings;
+        settings.EnableMicaEffect = MicaEffectCheckBox.IsChecked == true;
         SettingsService.Instance.Save();
     }
 

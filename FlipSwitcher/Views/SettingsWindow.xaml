@@ -266,9 +266,11 @@
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
-                                <CheckBox Grid.Column="1"
+                                <CheckBox x:Name="MicaEffectCheckBox"
+                                    Grid.Column="1"
                                     IsChecked="True"
-                                    IsEnabled="False"
+                                    Checked="MicaEffectCheckBox_Changed"
+                                    Unchecked="MicaEffectCheckBox_Changed"
                                     Style="{StaticResource FluentCheckBoxStyle}" />
                             </Grid>
                         </StackPanel>
