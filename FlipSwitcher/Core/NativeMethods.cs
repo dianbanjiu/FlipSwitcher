@@ -226,6 +226,8 @@ internal static class NativeMethods
     public const int VK_MENU = 0x12; // Alt key
     public const int VK_UP = 0x26;
     public const int VK_DOWN = 0x28;
+    public const int VK_LEFT = 0x25;
+    public const int VK_RIGHT = 0x27;
     public const int VK_ESCAPE = 0x1B;
     public const int VK_S = 0x53;
     public const int VK_W = 0x57;

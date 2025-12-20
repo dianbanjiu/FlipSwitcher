@@ -86,6 +86,16 @@ public class HotkeyService : IDisposable
     /// </summary>
     public event EventHandler? SettingsRequested;
 
+    /// <summary>
+    /// Fired when Right arrow key is pressed (to group by process)
+    /// </summary>
+    public event EventHandler? GroupByProcessRequested;
+
+    /// <summary>
+    /// Fired when Left arrow key is pressed (to ungroup from process)
+    /// </summary>
+    public event EventHandler? UngroupFromProcessRequested;
+
     public string CurrentHotkey { get; private set; } = "Alt + Space";
     public bool IsAltTabEnabled => _useAltTab;
 
@@ -288,6 +298,24 @@ public class HotkeyService : IDisposable
                         Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                         {
                             NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Next));
+                        }));
+                        return (IntPtr)1;
+                    }
+
+                    if (hookStruct.vkCode == NativeMethods.VK_RIGHT)
+                    {
+                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            GroupByProcessRequested?.Invoke(this, EventArgs.Empty);
+                        }));
+                        return (IntPtr)1;
+                    }
+
+                    if (hookStruct.vkCode == NativeMethods.VK_LEFT)
+                    {
+                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            UngroupFromProcessRequested?.Invoke(this, EventArgs.Empty);
                         }));
                         return (IntPtr)1;
                     }

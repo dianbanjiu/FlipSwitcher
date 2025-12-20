@@ -37,6 +37,8 @@ public partial class MainWindow : Window
         _hotkeyService.SearchModeRequested += HotkeyService_SearchModeRequested;
         _hotkeyService.EscapePressed += HotkeyService_EscapePressed;
         _hotkeyService.SettingsRequested += HotkeyService_SettingsRequested;
+        _hotkeyService.GroupByProcessRequested += HotkeyService_GroupByProcessRequested;
+        _hotkeyService.UngroupFromProcessRequested += HotkeyService_UngroupFromProcessRequested;
 
         // Listen for settings changes
         SettingsService.Instance.SettingsChanged += OnSettingsChanged;
@@ -220,8 +222,25 @@ public partial class MainWindow : Window
         settingsWindow.ShowDialog();
     }
 
+    private void HotkeyService_GroupByProcessRequested(object? sender, EventArgs e)
+    {
+        if (!IsVisible) return;
+        _viewModel.GroupByProcess();
+        ScrollSelectedIntoView();
+    }
+
+    private void HotkeyService_UngroupFromProcessRequested(object? sender, EventArgs e)
+    {
+        if (!IsVisible) return;
+        _viewModel.UngroupFromProcess();
+        ScrollSelectedIntoView();
+    }
+
     private void ShowWindow()
     {
+        // 重置分组状态，确保显示总列表
+        _viewModel.ResetGrouping();
+        
         // Refresh window list - in Alt+Tab mode, select the second window
         // (the first window is the current one, user wants to switch to another)
         _viewModel.RefreshWindows(selectSecondWindow: _isAltTabMode);
@@ -320,6 +339,30 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 break;
 
+            case Key.Right:
+                // 如果搜索框有焦点，让 TextBox 处理左右方向键（用于在文本中移动光标）
+                if (SearchBox.IsFocused)
+                {
+                    // 让 TextBox 处理，不拦截
+                    break;
+                }
+                _viewModel.GroupByProcess();
+                ScrollSelectedIntoView();
+                e.Handled = true;
+                break;
+
+            case Key.Left:
+                // 如果搜索框有焦点，让 TextBox 处理左右方向键（用于在文本中移动光标）
+                if (SearchBox.IsFocused)
+                {
+                    // 让 TextBox 处理，不拦截
+                    break;
+                }
+                _viewModel.UngroupFromProcess();
+                ScrollSelectedIntoView();
+                e.Handled = true;
+                break;
+
             case Key.Tab:
                 if (Keyboard.Modifiers == ModifierKeys.Shift)
                     _viewModel.MoveSelectionUp();
@@ -377,6 +420,8 @@ public partial class MainWindow : Window
 
     private void ViewModel_WindowActivated(object? sender, EventArgs e)
     {
+        // 重置分组状态，确保下次打开时显示总列表
+        _viewModel.ResetGrouping();
         HideWindow();
     }
 
