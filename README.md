@@ -1,5 +1,7 @@
 # FlipSwitcher
 
+**[English](README.md) | [简体中文](README_zh-cn.md)**
+
 <p align="center">
   <img src="docs/screenshot.png" alt="FlipSwitcher Screenshot" width="600"/>
 </p>
@@ -75,13 +77,6 @@ FlipSwitcher/
 ├── Models/         # Data models (AppWindow)
 ├── Properties/     # Publish profiles
 ├── Services/       # Business logic
-│   ├── AdminService.cs      # Administrator privileges
-│   ├── HotkeyService.cs     # Global hotkey handling
-│   ├── SettingsService.cs   # Application settings
-│   ├── StartupService.cs    # Windows startup registration
-│   ├── ThemeService.cs      # Theme management (dark/light)
-│   ├── TrayIconService.cs   # System tray icon
-│   └── WindowService.cs     # Window enumeration
 ├── Themes/         # Fluent 2 styles and colors (dark/light themes)
 ├── ViewModels/     # MVVM ViewModels
 └── Views/          # WPF Windows (MainWindow, SettingsWindow)
@@ -94,13 +89,9 @@ FlipSwitcher/
 - **CommunityToolkit.Mvvm** - MVVM helpers
 - **Hardcodet.NotifyIcon.Wpf** - System tray support
 
-## 📝 License
-
-MIT License - feel free to use this project for any purpose.
-
 ## 🙏 Acknowledgments
 
-- Original [Switcheroo](https://github.com/kvakulo/Switcheroo) project by kvakulo
+- Inspired by kvakulo [Switcheroo](https://github.com/kvakulo/Switcheroo) 
 - Microsoft [Fluent 2 Design System](https://fluent2.microsoft.design/)
 - [Segoe UI Variable](https://docs.microsoft.com/en-us/windows/apps/design/signature-experiences/typography) font
 
