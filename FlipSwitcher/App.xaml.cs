@@ -1,3 +1,5 @@
+using System;
+using System.Threading;
 using System.Windows;
 using FlipSwitcher.Services;
 
@@ -7,9 +9,22 @@ public partial class App : Application
 {
     private HotkeyService? _hotkeyService;
     private TrayIconService? _trayIconService;
+    private static Mutex? _mutex;
+    private const string MutexName = "FlipSwitcher_SingleInstance_Mutex";
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // 检查是否已有实例运行
+        bool createdNew;
+        _mutex = new Mutex(true, MutexName, out createdNew);
+
+        if (!createdNew)
+        {
+            // 已有实例运行，直接退出
+            Shutdown();
+            return;
+        }
+
         base.OnStartup(e);
 
         // Check if we need to restart with admin privileges
@@ -21,6 +36,8 @@ public partial class App : Application
             // Setting says run as admin, but we're not admin - try to elevate
             if (AdminService.RestartAsAdmin())
             {
+                _mutex?.ReleaseMutex();
+                _mutex?.Dispose();
                 Shutdown();
                 return;
             }
@@ -46,10 +63,13 @@ public partial class App : Application
         };
     }
 
+
     protected override void OnExit(ExitEventArgs e)
     {
         _hotkeyService?.Dispose();
         _trayIconService?.Dispose();
+        _mutex?.ReleaseMutex();
+        _mutex?.Dispose();
         base.OnExit(e);
     }
 }

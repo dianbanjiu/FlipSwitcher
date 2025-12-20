@@ -289,6 +289,10 @@ internal static class NativeMethods
     public const uint MOD_NOREPEAT = 0x4000;
 
     public const int WM_HOTKEY = 0x0312;
+    public const uint WM_SHOWME = 0x0400 + 1; // Custom message to show window
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
     #endregion
 
