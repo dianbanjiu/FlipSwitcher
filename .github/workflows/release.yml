@@ -29,10 +29,53 @@ jobs:
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
 
+      - name: Get previous tag
+        id: prev_tag
+        run: |
+          git fetch --tags --force
+          $tags = git tag --sort=-creatordate | Where-Object { $_ -match '^v' }
+          $currentTag = "${{ github.ref_name }}"
+          $prevTag = ""
+          $foundCurrent = $false
+          foreach ($t in $tags) {
+            if ($foundCurrent) {
+              $prevTag = $t
+              break
+            }
+            if ($t -eq $currentTag) {
+              $foundCurrent = $true
+            }
+          }
+          echo "PREV_TAG=$prevTag" >> $env:GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          $prevTag = "${{ steps.prev_tag.outputs.PREV_TAG }}"
+          $currentTag = "${{ github.ref_name }}"
+          
+          if ($prevTag) {
+            $range = "$prevTag..$currentTag"
+            $header = "## Changelog ($prevTag → $currentTag)`n`n"
+          } else {
+            $range = $currentTag
+            $header = "## Changelog`n`n"
+          }
+          
+          $commits = git log $range --pretty=format:"- %s (%h)" --no-merges 2>$null
+          if ($commits) {
+            $body = $header + ($commits -join "`n")
+          } else {
+            $body = $header + "- First release"
+          }
+          
+          # Write to file to avoid multiline string issue
+          $body | Out-File -FilePath changelog.md -Encoding utf8
+
       - name: Restore dependencies
         run: dotnet restore FlipSwitcher/FlipSwitcher.csproj
 
-      # 包含运行时的独立版本
+      # Self-contained version with runtime
       - name: Build Self-Contained
         run: |
           dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.get_version.outputs.VERSION }} -o publish/self-contained
@@ -41,7 +84,7 @@ jobs:
         run: |
           Move-Item -Path publish/self-contained/FlipSwitcher.exe -Destination publish/FlipSwitcher-windows-x64-SelfContained.exe
 
-      # 便携版本 (zip)
+      # Portable version (zip)
       - name: Build Portable
         run: |
           dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.get_version.outputs.VERSION }} -o publish/portable
@@ -56,9 +99,9 @@ jobs:
           name: ${{ steps.get_version.outputs.TAG }}
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
+          body_path: changelog.md
           files: |
             publish/FlipSwitcher-windows-x64-SelfContained.exe
             publish/FlipSwitcher-windows-x64-Portable.zip
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
