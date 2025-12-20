@@ -70,6 +70,19 @@
     <!-- Tray Menu -->
     <system:String x:Key="TrayShow">Show</system:String>
     <system:String x:Key="TraySettings">Settings</system:String>
+    <system:String x:Key="TrayRestart">Restart</system:String>
     <system:String x:Key="TrayExit">Exit</system:String>
+    
+    <!-- MessageBox -->
+    <system:String x:Key="MsgRestartRequired">FlipSwitcher needs to restart with administrator privileges.\n\nRestart now?</system:String>
+    <system:String x:Key="MsgRestartRequiredNormal">FlipSwitcher needs to restart without administrator privileges.\n\nRestart now?</system:String>
+    <system:String x:Key="MsgRestartFailed">Failed to restart the application. Please restart manually.</system:String>
+    <system:String x:Key="MsgRestartFailedTitle">Restart Failed</system:String>
+    <system:String x:Key="MsgRestartRequiredTitle">Restart Required</system:String>
+    <system:String x:Key="MsgStartupFailed">Failed to enable startup with Windows. Please try running as administrator.</system:String>
+    <system:String x:Key="MsgStartupDisabledFailed">Failed to disable startup with Windows.</system:String>
+    <system:String x:Key="MsgAtLeastOneHotkey">At least one hotkey must be enabled.</system:String>
+    <system:String x:Key="MsgErrorOccurred">An error occurred: {0}</system:String>
+    <system:String x:Key="MsgErrorTitle">FlipSwitcher Error</system:String>
 
 </ResourceDictionary>

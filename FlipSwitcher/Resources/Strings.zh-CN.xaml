@@ -70,6 +70,19 @@
     <!-- Tray Menu -->
     <system:String x:Key="TrayShow">显示</system:String>
     <system:String x:Key="TraySettings">设置</system:String>
+    <system:String x:Key="TrayRestart">重启</system:String>
     <system:String x:Key="TrayExit">退出</system:String>
+    
+    <!-- MessageBox -->
+    <system:String x:Key="MsgRestartRequired">FlipSwitcher 需要以管理员权限重启。\n\n是否立即重启？</system:String>
+    <system:String x:Key="MsgRestartRequiredNormal">FlipSwitcher 需要以普通用户权限重启。\n\n是否立即重启？</system:String>
+    <system:String x:Key="MsgRestartFailed">无法重启应用程序。请手动重启。</system:String>
+    <system:String x:Key="MsgRestartFailedTitle">重启失败</system:String>
+    <system:String x:Key="MsgRestartRequiredTitle">需要重启</system:String>
+    <system:String x:Key="MsgStartupFailed">无法启用开机自启。请尝试以管理员身份运行。</system:String>
+    <system:String x:Key="MsgStartupDisabledFailed">无法禁用开机自启。</system:String>
+    <system:String x:Key="MsgAtLeastOneHotkey">至少需要启用一个快捷键。</system:String>
+    <system:String x:Key="MsgErrorOccurred">发生错误：{0}</system:String>
+    <system:String x:Key="MsgErrorTitle">FlipSwitcher 错误</system:String>
 
 </ResourceDictionary>

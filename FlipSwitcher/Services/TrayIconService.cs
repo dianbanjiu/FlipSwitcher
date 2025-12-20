@@ -34,6 +34,8 @@ public class TrayIconService : IDisposable
             _showItem.Header = LanguageService.GetString("TrayShow");
         if (_settingsItem != null)
             _settingsItem.Header = LanguageService.GetString("TraySettings");
+        if (_restartItem != null)
+            _restartItem.Header = LanguageService.GetString("TrayRestart");
         if (_exitItem != null)
             _exitItem.Header = LanguageService.GetString("TrayExit");
     }
@@ -77,7 +79,7 @@ public class TrayIconService : IDisposable
         _settingsItem = new System.Windows.Controls.MenuItem { Header = LanguageService.GetString("TraySettings") };
         _settingsItem.Click += (s, e) => ShowSettings();
 
-        _restartItem = new System.Windows.Controls.MenuItem { Header = "重启" };
+        _restartItem = new System.Windows.Controls.MenuItem { Header = LanguageService.GetString("TrayRestart") };
         _restartItem.Click += (s, e) => RestartApplication();
 
         _exitItem = new System.Windows.Controls.MenuItem { Header = LanguageService.GetString("TrayExit") };
@@ -128,12 +130,7 @@ public class TrayIconService : IDisposable
     {
         try
         {
-            var exePath = Environment.ProcessPath;
-            if (string.IsNullOrEmpty(exePath))
-            {
-                exePath = Process.GetCurrentProcess().MainModule?.FileName;
-            }
-
+            var exePath = ProcessHelper.GetExecutablePath();
             if (string.IsNullOrEmpty(exePath))
             {
                 return;

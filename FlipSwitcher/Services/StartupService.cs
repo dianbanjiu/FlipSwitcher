@@ -258,12 +258,7 @@ public static class StartupService
 
     private static string? GetExecutablePath()
     {
-        var exePath = Environment.ProcessPath;
-        if (string.IsNullOrEmpty(exePath))
-        {
-            exePath = Process.GetCurrentProcess().MainModule?.FileName;
-        }
-        return exePath;
+        return ProcessHelper.GetExecutablePath();
     }
 }
 

@@ -34,12 +34,7 @@ public static class AdminService
     {
         try
         {
-            var exePath = Environment.ProcessPath;
-            if (string.IsNullOrEmpty(exePath))
-            {
-                exePath = Process.GetCurrentProcess().MainModule?.FileName;
-            }
-
+            var exePath = ProcessHelper.GetExecutablePath();
             if (string.IsNullOrEmpty(exePath))
             {
                 return false;
@@ -74,12 +69,7 @@ public static class AdminService
     {
         try
         {
-            var exePath = Environment.ProcessPath;
-            if (string.IsNullOrEmpty(exePath))
-            {
-                exePath = Process.GetCurrentProcess().MainModule?.FileName;
-            }
-
+            var exePath = ProcessHelper.GetExecutablePath();
             if (string.IsNullOrEmpty(exePath))
             {
                 return false;

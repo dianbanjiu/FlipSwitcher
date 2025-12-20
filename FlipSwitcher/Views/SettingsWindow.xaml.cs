@@ -128,11 +128,12 @@ public partial class SettingsWindow : Window
         // If the setting changed and requires a restart
         if (wantAdmin != isCurrentlyAdmin)
         {
+            var message = wantAdmin 
+                ? LanguageService.GetString("MsgRestartRequired")
+                : LanguageService.GetString("MsgRestartRequiredNormal");
             var result = MessageBox.Show(
-                wantAdmin 
-                    ? "FlipSwitcher needs to restart with administrator privileges.\n\nRestart now?"
-                    : "FlipSwitcher needs to restart without administrator privileges.\n\nRestart now?",
-                "Restart Required",
+                message,
+                LanguageService.GetString("MsgRestartRequiredTitle"),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
@@ -149,8 +150,8 @@ public partial class SettingsWindow : Window
                 else
                 {
                     MessageBox.Show(
-                        "Failed to restart the application. Please restart manually.",
-                        "Restart Failed",
+                        LanguageService.GetString("MsgRestartFailed"),
+                        LanguageService.GetString("MsgRestartFailedTitle"),
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
                 }
@@ -174,11 +175,12 @@ public partial class SettingsWindow : Window
         
         if (!success)
         {
+            var message = enable 
+                ? LanguageService.GetString("MsgStartupFailed")
+                : LanguageService.GetString("MsgStartupDisabledFailed");
             MessageBox.Show(
-                enable 
-                    ? "Failed to enable startup with Windows. Please try running as administrator."
-                    : "Failed to disable startup with Windows.",
-                "FlipSwitcher",
+                message,
+                LanguageService.GetString("AppTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
 
@@ -231,8 +233,11 @@ public partial class SettingsWindow : Window
             else
                 AltTabCheckBox.IsChecked = true;
 
-            MessageBox.Show("At least one hotkey must be enabled.", "FlipSwitcher",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                LanguageService.GetString("MsgAtLeastOneHotkey"), 
+                LanguageService.GetString("AppTitle"),
+                MessageBoxButton.OK, 
+                MessageBoxImage.Warning);
             return;
         }
 

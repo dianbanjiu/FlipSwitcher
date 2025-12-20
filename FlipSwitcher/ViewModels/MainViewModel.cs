@@ -1,9 +1,8 @@
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FlipSwitcher.Models;
 using FlipSwitcher.Services;
@@ -13,7 +12,7 @@ namespace FlipSwitcher.ViewModels;
 /// <summary>
 /// ViewModel for the main window switcher
 /// </summary>
-public class MainViewModel : INotifyPropertyChanged
+public class MainViewModel : ObservableObject
 {
     private readonly WindowService _windowService;
     private string _searchText = string.Empty;
@@ -90,7 +89,6 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand ActivateSelectedCommand { get; }
 
     public event EventHandler? WindowActivated;
-    public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
     /// Refresh the window list
@@ -356,9 +354,5 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
 }
 

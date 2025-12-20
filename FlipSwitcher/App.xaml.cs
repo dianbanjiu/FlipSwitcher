@@ -60,7 +60,8 @@ public partial class App : Application
         // Set up global exception handling
         DispatcherUnhandledException += (s, args) =>
         {
-            MessageBox.Show($"An error occurred: {args.Exception.Message}", "FlipSwitcher Error",
+            var message = string.Format(LanguageService.GetString("MsgErrorOccurred"), args.Exception.Message);
+            MessageBox.Show(message, LanguageService.GetString("MsgErrorTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
