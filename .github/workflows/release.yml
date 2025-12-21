@@ -33,6 +33,103 @@ jobs:
         run: |
           choco install innosetup --yes --no-progress
 
+      - name: Download Chinese language files
+        run: |
+          # Find Inno Setup installation path
+          $innoPath = $null
+          $possiblePaths = @(
+            "C:\Program Files (x86)\Inno Setup 6",
+            "C:\Program Files\Inno Setup 6",
+            "C:\Program Files (x86)\Inno Setup 5",
+            "C:\Program Files\Inno Setup 5"
+          )
+          foreach ($path in $possiblePaths) {
+            if (Test-Path "$path\ISCC.exe") {
+              $innoPath = $path
+              break
+            }
+          }
+          if (-not $innoPath) {
+            $isccPath = Get-Command ISCC.exe -ErrorAction SilentlyContinue
+            if ($isccPath) {
+              $innoPath = Split-Path $isccPath.Source
+            }
+          }
+          if ($innoPath) {
+            $langDir = Join-Path $innoPath "Languages"
+            if (-not (Test-Path $langDir)) {
+              New-Item -ItemType Directory -Path $langDir -Force | Out-Null
+            }
+            # Download Chinese Simplified from GitHub
+            $chineseSimplified = Join-Path $langDir "ChineseSimplified.isl"
+            if (-not (Test-Path $chineseSimplified)) {
+              try {
+                $urls = @(
+                  "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl",
+                  "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/ChineseSimplified.isl"
+                )
+                $downloaded = $false
+                foreach ($url in $urls) {
+                  try {
+                    Invoke-WebRequest -Uri $url -OutFile $chineseSimplified -UseBasicParsing -ErrorAction Stop
+                    Write-Host "Downloaded ChineseSimplified.isl from $url"
+                    $downloaded = $true
+                    break
+                  } catch {
+                    continue
+                  }
+                }
+                if (-not $downloaded) {
+                  # Try to copy from project directory if exists
+                  $projectLangFile = Join-Path $PWD "FlipSwitcher\InnoSetupLanguages\ChineseSimplified.isl"
+                  if (Test-Path $projectLangFile) {
+                    Copy-Item $projectLangFile $chineseSimplified -Force
+                    Write-Host "Copied ChineseSimplified.isl from project directory"
+                    $downloaded = $true
+                  } else {
+                    Write-Warning "Failed to download ChineseSimplified.isl from all sources and not found in project"
+                  }
+                }
+              } catch {
+                Write-Warning "Failed to download ChineseSimplified.isl: $_"
+              }
+            }
+            # Download Chinese Traditional from GitHub
+            $chineseTraditional = Join-Path $langDir "ChineseTraditional.isl"
+            if (-not (Test-Path $chineseTraditional)) {
+              try {
+                $urls = @(
+                  "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseTraditional.isl",
+                  "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/ChineseTraditional.isl"
+                )
+                $downloaded = $false
+                foreach ($url in $urls) {
+                  try {
+                    Invoke-WebRequest -Uri $url -OutFile $chineseTraditional -UseBasicParsing -ErrorAction Stop
+                    Write-Host "Downloaded ChineseTraditional.isl from $url"
+                    $downloaded = $true
+                    break
+                  } catch {
+                    continue
+                  }
+                }
+                if (-not $downloaded) {
+                  # Try to copy from project directory if exists
+                  $projectLangFile = Join-Path $PWD "FlipSwitcher\InnoSetupLanguages\ChineseTraditional.isl"
+                  if (Test-Path $projectLangFile) {
+                    Copy-Item $projectLangFile $chineseTraditional -Force
+                    Write-Host "Copied ChineseTraditional.isl from project directory"
+                    $downloaded = $true
+                  } else {
+                    Write-Warning "Failed to download ChineseTraditional.isl from all sources and not found in project"
+                  }
+                }
+              } catch {
+                Write-Warning "Failed to download ChineseTraditional.isl: $_"
+              }
+            }
+          }
+
       - name: Restore dependencies
         run: dotnet restore FlipSwitcher/FlipSwitcher.csproj
 
