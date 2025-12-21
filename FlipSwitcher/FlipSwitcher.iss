@@ -1,7 +1,7 @@
 [Setup]
 AppName=FlipSwitcher
 AppVersion={#Version}
-AppPublisher=FlipSwitcher Team
+AppPublisher=DjangoZane
 AppPublisherURL=https://github.com/dianbanjiu/FlipSwitcher
 AppSupportURL=https://github.com/dianbanjiu/FlipSwitcher
 AppUpdatesURL=https://github.com/dianbanjiu/FlipSwitcher
