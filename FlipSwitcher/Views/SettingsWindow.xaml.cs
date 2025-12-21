@@ -70,6 +70,7 @@ public partial class SettingsWindow : Window
         HideOnFocusLostCheckBox.IsChecked = settings.HideOnFocusLost;
         MicaEffectCheckBox.IsChecked = settings.EnableMicaEffect;
         ThemeComboBox.SelectedIndex = settings.Theme;
+        CheckForUpdatesCheckBox.IsChecked = settings.CheckForUpdates;
         
         UpdateCurrentHotkeyDisplay();
     }
@@ -218,6 +219,55 @@ public partial class SettingsWindow : Window
         var settings = SettingsService.Instance.Settings;
         settings.Theme = ThemeComboBox.SelectedIndex;
         SettingsService.Instance.Save();
+    }
+
+    private void CheckForUpdatesCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        var settings = SettingsService.Instance.Settings;
+        settings.CheckForUpdates = CheckForUpdatesCheckBox.IsChecked == true;
+        SettingsService.Instance.Save();
+    }
+
+    private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
+    {
+        CheckForUpdatesButton.IsEnabled = false;
+        CheckForUpdatesButton.Content = LanguageService.GetString("SettingsCheckingUpdates");
+
+        try
+        {
+            var updateInfo = await UpdateService.Instance.CheckForUpdatesAsync(silent: false);
+            if (updateInfo != null)
+            {
+                var message = string.Format(
+                    LanguageService.GetString("MsgUpdateAvailable"),
+                    updateInfo.Version);
+                var result = MessageBox.Show(
+                    message,
+                    LanguageService.GetString("MsgUpdateAvailableTitle"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Information);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    UpdateService.Instance.OpenDownloadPage(updateInfo.DownloadUrl);
+                }
+            }
+            else
+            {
+                MessageBox.Show(
+                    LanguageService.GetString("MsgNoUpdateAvailable"),
+                    LanguageService.GetString("MsgNoUpdateAvailableTitle"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+        }
+        finally
+        {
+            CheckForUpdatesButton.IsEnabled = true;
+            CheckForUpdatesButton.Content = LanguageService.GetString("SettingsCheckForUpdates");
+        }
     }
 
     private void HotkeyCheckBox_Changed(object sender, RoutedEventArgs e)

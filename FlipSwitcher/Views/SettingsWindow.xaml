@@ -383,6 +383,48 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- Updates Section -->
+                    <TextBlock Text="{DynamicResource SettingsUpdates}"
+                        Style="{StaticResource SubtitleTextStyle}"
+                        Margin="0,0,0,12" />
+
+                    <Border Background="{StaticResource CardBackgroundBrush}"
+                        BorderBrush="{StaticResource SurfaceStrokeDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16"
+                        Margin="0,0,0,24">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{DynamicResource SettingsCheckForUpdatesAuto}"
+                                        Style="{StaticResource BodyStrongTextStyle}" />
+                                    <TextBlock Text="{DynamicResource SettingsCheckForUpdatesAutoDesc}"
+                                        Style="{StaticResource CaptionTextStyle}"
+                                        Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <CheckBox x:Name="CheckForUpdatesCheckBox"
+                                    Grid.Column="1"
+                                    IsChecked="False"
+                                    Checked="CheckForUpdatesCheckBox_Changed"
+                                    Unchecked="CheckForUpdatesCheckBox_Changed"
+                                    Style="{StaticResource FluentCheckBoxStyle}" />
+                            </Grid>
+
+                            <Button x:Name="CheckForUpdatesButton"
+                                Content="{DynamicResource SettingsCheckForUpdates}"
+                                Click="CheckForUpdatesButton_Click"
+                                Style="{StaticResource FluentButtonStyle}"
+                                HorizontalAlignment="Left" />
+                        </StackPanel>
+                    </Border>
+
                     <!-- About Section -->
                     <TextBlock Text="{DynamicResource SettingsAbout}"
                         Style="{StaticResource SubtitleTextStyle}"

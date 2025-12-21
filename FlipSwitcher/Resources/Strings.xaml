@@ -62,6 +62,13 @@
     <system:String x:Key="SettingsHideOnFocusLost">Hide on Focus Lost</system:String>
     <system:String x:Key="SettingsHideOnFocusLostDesc">Automatically hide when clicking outside</system:String>
     
+    <!-- Settings - Updates -->
+    <system:String x:Key="SettingsUpdates">Updates</system:String>
+    <system:String x:Key="SettingsCheckForUpdatesAuto">Check for updates automatically</system:String>
+    <system:String x:Key="SettingsCheckForUpdatesAutoDesc">Check for updates when the application starts</system:String>
+    <system:String x:Key="SettingsCheckForUpdates">Check for Updates</system:String>
+    <system:String x:Key="SettingsCheckingUpdates">Checking...</system:String>
+    
     <!-- Settings - About -->
     <system:String x:Key="SettingsAbout">About</system:String>
     <system:String x:Key="SettingsAboutDesc">A modern Alt-Tab replacement with Fluent 2 Design</system:String>
@@ -84,5 +91,11 @@
     <system:String x:Key="MsgAtLeastOneHotkey">At least one hotkey must be enabled.</system:String>
     <system:String x:Key="MsgErrorOccurred">An error occurred: {0}</system:String>
     <system:String x:Key="MsgErrorTitle">FlipSwitcher Error</system:String>
+    <system:String x:Key="MsgUpdateAvailable">A new version ({0}) is available! Would you like to download it now?</system:String>
+    <system:String x:Key="MsgUpdateAvailableTitle">Update Available</system:String>
+    <system:String x:Key="MsgNoUpdateAvailable">You are using the latest version.</system:String>
+    <system:String x:Key="MsgNoUpdateAvailableTitle">No Updates</system:String>
+    <system:String x:Key="MsgUpdateCheckFailed">Failed to check for updates. Please check your internet connection.</system:String>
+    <system:String x:Key="MsgUpdateCheckFailedTitle">Update Check Failed</system:String>
 
 </ResourceDictionary>

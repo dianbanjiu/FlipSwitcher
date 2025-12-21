@@ -62,6 +62,13 @@
     <system:String x:Key="SettingsHideOnFocusLost">失去焦點時隱藏</system:String>
     <system:String x:Key="SettingsHideOnFocusLostDesc">點擊外部區域時自動隱藏</system:String>
     
+    <!-- Settings - Updates -->
+    <system:String x:Key="SettingsUpdates">更新</system:String>
+    <system:String x:Key="SettingsCheckForUpdatesAuto">自動檢查更新</system:String>
+    <system:String x:Key="SettingsCheckForUpdatesAutoDesc">應用程式啟動時自動檢查更新</system:String>
+    <system:String x:Key="SettingsCheckForUpdates">檢查更新</system:String>
+    <system:String x:Key="SettingsCheckingUpdates">檢查中...</system:String>
+    
     <!-- Settings - About -->
     <system:String x:Key="SettingsAbout">關於</system:String>
     <system:String x:Key="SettingsAboutDesc">採用 Fluent 2 設計的現代 Alt-Tab 替代品</system:String>
@@ -84,5 +91,11 @@
     <system:String x:Key="MsgAtLeastOneHotkey">至少需要啟用一個快速鍵。</system:String>
     <system:String x:Key="MsgErrorOccurred">發生錯誤：{0}</system:String>
     <system:String x:Key="MsgErrorTitle">FlipSwitcher 錯誤</system:String>
+    <system:String x:Key="MsgUpdateAvailable">發現新版本 ({0})！是否立即下載？</system:String>
+    <system:String x:Key="MsgUpdateAvailableTitle">發現更新</system:String>
+    <system:String x:Key="MsgNoUpdateAvailable">您正在使用最新版本。</system:String>
+    <system:String x:Key="MsgNoUpdateAvailableTitle">無更新</system:String>
+    <system:String x:Key="MsgUpdateCheckFailed">檢查更新失敗。請檢查您的網路連線。</system:String>
+    <system:String x:Key="MsgUpdateCheckFailedTitle">更新檢查失敗</system:String>
 
 </ResourceDictionary>

@@ -109,5 +109,10 @@ public class AppSettings
     /// Language: 0 = English, 1 = Chinese, 2 = ChineseTraditional
     /// </summary>
     public int Language { get; set; } = 0;
+
+    /// <summary>
+    /// Check for updates automatically on startup
+    /// </summary>
+    public bool CheckForUpdates { get; set; } = false;
 }
 

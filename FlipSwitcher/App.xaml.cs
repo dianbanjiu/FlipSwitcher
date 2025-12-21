@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using FlipSwitcher.Services;
 
@@ -57,6 +58,16 @@ public partial class App : Application
         _hotkeyService = new HotkeyService();
         _trayIconService = new TrayIconService();
 
+        // Check for updates on startup (delayed to avoid blocking)
+        if (settings.CheckForUpdates)
+        {
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(3000);
+                await CheckForUpdatesAsync();
+            });
+        }
+
         // Set up global exception handling
         DispatcherUnhandledException += (s, args) =>
         {
@@ -67,11 +78,36 @@ public partial class App : Application
         };
     }
 
+    private async Task CheckForUpdatesAsync()
+    {
+        var updateInfo = await UpdateService.Instance.CheckForUpdatesAsync(silent: true);
+        if (updateInfo != null)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                var message = string.Format(
+                    LanguageService.GetString("MsgUpdateAvailable"),
+                    updateInfo.Version);
+                var result = MessageBox.Show(
+                    message,
+                    LanguageService.GetString("MsgUpdateAvailableTitle"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Information);
+                
+                if (result == MessageBoxResult.Yes)
+                {
+                    UpdateService.Instance.OpenDownloadPage(updateInfo.DownloadUrl);
+                }
+            });
+        }
+    }
+
 
     protected override void OnExit(ExitEventArgs e)
     {
         _hotkeyService?.Dispose();
         _trayIconService?.Dispose();
+        UpdateService.Instance.Dispose();
         ThemeService.Instance.Dispose();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();
