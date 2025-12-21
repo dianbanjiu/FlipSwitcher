@@ -1,6 +1,7 @@
 [Setup]
 AppName=FlipSwitcher
 AppVersion={#Version}
+AppVerName=FlipSwitcher
 AppPublisher=DjangoZane
 AppPublisherURL=https://github.com/dianbanjiu/FlipSwitcher
 AppSupportURL=https://github.com/dianbanjiu/FlipSwitcher
@@ -17,6 +18,9 @@ WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64
 UninstallDisplayIcon={app}\FlipSwitcher.exe
+CloseApplications=yes
+CloseApplicationsFilter=FlipSwitcher.exe
+RestartApplications=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
