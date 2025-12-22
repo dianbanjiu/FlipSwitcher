@@ -54,6 +54,12 @@ public partial class App : Application
         // Initialize theme service and apply theme
         ThemeService.Instance.ApplyTheme((AppTheme)settings.Theme);
 
+        // Apply font setting
+        if (!string.IsNullOrWhiteSpace(settings.FontFamily))
+        {
+            FontService.Instance.ApplyFont(settings.FontFamily);
+        }
+
         // Initialize services
         _hotkeyService = new HotkeyService();
         _trayIconService = new TrayIconService();

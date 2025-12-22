@@ -114,5 +114,10 @@ public class AppSettings
     /// Check for updates automatically on startup
     /// </summary>
     public bool CheckForUpdates { get; set; } = false;
+
+    /// <summary>
+    /// Font family name (empty string means use default)
+    /// </summary>
+    public string FontFamily { get; set; } = string.Empty;
 }
 

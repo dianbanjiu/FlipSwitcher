@@ -263,6 +263,29 @@
                                 </ComboBox>
                             </Grid>
 
+                            <!-- Font Family Option -->
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="字体"
+                                        Style="{StaticResource BodyStrongTextStyle}" />
+                                    <TextBlock Text="选择应用程序使用的字体"
+                                        Style="{StaticResource CaptionTextStyle}"
+                                        Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <ComboBox x:Name="FontFamilyComboBox"
+                                    Grid.Column="1"
+                                    Width="200"
+                                    SelectionChanged="FontFamilyComboBox_SelectionChanged"
+                                    Style="{StaticResource FluentComboBoxStyle}"
+                                    ItemContainerStyle="{StaticResource FluentComboBoxItemStyle}" />
+                            </Grid>
+
                             <!-- Mica Effect Option -->
                             <Grid>
                                 <Grid.ColumnDefinitions>

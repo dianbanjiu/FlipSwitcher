@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
@@ -22,6 +23,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
+        LoadFontFamilies();
         LoadSettings();
         UpdateAdminStatusDisplay();
         UpdateVersionDisplay();
@@ -49,6 +51,21 @@ public partial class SettingsWindow : Window
         VersionText.Text = $"FlipSwitcher v{versionStr}";
     }
 
+    private void LoadFontFamilies()
+    {
+        var fonts = FontService.Instance.GetInstalledFonts();
+        FontFamilyComboBox.Items.Clear();
+        
+        // 添加默认选项
+        FontFamilyComboBox.Items.Add("默认 (Segoe UI Variable)");
+        
+        // 添加系统字体
+        foreach (var font in fonts)
+        {
+            FontFamilyComboBox.Items.Add(font);
+        }
+    }
+
     private void LoadSettings()
     {
         var settings = SettingsService.Instance.Settings;
@@ -58,6 +75,24 @@ public partial class SettingsWindow : Window
         
         // Load language setting
         LanguageComboBox.SelectedIndex = settings.Language;
+        
+        // Load font setting
+        if (string.IsNullOrWhiteSpace(settings.FontFamily))
+        {
+            FontFamilyComboBox.SelectedIndex = 0; // 默认字体
+        }
+        else
+        {
+            var fontIndex = FontFamilyComboBox.Items.IndexOf(settings.FontFamily);
+            if (fontIndex >= 0)
+            {
+                FontFamilyComboBox.SelectedIndex = fontIndex;
+            }
+            else
+            {
+                FontFamilyComboBox.SelectedIndex = 0;
+            }
+        }
         
         // Sync startup setting with actual registry/Task Scheduler state
         bool actualStartupEnabled = StartupService.IsStartupEnabled();
@@ -219,6 +254,26 @@ public partial class SettingsWindow : Window
         var settings = SettingsService.Instance.Settings;
         settings.Theme = ThemeComboBox.SelectedIndex;
         SettingsService.Instance.Save();
+    }
+
+    private void FontFamilyComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        var settings = SettingsService.Instance.Settings;
+        var selectedItem = FontFamilyComboBox.SelectedItem?.ToString();
+        
+        if (selectedItem == "默认 (Segoe UI Variable)" || string.IsNullOrWhiteSpace(selectedItem))
+        {
+            settings.FontFamily = string.Empty;
+        }
+        else
+        {
+            settings.FontFamily = selectedItem;
+        }
+        
+        SettingsService.Instance.Save();
+        FontService.Instance.ApplyFont(settings.FontFamily);
     }
 
     private void CheckForUpdatesCheckBox_Changed(object sender, RoutedEventArgs e)
