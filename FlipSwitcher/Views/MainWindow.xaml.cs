@@ -46,6 +46,9 @@ public partial class MainWindow : Window
 
         // Apply Mica/Acrylic effect on Windows 11
         Loaded += (s, e) => ApplyWindowEffects();
+
+        // Prevent double-click maximize
+        MouseDoubleClick += (s, e) => e.Handled = true;
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -57,8 +60,34 @@ public partial class MainWindow : Window
         // Update hotkey display
         UpdateHotkeyDisplay();
 
+        // Intercept window messages to prevent double-click maximize
+        var hwndSource = PresentationSource.FromVisual(this) as HwndSource;
+        if (hwndSource != null)
+        {
+            hwndSource.AddHook(WndProc);
+        }
+
         // Initially hide the window
         Hide();
+    }
+
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        // Block double-click on title bar to prevent maximize
+        if (msg == NativeMethods.WM_NCLBUTTONDBLCLK)
+        {
+            handled = true;
+            return IntPtr.Zero;
+        }
+
+        // Block SC_MAXIMIZE system command
+        if (msg == NativeMethods.WM_SYSCOMMAND && wParam.ToInt32() == NativeMethods.SC_MAXIMIZE)
+        {
+            handled = true;
+            return IntPtr.Zero;
+        }
+
+        return IntPtr.Zero;
     }
 
     private void OnSettingsChanged(object? sender, EventArgs e)

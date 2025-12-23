@@ -272,6 +272,10 @@ internal static class NativeMethods
 
     public const uint WM_GETICON = 0x007F;
     public const uint WM_CLOSE = 0x0010;
+    public const uint WM_NCLBUTTONDBLCLK = 0x00A3;
+    public const uint WM_SYSCOMMAND = 0x0112;
+    public const uint SC_MAXIMIZE = 0xF030;
+    public const int HTCAPTION = 2;
     public const uint SMTO_ABORTIFHUNG = 0x0002;
     public const int ICON_SMALL = 0;
     public const int ICON_BIG = 1;
