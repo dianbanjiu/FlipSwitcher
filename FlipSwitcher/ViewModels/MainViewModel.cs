@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -250,6 +251,62 @@ public class MainViewModel : ObservableObject
                 {
                     SelectedWindow = null;
                 }
+            }
+            else
+            {
+                SelectedWindow = null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 停止当前选中窗口所属的进程
+    /// </summary>
+    public void StopSelectedProcess()
+    {
+        if (SelectedWindow == null) return;
+
+        var targetProcessId = SelectedWindow.ProcessId;
+        var currentIndex = FilteredWindows.IndexOf(SelectedWindow);
+
+        try
+        {
+            using var process = Process.GetProcessById((int)targetProcessId);
+            process.Kill(entireProcessTree: true);
+        }
+        catch
+        {
+            // 无法终止进程时直接返回
+            return;
+        }
+
+        var windowsToRemove = _windows
+            .Where(w => w.ProcessId == targetProcessId)
+            .ToList();
+
+        foreach (var window in windowsToRemove)
+        {
+            _windows.Remove(window);
+            FilteredWindows.Remove(window);
+        }
+
+        OnPropertyChanged(nameof(WindowCount));
+        OnPropertyChanged(nameof(HasWindows));
+        OnPropertyChanged(nameof(NoWindowsFound));
+
+        if (FilteredWindows.Count > 0)
+        {
+            var newIndex = Math.Clamp(currentIndex, 0, FilteredWindows.Count - 1);
+            SelectedWindow = FilteredWindows[newIndex];
+        }
+        else
+        {
+            if (_isGroupedByProcess)
+            {
+                _isGroupedByProcess = false;
+                _groupedProcessName = null;
+                FilterWindows();
+                SelectedWindow = FilteredWindows.Count > 0 ? FilteredWindows[0] : null;
             }
             else
             {

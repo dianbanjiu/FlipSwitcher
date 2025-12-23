@@ -34,6 +34,7 @@ public partial class MainWindow : Window
         _hotkeyService.NavigationRequested += HotkeyService_NavigationRequested;
         _hotkeyService.AltReleased += HotkeyService_AltReleased;
         _hotkeyService.CloseWindowRequested += HotkeyService_CloseWindowRequested;
+        _hotkeyService.StopProcessRequested += HotkeyService_StopProcessRequested;
         _hotkeyService.SearchModeRequested += HotkeyService_SearchModeRequested;
         _hotkeyService.EscapePressed += HotkeyService_EscapePressed;
         _hotkeyService.SettingsRequested += HotkeyService_SettingsRequested;
@@ -181,6 +182,13 @@ public partial class MainWindow : Window
         if (!IsVisible) return;
 
         _viewModel.CloseSelectedWindow();
+    }
+
+    private void HotkeyService_StopProcessRequested(object? sender, EventArgs e)
+    {
+        if (!IsVisible) return;
+
+        _viewModel.StopSelectedProcess();
     }
 
     private void HotkeyService_SearchModeRequested(object? sender, EventArgs e)
@@ -401,6 +409,15 @@ public partial class MainWindow : Window
                 if (Keyboard.Modifiers == ModifierKeys.Alt)
                 {
                     _viewModel.CloseSelectedWindow();
+                    e.Handled = true;
+                }
+                break;
+
+            case Key.D:
+                // Alt+D to stop selected process
+                if (Keyboard.Modifiers == ModifierKeys.Alt)
+                {
+                    _viewModel.StopSelectedProcess();
                     e.Handled = true;
                 }
                 break;

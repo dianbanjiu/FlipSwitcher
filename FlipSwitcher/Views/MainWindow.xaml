@@ -259,6 +259,22 @@
                             FontSize="11"
                             VerticalAlignment="Center"
                             Margin="0,0,12,0" />
+
+                        <!-- Alt+S Exit Hint -->
+                        <Border Background="{StaticResource ControlDefaultBrush}"
+                            CornerRadius="4"
+                            Padding="6,3"
+                            Margin="0,0,4,0">
+                            <TextBlock Text="Alt+S"
+                                Style="{StaticResource CaptionTextStyle}"
+                                FontSize="11"
+                                Foreground="{StaticResource TextSecondaryBrush}" />
+                        </Border>
+                        <TextBlock Text="{DynamicResource HintExit}"
+                            Style="{StaticResource CaptionTextStyle}"
+                            FontSize="11"
+                            VerticalAlignment="Center"
+                            Margin="0,0,12,0" />
                     </StackPanel>
 
                     <!-- Hotkey Reminder -->

@@ -73,6 +73,11 @@ public class HotkeyService : IDisposable
     public event EventHandler? CloseWindowRequested;
 
     /// <summary>
+    /// Fired when Alt+D is pressed (to stop selected process)
+    /// </summary>
+    public event EventHandler? StopProcessRequested;
+
+    /// <summary>
     /// Fired when Alt+S is pressed (to enter search mode)
     /// </summary>
     public event EventHandler? SearchModeRequested;
@@ -352,6 +357,16 @@ public class HotkeyService : IDisposable
                         Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                         {
                             CloseWindowRequested?.Invoke(this, EventArgs.Empty);
+                        }));
+                        return (IntPtr)1;
+                    }
+
+                    // Alt+D - stop selected process
+                    if (hookStruct.vkCode == NativeMethods.VK_D)
+                    {
+                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            StopProcessRequested?.Invoke(this, EventArgs.Empty);
                         }));
                         return (IntPtr)1;
                     }

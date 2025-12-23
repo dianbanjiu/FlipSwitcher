@@ -8,7 +8,6 @@ namespace FlipSwitcher;
 
 public partial class App : Application
 {
-    private HotkeyService? _hotkeyService;
     private TrayIconService? _trayIconService;
     private static Mutex? _mutex;
     private const string MutexName = "FlipSwitcher_SingleInstance_Mutex";
@@ -61,7 +60,6 @@ public partial class App : Application
         }
 
         // Initialize services
-        _hotkeyService = new HotkeyService();
         _trayIconService = new TrayIconService();
 
         // Check for updates on startup (delayed to avoid blocking)
@@ -111,7 +109,6 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _hotkeyService?.Dispose();
         _trayIconService?.Dispose();
         UpdateService.Instance.Dispose();
         ThemeService.Instance.Dispose();
