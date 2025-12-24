@@ -81,8 +81,8 @@
     <system:String x:Key="TrayExit">Exit</system:String>
     
     <!-- MessageBox -->
-    <system:String x:Key="MsgRestartRequired">FlipSwitcher needs to restart with administrator privileges.\n\nRestart now?</system:String>
-    <system:String x:Key="MsgRestartRequiredNormal">FlipSwitcher needs to restart without administrator privileges.\n\nRestart now?</system:String>
+    <system:String x:Key="MsgRestartRequired">FlipSwitcher needs to restart with administrator privileges. Restart now?</system:String>
+    <system:String x:Key="MsgRestartRequiredNormal">FlipSwitcher needs to restart without administrator privileges. Restart now?</system:String>
     <system:String x:Key="MsgRestartFailed">Failed to restart the application. Please restart manually.</system:String>
     <system:String x:Key="MsgRestartFailedTitle">Restart Failed</system:String>
     <system:String x:Key="MsgRestartRequiredTitle">Restart Required</system:String>

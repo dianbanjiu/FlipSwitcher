@@ -81,8 +81,8 @@
     <system:String x:Key="TrayExit">結束</system:String>
     
     <!-- MessageBox -->
-    <system:String x:Key="MsgRestartRequired">FlipSwitcher 需要以系統管理員權限重新啟動。\n\n是否立即重新啟動？</system:String>
-    <system:String x:Key="MsgRestartRequiredNormal">FlipSwitcher 需要以一般使用者權限重新啟動。\n\n是否立即重新啟動？</system:String>
+    <system:String x:Key="MsgRestartRequired">FlipSwitcher 需要以系統管理員權限重新啟動。是否立即重新啟動？</system:String>
+    <system:String x:Key="MsgRestartRequiredNormal">FlipSwitcher 需要以一般使用者權限重新啟動。是否立即重新啟動？</system:String>
     <system:String x:Key="MsgRestartFailed">無法重新啟動應用程式。請手動重新啟動。</system:String>
     <system:String x:Key="MsgRestartFailedTitle">重新啟動失敗</system:String>
     <system:String x:Key="MsgRestartRequiredTitle">需要重新啟動</system:String>
