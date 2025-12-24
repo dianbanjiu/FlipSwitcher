@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -18,6 +19,8 @@ namespace FlipSwitcher.Views;
 public partial class SettingsWindow : Window
 {
     private bool _isInitializing = true;
+    private bool _isClosing = false;
+    private bool _isShowingDialog = false;
     private HotkeyService? _hotkeyService;
 
     public SettingsWindow()
@@ -42,6 +45,9 @@ public partial class SettingsWindow : Window
         {
             _hotkeyService.EscapePressed += HotkeyService_EscapePressed;
         }
+        
+        // 监听窗口失去焦点事件
+        Deactivated += SettingsWindow_Deactivated;
     }
 
     private void UpdateVersionDisplay()
@@ -298,30 +304,36 @@ public partial class SettingsWindow : Window
                 var message = string.Format(
                     LanguageService.GetString("MsgUpdateAvailable"),
                     updateInfo.Version);
+                _isShowingDialog = true;
                 var result = MessageBox.Show(
                     message,
                     LanguageService.GetString("MsgUpdateAvailableTitle"),
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Information);
+                _isShowingDialog = false;
 
                 if (result == MessageBoxResult.Yes)
                 {
+                    // 打开浏览器后允许窗口正常关闭
                     UpdateService.Instance.OpenDownloadPage(updateInfo.DownloadUrl);
                 }
             }
             else
             {
+                _isShowingDialog = true;
                 MessageBox.Show(
                     LanguageService.GetString("MsgNoUpdateAvailable"),
                     LanguageService.GetString("MsgNoUpdateAvailableTitle"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
+                _isShowingDialog = false;
             }
         }
         finally
         {
             CheckForUpdatesButton.IsEnabled = true;
             CheckForUpdatesButton.Content = LanguageService.GetString("SettingsCheckForUpdates");
+            _isShowingDialog = false;
         }
     }
 
@@ -372,7 +384,11 @@ public partial class SettingsWindow : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
-        Close();
+        if (!_isClosing)
+        {
+            _isClosing = true;
+            Close();
+        }
     }
 
     private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
@@ -396,8 +412,9 @@ public partial class SettingsWindow : Window
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         // 支持 Esc 或 Alt+Esc 关闭（即使 Alt 键未松开）
-        if (e.Key == Key.Escape)
+        if (e.Key == Key.Escape && !_isClosing)
         {
+            _isClosing = true;
             Close();
             e.Handled = true;
         }
@@ -406,7 +423,7 @@ public partial class SettingsWindow : Window
     protected override void OnKeyDown(KeyEventArgs e)
     {
         // 使用 OnKeyDown 作为备用，确保 Alt+Esc 能被捕获
-        if (e.Key == Key.Escape)
+        if (e.Key == Key.Escape && !_isClosing)
         {
             // 检查 Alt 键是否被按下（即使 WPF 的 Keyboard.Modifiers 可能检测不到）
             bool altPressed = (NativeMethods.GetAsyncKeyState(NativeMethods.VK_MENU) & 0x8000) != 0 ||
@@ -414,6 +431,7 @@ public partial class SettingsWindow : Window
                               (NativeMethods.GetAsyncKeyState(NativeMethods.VK_RMENU) & 0x8000) != 0;
             
             // 无论 Alt 键是否被按下，都关闭窗口
+            _isClosing = true;
             Close();
             e.Handled = true;
         }
@@ -423,14 +441,33 @@ public partial class SettingsWindow : Window
     private void HotkeyService_EscapePressed(object? sender, EventArgs e)
     {
         // 当 Alt+Esc 被按下时关闭设置窗口
-        if (IsLoaded)
+        if (!_isClosing && IsLoaded)
         {
+            _isClosing = true;
             Close();
+        }
+    }
+
+    private void SettingsWindow_Deactivated(object? sender, EventArgs e)
+    {
+        // 当窗口失去焦点时关闭，但需要检查是否已经在关闭过程中或正在显示对话框
+        if (!_isClosing && !_isShowingDialog && IsLoaded)
+        {
+            _isClosing = true;
+            // 使用 Dispatcher 延迟关闭，避免在窗口关闭过程中调用
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (IsLoaded)
+                {
+                    Close();
+                }
+            }), System.Windows.Threading.DispatcherPriority.Normal);
         }
     }
 
     protected override void OnClosed(EventArgs e)
     {
+        Deactivated -= SettingsWindow_Deactivated;
         if (_hotkeyService != null)
         {
             _hotkeyService.EscapePressed -= HotkeyService_EscapePressed;
