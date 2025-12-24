@@ -260,12 +260,12 @@
                             VerticalAlignment="Center"
                             Margin="0,0,12,0" />
 
-                        <!-- Alt+S Exit Hint -->
+                        <!-- Alt+D Exit Hint -->
                         <Border Background="{StaticResource ControlDefaultBrush}"
                             CornerRadius="4"
                             Padding="6,3"
                             Margin="0,0,4,0">
-                            <TextBlock Text="Alt+S"
+                            <TextBlock Text="Alt+D"
                                 Style="{StaticResource CaptionTextStyle}"
                                 FontSize="11"
                                 Foreground="{StaticResource TextSecondaryBrush}" />
