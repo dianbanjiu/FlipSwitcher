@@ -229,6 +229,11 @@ public class HotkeyService : IDisposable
         return (NativeMethods.GetAsyncKeyState(NativeMethods.VK_SHIFT) & 0x8000) != 0;
     }
 
+    private void InvokeOnDispatcher(Action action)
+    {
+        Application.Current?.Dispatcher.BeginInvoke(action);
+    }
+
     private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
         if (nCode >= 0 && _useAltTab)
@@ -241,22 +246,9 @@ public class HotkeyService : IDisposable
             // Escape key - ALWAYS close window regardless of any modifier keys
             if (isKeyDown && hookStruct.vkCode == NativeMethods.VK_ESCAPE)
             {
-                // If settings window is open and Alt is pressed, close settings window
-                if (_isSettingsWindowOpen && IsAltPressed())
+                if ((_isSettingsWindowOpen && IsAltPressed()) || _isVisible)
                 {
-                    Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        EscapePressed?.Invoke(this, EventArgs.Empty);
-                    }));
-                    return (IntPtr)1;
-                }
-                // Otherwise, only close if main window is visible
-                else if (_isVisible)
-                {
-                    Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        EscapePressed?.Invoke(this, EventArgs.Empty);
-                    }));
+                    InvokeOnDispatcher(() => EscapePressed?.Invoke(this, EventArgs.Empty));
                     return (IntPtr)1;
                 }
             }
@@ -268,10 +260,7 @@ public class HotkeyService : IDisposable
             {
                 if (_isVisible)
                 {
-                    Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        AltReleased?.Invoke(this, EventArgs.Empty);
-                    }));
+                    InvokeOnDispatcher(() => AltReleased?.Invoke(this, EventArgs.Empty));
                 }
             }
 
@@ -283,67 +272,42 @@ public class HotkeyService : IDisposable
                 // Tab key - navigate next/previous
                 if (hookStruct.vkCode == NativeMethods.VK_TAB)
                 {
-                    bool shiftPressed = IsShiftPressed();
-                    
                     if (!_isVisible)
                     {
-                        // First Alt+Tab - show FlipSwitcher
-                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            HotkeyPressed?.Invoke(this, EventArgs.Empty);
-                        }));
+                        InvokeOnDispatcher(() => HotkeyPressed?.Invoke(this, EventArgs.Empty));
                     }
                     else
                     {
-                        // Subsequent Tab presses - navigate
-                        var direction = shiftPressed ? NavigationDirection.Previous : NavigationDirection.Next;
-                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            NavigationRequested?.Invoke(this, new NavigationEventArgs(direction));
-                        }));
+                        var direction = IsShiftPressed() ? NavigationDirection.Previous : NavigationDirection.Next;
+                        InvokeOnDispatcher(() => NavigationRequested?.Invoke(this, new NavigationEventArgs(direction)));
                     }
-                    
-                    // Block Alt+Tab from reaching the system
                     return (IntPtr)1;
                 }
                 
                 // Arrow keys - navigate while FlipSwitcher is visible (but not in search mode)
-                // In search mode, let the window handle arrow keys directly
                 if (_isVisible && !_isSearchMode)
                 {
                     if (hookStruct.vkCode == NativeMethods.VK_UP)
                     {
-                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Previous));
-                        }));
+                        InvokeOnDispatcher(() => NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Previous)));
                         return (IntPtr)1;
                     }
                     
                     if (hookStruct.vkCode == NativeMethods.VK_DOWN)
                     {
-                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Next));
-                        }));
+                        InvokeOnDispatcher(() => NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Next)));
                         return (IntPtr)1;
                     }
 
                     if (hookStruct.vkCode == NativeMethods.VK_RIGHT)
                     {
-                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            GroupByProcessRequested?.Invoke(this, EventArgs.Empty);
-                        }));
+                        InvokeOnDispatcher(() => GroupByProcessRequested?.Invoke(this, EventArgs.Empty));
                         return (IntPtr)1;
                     }
 
                     if (hookStruct.vkCode == NativeMethods.VK_LEFT)
                     {
-                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            UngroupFromProcessRequested?.Invoke(this, EventArgs.Empty);
-                        }));
+                        InvokeOnDispatcher(() => UngroupFromProcessRequested?.Invoke(this, EventArgs.Empty));
                         return (IntPtr)1;
                     }
                 }
@@ -351,43 +315,27 @@ public class HotkeyService : IDisposable
                 // These shortcuts work regardless of search mode
                 if (_isVisible)
                 {
-                    // Alt+W - close selected window
                     if (hookStruct.vkCode == NativeMethods.VK_W)
                     {
-                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            CloseWindowRequested?.Invoke(this, EventArgs.Empty);
-                        }));
+                        InvokeOnDispatcher(() => CloseWindowRequested?.Invoke(this, EventArgs.Empty));
                         return (IntPtr)1;
                     }
 
-                    // Alt+D - stop selected process
                     if (hookStruct.vkCode == NativeMethods.VK_D)
                     {
-                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            StopProcessRequested?.Invoke(this, EventArgs.Empty);
-                        }));
+                        InvokeOnDispatcher(() => StopProcessRequested?.Invoke(this, EventArgs.Empty));
                         return (IntPtr)1;
                     }
 
-                    // Alt+S - enter search mode
                     if (hookStruct.vkCode == NativeMethods.VK_S)
                     {
-                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            SearchModeRequested?.Invoke(this, EventArgs.Empty);
-                        }));
+                        InvokeOnDispatcher(() => SearchModeRequested?.Invoke(this, EventArgs.Empty));
                         return (IntPtr)1;
                     }
 
-                    // Alt+, - open settings
                     if (hookStruct.vkCode == NativeMethods.VK_OEM_COMMA)
                     {
-                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            SettingsRequested?.Invoke(this, EventArgs.Empty);
-                        }));
+                        InvokeOnDispatcher(() => SettingsRequested?.Invoke(this, EventArgs.Empty));
                         return (IntPtr)1;
                     }
                 }

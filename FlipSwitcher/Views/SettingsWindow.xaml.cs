@@ -57,15 +57,14 @@ public partial class SettingsWindow : Window
         VersionText.Text = $"FlipSwitcher v{versionStr}";
     }
 
+    private const string DefaultFontDisplayName = "默认 (Segoe UI Variable)";
+
     private void LoadFontFamilies()
     {
         var fonts = FontService.Instance.GetInstalledFonts();
         FontFamilyComboBox.Items.Clear();
+        FontFamilyComboBox.Items.Add(DefaultFontDisplayName);
         
-        // 添加默认选项
-        FontFamilyComboBox.Items.Add("默认 (Segoe UI Variable)");
-        
-        // 添加系统字体
         foreach (var font in fonts)
         {
             FontFamilyComboBox.Items.Add(font);
@@ -83,9 +82,10 @@ public partial class SettingsWindow : Window
         LanguageComboBox.SelectedIndex = settings.Language;
         
         // Load font setting
+        const int DefaultFontIndex = 0;
         if (string.IsNullOrWhiteSpace(settings.FontFamily))
         {
-            FontFamilyComboBox.SelectedIndex = 0; // 默认字体
+            FontFamilyComboBox.SelectedIndex = DefaultFontIndex;
         }
         else
         {
@@ -134,19 +134,22 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private void LanguageComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    private void SaveSetting<T>(Action<AppSettings, T> setter, T value, Action? afterSave = null)
     {
         if (_isInitializing) return;
-
         var settings = SettingsService.Instance.Settings;
-        settings.Language = LanguageComboBox.SelectedIndex;
+        setter(settings, value);
         SettingsService.Instance.Save();
+        afterSave?.Invoke();
+    }
 
-        // Apply language change
-        LanguageService.Instance.SetLanguage((AppLanguage)settings.Language);
-        
-        // Update admin status text with new language
-        UpdateAdminStatusDisplay();
+    private void LanguageComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        SaveSetting((s, v) => s.Language = v, LanguageComboBox.SelectedIndex, () =>
+        {
+            LanguageService.Instance.SetLanguage((AppLanguage)SettingsService.Instance.Settings.Language);
+            UpdateAdminStatusDisplay();
+        });
     }
 
     private void RunAsAdminCheckBox_Changed(object sender, RoutedEventArgs e)
@@ -237,58 +240,37 @@ public partial class SettingsWindow : Window
 
     private void HideOnFocusLostCheckBox_Changed(object sender, RoutedEventArgs e)
     {
-        if (_isInitializing) return;
-
-        var settings = SettingsService.Instance.Settings;
-        settings.HideOnFocusLost = HideOnFocusLostCheckBox.IsChecked == true;
-        SettingsService.Instance.Save();
+        SaveSetting((s, v) => s.HideOnFocusLost = v, HideOnFocusLostCheckBox.IsChecked == true);
     }
 
     private void MicaEffectCheckBox_Changed(object sender, RoutedEventArgs e)
     {
-        if (_isInitializing) return;
-
-        var settings = SettingsService.Instance.Settings;
-        settings.EnableMicaEffect = MicaEffectCheckBox.IsChecked == true;
-        SettingsService.Instance.Save();
+        SaveSetting((s, v) => s.EnableMicaEffect = v, MicaEffectCheckBox.IsChecked == true);
     }
 
     private void ThemeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (_isInitializing) return;
-
-        var settings = SettingsService.Instance.Settings;
-        settings.Theme = ThemeComboBox.SelectedIndex;
-        SettingsService.Instance.Save();
+        SaveSetting((s, v) => s.Theme = v, ThemeComboBox.SelectedIndex);
     }
 
     private void FontFamilyComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         if (_isInitializing) return;
 
-        var settings = SettingsService.Instance.Settings;
         var selectedItem = FontFamilyComboBox.SelectedItem?.ToString();
-        
-        if (selectedItem == "默认 (Segoe UI Variable)" || string.IsNullOrWhiteSpace(selectedItem))
+        var fontFamily = (selectedItem == DefaultFontDisplayName || string.IsNullOrWhiteSpace(selectedItem))
+            ? string.Empty
+            : selectedItem!;
+
+        SaveSetting((s, v) => s.FontFamily = v, fontFamily, () =>
         {
-            settings.FontFamily = string.Empty;
-        }
-        else
-        {
-            settings.FontFamily = selectedItem;
-        }
-        
-        SettingsService.Instance.Save();
-        FontService.Instance.ApplyFont(settings.FontFamily);
+            FontService.Instance.ApplyFont(fontFamily);
+        });
     }
 
     private void CheckForUpdatesCheckBox_Changed(object sender, RoutedEventArgs e)
     {
-        if (_isInitializing) return;
-
-        var settings = SettingsService.Instance.Settings;
-        settings.CheckForUpdates = CheckForUpdatesCheckBox.IsChecked == true;
-        SettingsService.Instance.Save();
+        SaveSetting((s, v) => s.CheckForUpdates = v, CheckForUpdatesCheckBox.IsChecked == true);
     }
 
     private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
@@ -358,12 +340,8 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        // Save settings
-        var settings = SettingsService.Instance.Settings;
-        settings.UseAltSpace = AltSpaceCheckBox.IsChecked == true;
-        settings.UseAltTab = AltTabCheckBox.IsChecked == true;
-        SettingsService.Instance.Save();
-
+        SaveSetting((s, v) => s.UseAltSpace = v, AltSpaceCheckBox.IsChecked == true);
+        SaveSetting((s, v) => s.UseAltTab = v, AltTabCheckBox.IsChecked == true);
         UpdateCurrentHotkeyDisplay();
     }
 

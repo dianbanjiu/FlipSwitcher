@@ -106,6 +106,15 @@ public partial class MainWindow : Window
         }
     }
 
+    private const int ThemeDark = 0;
+    private const int ThemeLight = 1;
+    private const int DWMSBT_MAINWINDOW = 2;
+    private const int DWMSBT_NONE = 0;
+    private const int MicaEffectEnabled = 1;
+    private const int DarkModeEnabled = 1;
+    private const int DarkModeDisabled = 0;
+    private const int FullMargin = -1;
+
     private void UpdateHotkeyDisplay()
     {
         HotkeyDisplayText.Text = _hotkeyService.CurrentHotkey;
@@ -118,44 +127,38 @@ public partial class MainWindow : Window
 
         try
         {
-            // Set dark mode based on current theme
             bool isDark = settings.Theme switch
             {
-                0 => true,  // Dark
-                1 => false, // Light
+                ThemeDark => true,
+                ThemeLight => false,
                 _ => true
             };
-            int darkMode = isDark ? 1 : 0;
+            int darkMode = isDark ? DarkModeEnabled : DarkModeDisabled;
             NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
 
-            // Apply Mica effect only if enabled in settings
             if (settings.EnableMicaEffect)
             {
-                // Try Mica backdrop (Windows 11 22H2+)
-                int backdropType = 2; // DWMSBT_MAINWINDOW (Mica)
+                int backdropType = DWMSBT_MAINWINDOW;
                 var result = NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_SYSTEMBACKDROP_TYPE, ref backdropType, sizeof(int));
 
                 if (result != 0)
                 {
-                    // Fallback: Try older Mica attribute
-                    int micaEffect = 1;
+                    int micaEffect = MicaEffectEnabled;
                     NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_MICA_EFFECT, ref micaEffect, sizeof(int));
                 }
 
-                // Extend frame into client area for seamless effect
                 var margins = new NativeMethods.MARGINS
                 {
-                    cxLeftWidth = -1,
-                    cxRightWidth = -1,
-                    cyTopHeight = -1,
-                    cyBottomHeight = -1
+                    cxLeftWidth = FullMargin,
+                    cxRightWidth = FullMargin,
+                    cyTopHeight = FullMargin,
+                    cyBottomHeight = FullMargin
                 };
                 NativeMethods.DwmExtendFrameIntoClientArea(hwnd, ref margins);
             }
             else
             {
-                // Disable Mica effect
-                int backdropType = 0; // DWMSBT_NONE
+                int backdropType = DWMSBT_NONE;
                 NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_SYSTEMBACKDROP_TYPE, ref backdropType, sizeof(int));
             }
         }

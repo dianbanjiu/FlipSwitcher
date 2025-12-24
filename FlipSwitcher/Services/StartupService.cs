@@ -56,8 +56,9 @@ public static class StartupService
                 RedirectStandardError = true
             };
 
+            const int TaskQueryTimeoutMs = 3000;
             using var process = Process.Start(startInfo);
-            process?.WaitForExit(3000);
+            process?.WaitForExit(TaskQueryTimeoutMs);
             return process?.ExitCode == 0;
         }
         catch
@@ -210,8 +211,9 @@ public static class StartupService
                         RedirectStandardError = true
                     };
 
+                    const int TaskCreateTimeoutMs = 5000;
                     using var process = Process.Start(startInfo);
-                    process?.WaitForExit(5000);
+                    process?.WaitForExit(TaskCreateTimeoutMs);
                     return process?.ExitCode == 0;
                 }
                 finally
@@ -232,9 +234,9 @@ public static class StartupService
                     RedirectStandardError = true
                 };
 
+                const int TaskDeleteTimeoutMs = 5000;
                 using var process = Process.Start(startInfo);
-                process?.WaitForExit(5000);
-                // Don't check exit code - task might not exist
+                process?.WaitForExit(TaskDeleteTimeoutMs);
                 return true;
             }
         }

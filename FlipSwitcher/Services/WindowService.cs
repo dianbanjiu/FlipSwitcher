@@ -36,6 +36,74 @@ public class WindowService
         "TextInputHost"
     };
 
+    private const int WPF_RESTORETOMAXIMIZED = 0x2;
+    private const int MaxClassNameLength = 256;
+
+    private static bool ShouldSkipWindow(IntPtr hWnd, IntPtr shellWindow, uint currentProcessId)
+    {
+        if (hWnd == shellWindow || !NativeMethods.IsWindowVisible(hWnd))
+            return true;
+
+        if (IsCloaked(hWnd))
+            return true;
+
+        var exStyle = NativeMethods.GetWindowLong(hWnd, NativeMethods.GWL_EXSTYLE);
+        if ((exStyle & (int)NativeMethods.WS_EX_TOOLWINDOW) != 0 &&
+            (exStyle & (int)NativeMethods.WS_EX_APPWINDOW) == 0)
+            return true;
+
+        NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
+        if (processId == currentProcessId)
+            return true;
+
+        var owner = NativeMethods.GetWindow(hWnd, NativeMethods.GW_OWNER);
+        if (owner != IntPtr.Zero)
+        {
+            var rootOwner = NativeMethods.GetAncestor(hWnd, NativeMethods.GA_ROOTOWNER);
+            var lastPopup = NativeMethods.GetLastActivePopup(rootOwner);
+            if (lastPopup != hWnd && NativeMethods.IsWindowVisible(lastPopup))
+                return true;
+        }
+
+        var titleLength = NativeMethods.GetWindowTextLength(hWnd);
+        if (titleLength == 0)
+            return true;
+
+        var titleBuilder = new StringBuilder(titleLength + 1);
+        NativeMethods.GetWindowText(hWnd, titleBuilder, titleBuilder.Capacity);
+        if (string.IsNullOrWhiteSpace(titleBuilder.ToString()))
+            return true;
+
+        var classBuilder = new StringBuilder(MaxClassNameLength);
+        NativeMethods.GetClassName(hWnd, classBuilder, classBuilder.Capacity);
+        if (ExcludedClassNames.Contains(classBuilder.ToString()))
+            return true;
+
+        var processName = GetProcessName(processId);
+        if (ExcludedProcessNames.Contains(processName))
+            return true;
+
+        return false;
+    }
+
+    private static (bool isMinimized, bool isMaximized) GetWindowState(IntPtr hWnd)
+    {
+        var isMinimized = NativeMethods.IsIconic(hWnd);
+        var isMaximized = NativeMethods.IsZoomed(hWnd);
+
+        if (isMinimized)
+        {
+            var placement = new NativeMethods.WINDOWPLACEMENT();
+            placement.length = Marshal.SizeOf(placement);
+            if (NativeMethods.GetWindowPlacement(hWnd, ref placement))
+            {
+                isMaximized = (placement.flags & WPF_RESTORETOMAXIMIZED) != 0;
+            }
+        }
+
+        return (isMinimized, isMaximized);
+    }
+
     public List<AppWindow> GetWindows()
     {
         var windows = new List<AppWindow>();
@@ -46,86 +114,21 @@ public class WindowService
         {
             try
             {
-                // Skip shell window
-                if (hWnd == shellWindow)
+                if (ShouldSkipWindow(hWnd, shellWindow, currentProcessId))
                     return true;
 
-                // Must be visible
-                if (!NativeMethods.IsWindowVisible(hWnd))
-                    return true;
-
-                // Check if cloaked (hidden by Windows)
-                if (IsCloaked(hWnd))
-                    return true;
-
-                // Get window style
-                var exStyle = NativeMethods.GetWindowLong(hWnd, NativeMethods.GWL_EXSTYLE);
-
-                // Skip tool windows unless they have app window style
-                if ((exStyle & (int)NativeMethods.WS_EX_TOOLWINDOW) != 0 &&
-                    (exStyle & (int)NativeMethods.WS_EX_APPWINDOW) == 0)
-                    return true;
-
-                // Get process info first to skip our own process
-                NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
-                
-                // Skip our own windows
-                if (processId == currentProcessId)
-                    return true;
-
-                // Check ownership - we want top-level windows
-                var owner = NativeMethods.GetWindow(hWnd, NativeMethods.GW_OWNER);
-                if (owner != IntPtr.Zero)
-                {
-                    // Has an owner, check if it's the last active popup of its root
-                    var rootOwner = NativeMethods.GetAncestor(hWnd, NativeMethods.GA_ROOTOWNER);
-                    var lastPopup = NativeMethods.GetLastActivePopup(rootOwner);
-                    if (lastPopup != hWnd && NativeMethods.IsWindowVisible(lastPopup))
-                        return true;
-                }
-
-                // Get window title
                 var titleLength = NativeMethods.GetWindowTextLength(hWnd);
-                if (titleLength == 0)
-                    return true;
-
                 var titleBuilder = new StringBuilder(titleLength + 1);
                 NativeMethods.GetWindowText(hWnd, titleBuilder, titleBuilder.Capacity);
                 var title = titleBuilder.ToString();
 
-                if (string.IsNullOrWhiteSpace(title))
-                    return true;
-
-                // Get class name
-                var classBuilder = new StringBuilder(256);
+                var classBuilder = new StringBuilder(MaxClassNameLength);
                 NativeMethods.GetClassName(hWnd, classBuilder, classBuilder.Capacity);
                 var className = classBuilder.ToString();
 
-                // Skip excluded class names
-                if (ExcludedClassNames.Contains(className))
-                    return true;
-
+                NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
                 var processName = GetProcessName(processId);
-
-                // Skip excluded processes
-                if (ExcludedProcessNames.Contains(processName))
-                    return true;
-
-                // Check window state
-                var isMinimized = NativeMethods.IsIconic(hWnd);
-                var isMaximized = NativeMethods.IsZoomed(hWnd);
-                
-                // For minimized windows, check if they were maximized before minimizing
-                if (isMinimized)
-                {
-                    var placement = new NativeMethods.WINDOWPLACEMENT();
-                    placement.length = Marshal.SizeOf(placement);
-                    if (NativeMethods.GetWindowPlacement(hWnd, ref placement))
-                    {
-                        // Check if the window would be maximized when restored
-                        isMaximized = (placement.flags & 0x2) != 0; // WPF_RESTORETOMAXIMIZED
-                    }
-                }
+                var (isMinimized, isMaximized) = GetWindowState(hWnd);
 
                 var window = new AppWindow(hWnd, title, className, processId, processName, isMinimized, isMaximized);
                 windows.Add(window);

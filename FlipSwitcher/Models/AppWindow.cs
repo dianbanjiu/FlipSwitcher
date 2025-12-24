@@ -67,85 +67,88 @@ public class AppWindow : INotifyPropertyChanged
         IsMaximized = isMaximized;
     }
 
+    private const uint IconTimeoutMs = 100;
+
+    private IntPtr GetWindowIconHandle()
+    {
+        IntPtr iconHandle = IntPtr.Zero;
+
+        var iconSizes = new[] { NativeMethods.ICON_BIG, NativeMethods.ICON_SMALL, NativeMethods.ICON_SMALL2 };
+        foreach (var iconSize in iconSizes)
+        {
+            NativeMethods.SendMessageTimeout(Handle, NativeMethods.WM_GETICON,
+                (IntPtr)iconSize, IntPtr.Zero,
+                NativeMethods.SMTO_ABORTIFHUNG, IconTimeoutMs, out iconHandle);
+            if (iconHandle != IntPtr.Zero)
+                return iconHandle;
+        }
+
+        iconHandle = NativeMethods.GetClassLongPtr(Handle, NativeMethods.GCL_HICON);
+        if (iconHandle != IntPtr.Zero)
+            return iconHandle;
+
+        return NativeMethods.GetClassLongPtr(Handle, NativeMethods.GCL_HICONSM);
+    }
+
+    private ImageSource? LoadIconFromHandle(IntPtr iconHandle)
+    {
+        try
+        {
+            using var icon = System.Drawing.Icon.FromHandle(iconHandle);
+            using var clonedIcon = (System.Drawing.Icon)icon.Clone();
+            return Imaging.CreateBitmapSourceFromHIcon(
+                clonedIcon.Handle,
+                Int32Rect.Empty,
+                BitmapSizeOptions.FromEmptyOptions());
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private ImageSource? LoadIconFromProcess()
+    {
+        try
+        {
+            using var process = Process.GetProcessById((int)ProcessId);
+            var mainModule = process.MainModule;
+            if (mainModule?.FileName == null)
+                return null;
+
+            using var icon = System.Drawing.Icon.ExtractAssociatedIcon(mainModule.FileName);
+            if (icon == null)
+                return null;
+
+            return Imaging.CreateBitmapSourceFromHIcon(
+                icon.Handle,
+                Int32Rect.Empty,
+                BitmapSizeOptions.FromEmptyOptions());
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private ImageSource? LoadIcon()
     {
         try
         {
-            // Try to get the window icon
-            IntPtr iconHandle = IntPtr.Zero;
-
-            // First try WM_GETICON
-            NativeMethods.SendMessageTimeout(Handle, NativeMethods.WM_GETICON,
-                (IntPtr)NativeMethods.ICON_BIG, IntPtr.Zero,
-                NativeMethods.SMTO_ABORTIFHUNG, 100, out iconHandle);
-
-            if (iconHandle == IntPtr.Zero)
-            {
-                NativeMethods.SendMessageTimeout(Handle, NativeMethods.WM_GETICON,
-                    (IntPtr)NativeMethods.ICON_SMALL, IntPtr.Zero,
-                    NativeMethods.SMTO_ABORTIFHUNG, 100, out iconHandle);
-            }
-
-            if (iconHandle == IntPtr.Zero)
-            {
-                NativeMethods.SendMessageTimeout(Handle, NativeMethods.WM_GETICON,
-                    (IntPtr)NativeMethods.ICON_SMALL2, IntPtr.Zero,
-                    NativeMethods.SMTO_ABORTIFHUNG, 100, out iconHandle);
-            }
-
-            // Try GetClassLongPtr
-            if (iconHandle == IntPtr.Zero)
-            {
-                iconHandle = NativeMethods.GetClassLongPtr(Handle, NativeMethods.GCL_HICON);
-            }
-
-            if (iconHandle == IntPtr.Zero)
-            {
-                iconHandle = NativeMethods.GetClassLongPtr(Handle, NativeMethods.GCL_HICONSM);
-            }
-
+            var iconHandle = GetWindowIconHandle();
             if (iconHandle != IntPtr.Zero)
             {
-                // Note: Icon.FromHandle does not take ownership of the handle,
-                // so we should NOT dispose it (the handle belongs to the window).
-                // We create a copy to be safe.
-                using var icon = System.Drawing.Icon.FromHandle(iconHandle);
-                // Clone the icon to create an independent copy before disposing
-                using var clonedIcon = (System.Drawing.Icon)icon.Clone();
-                return Imaging.CreateBitmapSourceFromHIcon(
-                    clonedIcon.Handle,
-                    Int32Rect.Empty,
-                    BitmapSizeOptions.FromEmptyOptions());
+                var icon = LoadIconFromHandle(iconHandle);
+                if (icon != null)
+                    return icon;
             }
 
-            // Try to get icon from process executable
-            try
-            {
-                using var process = Process.GetProcessById((int)ProcessId);
-                var mainModule = process.MainModule;
-                if (mainModule?.FileName != null)
-                {
-                    using var icon = System.Drawing.Icon.ExtractAssociatedIcon(mainModule.FileName);
-                    if (icon != null)
-                    {
-                        return Imaging.CreateBitmapSourceFromHIcon(
-                            icon.Handle,
-                            Int32Rect.Empty,
-                            BitmapSizeOptions.FromEmptyOptions());
-                    }
-                }
-            }
-            catch
-            {
-                // Process may have exited or access denied
-            }
+            return LoadIconFromProcess();
         }
         catch
         {
-            // Ignore icon loading errors
+            return null;
         }
-
-        return null;
     }
 
     public void Activate()

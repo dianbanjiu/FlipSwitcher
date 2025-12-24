@@ -91,6 +91,39 @@ public class MainViewModel : ObservableObject
 
     public event EventHandler? WindowActivated;
 
+    private void NotifyWindowCountChanged()
+    {
+        OnPropertyChanged(nameof(WindowCount));
+        OnPropertyChanged(nameof(HasWindows));
+        OnPropertyChanged(nameof(NoWindowsFound));
+    }
+
+    private void ExitGroupingMode()
+    {
+        _isGroupedByProcess = false;
+        _groupedProcessName = null;
+        _lastSelectedWindowBeforeGrouping = null;
+    }
+
+    private void SelectWindowAfterRemoval(int currentIndex)
+    {
+        if (FilteredWindows.Count > 0)
+        {
+            var newIndex = Math.Clamp(currentIndex, 0, FilteredWindows.Count - 1);
+            SelectedWindow = FilteredWindows[newIndex];
+        }
+        else if (_isGroupedByProcess)
+        {
+            ExitGroupingMode();
+            FilterWindows();
+            SelectedWindow = FilteredWindows.Count > 0 ? FilteredWindows[0] : null;
+        }
+        else
+        {
+            SelectedWindow = null;
+        }
+    }
+
     /// <summary>
     /// Refresh the window list
     /// </summary>
@@ -99,7 +132,6 @@ public class MainViewModel : ObservableObject
     {
         _windows.Clear();
         var windows = _windowService.GetWindows();
-        
         foreach (var window in windows)
         {
             _windows.Add(window);
@@ -113,10 +145,7 @@ public class MainViewModel : ObservableObject
                 .ToList();
             
             FilteredWindows = new ObservableCollection<AppWindow>(groupedWindows);
-            
-            OnPropertyChanged(nameof(WindowCount));
-            OnPropertyChanged(nameof(HasWindows));
-            OnPropertyChanged(nameof(NoWindowsFound));
+            NotifyWindowCountChanged();
 
             if (FilteredWindows.Count > 0)
             {
@@ -124,9 +153,7 @@ public class MainViewModel : ObservableObject
             }
             else
             {
-                // 如果分组后没有窗口，退出分组模式
-                _isGroupedByProcess = false;
-                _groupedProcessName = null;
+                ExitGroupingMode();
                 FilterWindows(selectSecondWindow);
             }
         }
@@ -148,25 +175,12 @@ public class MainViewModel : ObservableObject
             : _windows.Where(w => w.MatchesFilter(SearchText)).ToList();
 
         FilteredWindows = new ObservableCollection<AppWindow>(filtered);
-        
-        OnPropertyChanged(nameof(WindowCount));
-        OnPropertyChanged(nameof(HasWindows));
-        OnPropertyChanged(nameof(NoWindowsFound));
+        NotifyWindowCountChanged();
 
-        // Select window
         if (FilteredWindows.Count > 0)
         {
-            // When opening fresh (selectSecondWindow=true), select the second window 
-            // (index 1) because the first one is usually the current active window.
-            // This matches standard Alt+Tab behavior.
-            if (selectSecondWindow && FilteredWindows.Count > 1)
-            {
-                SelectedWindow = FilteredWindows[1];
-            }
-            else
-            {
-                SelectedWindow = FilteredWindows[0];
-            }
+            var index = selectSecondWindow && FilteredWindows.Count > 1 ? 1 : 0;
+            SelectedWindow = FilteredWindows[index];
         }
         else
         {
@@ -219,44 +233,10 @@ public class MainViewModel : ObservableObject
         // Close the window
         windowToClose.Close();
 
-        // Remove from collections
         _windows.Remove(windowToClose);
         FilteredWindows.Remove(windowToClose);
-
-        // Update counts
-        OnPropertyChanged(nameof(WindowCount));
-        OnPropertyChanged(nameof(HasWindows));
-        OnPropertyChanged(nameof(NoWindowsFound));
-
-        // Select next window (or previous if we were at the end)
-        if (FilteredWindows.Count > 0)
-        {
-            // Ensure index is within valid bounds (IndexOf returns -1 if not found)
-            var newIndex = Math.Clamp(currentIndex, 0, FilteredWindows.Count - 1);
-            SelectedWindow = FilteredWindows[newIndex];
-        }
-        else
-        {
-            // 如果分组模式下没有窗口了，退出分组模式并刷新列表
-            if (_isGroupedByProcess)
-            {
-                _isGroupedByProcess = false;
-                _groupedProcessName = null;
-                FilterWindows();
-                if (FilteredWindows.Count > 0)
-                {
-                    SelectedWindow = FilteredWindows[0];
-                }
-                else
-                {
-                    SelectedWindow = null;
-                }
-            }
-            else
-            {
-                SelectedWindow = null;
-            }
-        }
+        NotifyWindowCountChanged();
+        SelectWindowAfterRemoval(currentIndex);
     }
 
     /// <summary>
@@ -290,29 +270,8 @@ public class MainViewModel : ObservableObject
             FilteredWindows.Remove(window);
         }
 
-        OnPropertyChanged(nameof(WindowCount));
-        OnPropertyChanged(nameof(HasWindows));
-        OnPropertyChanged(nameof(NoWindowsFound));
-
-        if (FilteredWindows.Count > 0)
-        {
-            var newIndex = Math.Clamp(currentIndex, 0, FilteredWindows.Count - 1);
-            SelectedWindow = FilteredWindows[newIndex];
-        }
-        else
-        {
-            if (_isGroupedByProcess)
-            {
-                _isGroupedByProcess = false;
-                _groupedProcessName = null;
-                FilterWindows();
-                SelectedWindow = FilteredWindows.Count > 0 ? FilteredWindows[0] : null;
-            }
-            else
-            {
-                SelectedWindow = null;
-            }
-        }
+        NotifyWindowCountChanged();
+        SelectWindowAfterRemoval(currentIndex);
     }
 
     private void SwitchToWindow(AppWindow? window)
@@ -347,12 +306,8 @@ public class MainViewModel : ObservableObject
             .ToList();
 
         FilteredWindows = new ObservableCollection<AppWindow>(groupedWindows);
-        
-        OnPropertyChanged(nameof(WindowCount));
-        OnPropertyChanged(nameof(HasWindows));
-        OnPropertyChanged(nameof(NoWindowsFound));
+        NotifyWindowCountChanged();
 
-        // 选中第一个窗口
         if (FilteredWindows.Count > 0)
         {
             SelectedWindow = FilteredWindows[0];
@@ -405,9 +360,7 @@ public class MainViewModel : ObservableObject
     {
         if (_isGroupedByProcess)
         {
-            _isGroupedByProcess = false;
-            _groupedProcessName = null;
-            _lastSelectedWindowBeforeGrouping = null;
+            ExitGroupingMode();
         }
     }
 

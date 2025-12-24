@@ -65,9 +65,10 @@ public partial class App : Application
         // Check for updates on startup (delayed to avoid blocking)
         if (settings.CheckForUpdates)
         {
+            const int UpdateCheckDelayMs = 3000;
             _ = Task.Run(async () =>
             {
-                await Task.Delay(3000);
+                await Task.Delay(UpdateCheckDelayMs);
                 await CheckForUpdatesAsync();
             });
         }
