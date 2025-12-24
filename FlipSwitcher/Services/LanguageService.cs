@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Windows;
 
 namespace FlipSwitcher.Services;
@@ -42,6 +43,27 @@ public class LanguageService
         SetLanguage(language, raiseEvent: false);
     }
 
+    private const string StringsResourceKey = "Strings";
+
+    private string GetResourcePath(AppLanguage language) => language switch
+    {
+        AppLanguage.Chinese => ChineseResourcePath,
+        AppLanguage.ChineseTraditional => ChineseTraditionalResourcePath,
+        _ => EnglishResourcePath
+    };
+
+    private ResourceDictionary? FindStringsDictionary(Collection<ResourceDictionary> dictionaries)
+    {
+        foreach (var dict in dictionaries)
+        {
+            if (dict.Source?.OriginalString.Contains(StringsResourceKey) == true)
+            {
+                return dict;
+            }
+        }
+        return null;
+    }
+
     /// <summary>
     /// Set the application language
     /// </summary>
@@ -49,40 +71,25 @@ public class LanguageService
     {
         CurrentLanguage = language;
 
-        var resourcePath = language switch
-        {
-            AppLanguage.Chinese => ChineseResourcePath,
-            AppLanguage.ChineseTraditional => ChineseTraditionalResourcePath,
-            _ => EnglishResourcePath
-        };
-
+        var resourcePath = GetResourcePath(language);
         var newDict = new ResourceDictionary
         {
             Source = new Uri(resourcePath, UriKind.Relative)
         };
 
-        // Find and replace the existing string resource dictionary
         var app = Application.Current;
-        ResourceDictionary? existingDict = null;
-
-        foreach (var dict in app.Resources.MergedDictionaries)
-        {
-            if (dict.Source != null && dict.Source.OriginalString.Contains("Strings"))
-            {
-                existingDict = dict;
-                break;
-            }
-        }
+        var dictionaries = app.Resources.MergedDictionaries;
+        var existingDict = FindStringsDictionary(dictionaries);
 
         if (existingDict != null)
         {
-            var index = app.Resources.MergedDictionaries.IndexOf(existingDict);
-            app.Resources.MergedDictionaries.RemoveAt(index);
-            app.Resources.MergedDictionaries.Insert(index, newDict);
+            var index = dictionaries.IndexOf(existingDict);
+            dictionaries.RemoveAt(index);
+            dictionaries.Insert(index, newDict);
         }
         else
         {
-            app.Resources.MergedDictionaries.Add(newDict);
+            dictionaries.Add(newDict);
         }
 
         if (raiseEvent)

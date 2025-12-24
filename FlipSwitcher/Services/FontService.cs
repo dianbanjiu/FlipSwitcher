@@ -11,6 +11,9 @@ public class FontService
     private static FontService? _instance;
     public static FontService Instance => _instance ??= new FontService();
 
+    private const string DefaultFontFamily = "Segoe UI Variable, Segoe UI, sans-serif";
+    private const string SegoeUIVariableKey = "SegoeUIVariable";
+
     private FontService()
     {
     }
@@ -20,15 +23,10 @@ public class FontService
     /// </summary>
     public List<string> GetInstalledFonts()
     {
-        var fonts = new List<string>();
-        var fontFamilies = Fonts.SystemFontFamilies.OrderBy(f => f.Source);
-
-        foreach (var fontFamily in fontFamilies)
-        {
-            fonts.Add(fontFamily.Source);
-        }
-
-        return fonts;
+        return Fonts.SystemFontFamilies
+            .OrderBy(f => f.Source)
+            .Select(f => f.Source)
+            .ToList();
     }
 
     /// <summary>
@@ -39,34 +37,24 @@ public class FontService
         var app = Application.Current;
         if (app == null) return;
 
-        var resources = app.Resources;
-        
-        // 如果字体名称为空，使用默认字体
-        if (string.IsNullOrWhiteSpace(fontFamilyName))
-        {
-            fontFamilyName = "Segoe UI Variable, Segoe UI, sans-serif";
-        }
+        var fontFamily = new FontFamily(
+            string.IsNullOrWhiteSpace(fontFamilyName) ? DefaultFontFamily : fontFamilyName);
 
-        // 更新字体资源
-        var fontFamily = new FontFamily(fontFamilyName);
-        
-        // 在应用级别资源中覆盖字体资源（优先级高于 MergedDictionaries）
-        if (resources.Contains("SegoeUIVariable"))
+        var resources = app.Resources;
+        if (resources.Contains(SegoeUIVariableKey))
         {
-            resources["SegoeUIVariable"] = fontFamily;
+            resources[SegoeUIVariableKey] = fontFamily;
         }
         else
         {
-            resources.Add("SegoeUIVariable", fontFamily);
+            resources.Add(SegoeUIVariableKey, fontFamily);
         }
 
-        // 由于 StaticResource 不会自动更新，需要遍历所有控件强制更新字体
-        // 使用 Dispatcher 确保在 UI 线程上执行
         app.Dispatcher.Invoke(() =>
         {
             foreach (Window window in app.Windows)
             {
-                if (window != null && window.IsLoaded)
+                if (window?.IsLoaded == true)
                 {
                     UpdateWindowFonts(window, fontFamily);
                     window.InvalidateVisual();

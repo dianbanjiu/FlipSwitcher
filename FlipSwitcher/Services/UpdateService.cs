@@ -24,13 +24,22 @@ public class UpdateService
 
     private const string GitHubApiUrl = "https://api.github.com/repos/dianbanjiu/FlipSwitcher/releases/latest";
     private const string GitHubReleasesUrl = "https://github.com/dianbanjiu/FlipSwitcher/releases/latest";
+    private const string UserAgent = "FlipSwitcher";
+    private const string SetupExeSuffix = "-Setup.exe";
+    private const string TagNameProperty = "tag_name";
+    private const string AssetsProperty = "assets";
+    private const string BrowserDownloadUrlProperty = "browser_download_url";
+    private const string BodyProperty = "body";
+    private const string PublishedAtProperty = "published_at";
+    private const char VersionPrefix = 'v';
+
     private readonly HttpClient _httpClient;
     private bool _isChecking;
 
     private UpdateService()
     {
         _httpClient = new HttpClient();
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "FlipSwitcher");
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", UserAgent);
     }
 
     public Version GetCurrentVersion()
@@ -50,53 +59,23 @@ public class UpdateService
             var response = await _httpClient.GetStringAsync(GitHubApiUrl);
             var release = JsonSerializer.Deserialize<JsonElement>(response);
 
-            if (!release.TryGetProperty("tag_name", out var tagName))
+            if (!release.TryGetProperty(TagNameProperty, out var tagName))
                 return null;
 
-            var tagNameStr = tagName.GetString() ?? string.Empty;
+            var tagNameStr = tagName.GetString();
             if (string.IsNullOrEmpty(tagNameStr))
                 return null;
 
-            var versionStr = tagNameStr.TrimStart('v');
-            if (string.IsNullOrEmpty(versionStr))
+            var versionStr = tagNameStr.TrimStart(VersionPrefix);
+            if (string.IsNullOrEmpty(versionStr) || !Version.TryParse(versionStr, out var latestVersion))
                 return null;
 
-            if (!Version.TryParse(versionStr, out var latestVersion))
+            if (latestVersion <= GetCurrentVersion())
                 return null;
 
-            var currentVersion = GetCurrentVersion();
-            if (latestVersion <= currentVersion)
-                return null;
-
-            var downloadUrl = GitHubReleasesUrl;
-            if (release.TryGetProperty("assets", out var assets) && assets.GetArrayLength() > 0)
-            {
-                foreach (var asset in assets.EnumerateArray())
-                {
-                    if (asset.TryGetProperty("browser_download_url", out var url))
-                    {
-                        var urlStr = url.GetString() ?? string.Empty;
-                        if (urlStr.EndsWith("-Setup.exe", StringComparison.OrdinalIgnoreCase))
-                        {
-                            downloadUrl = urlStr;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            var releaseNotes = string.Empty;
-            if (release.TryGetProperty("body", out var body))
-            {
-                releaseNotes = body.GetString() ?? string.Empty;
-            }
-
-            var publishedAt = DateTime.UtcNow;
-            if (release.TryGetProperty("published_at", out var published))
-            {
-                if (DateTime.TryParse(published.GetString(), out var date))
-                    publishedAt = date;
-            }
+            var downloadUrl = FindSetupDownloadUrl(release) ?? GitHubReleasesUrl;
+            var releaseNotes = GetReleaseNotes(release);
+            var publishedAt = GetPublishedDate(release);
 
             return new UpdateInfo
             {
@@ -110,14 +89,7 @@ public class UpdateService
         {
             if (!silent)
             {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    MessageBox.Show(
-                        LanguageService.GetString("MsgUpdateCheckFailed"),
-                        LanguageService.GetString("MsgUpdateCheckFailedTitle"),
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-                });
+                ShowUpdateCheckFailedMessage();
             }
             return null;
         }
@@ -125,6 +97,57 @@ public class UpdateService
         {
             _isChecking = false;
         }
+    }
+
+    private string? FindSetupDownloadUrl(JsonElement release)
+    {
+        if (!release.TryGetProperty(AssetsProperty, out var assets) || assets.GetArrayLength() == 0)
+            return null;
+
+        foreach (var asset in assets.EnumerateArray())
+        {
+            if (asset.TryGetProperty(BrowserDownloadUrlProperty, out var url))
+            {
+                var urlStr = url.GetString();
+                if (!string.IsNullOrEmpty(urlStr) && urlStr.EndsWith(SetupExeSuffix, StringComparison.OrdinalIgnoreCase))
+                {
+                    return urlStr;
+                }
+            }
+        }
+        return null;
+    }
+
+    private string GetReleaseNotes(JsonElement release)
+    {
+        return release.TryGetProperty(BodyProperty, out var body)
+            ? body.GetString() ?? string.Empty
+            : string.Empty;
+    }
+
+    private DateTime GetPublishedDate(JsonElement release)
+    {
+        if (release.TryGetProperty(PublishedAtProperty, out var published))
+        {
+            var dateStr = published.GetString();
+            if (dateStr != null && DateTime.TryParse(dateStr, out var date))
+            {
+                return date;
+            }
+        }
+        return DateTime.UtcNow;
+    }
+
+    private void ShowUpdateCheckFailedMessage()
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            MessageBox.Show(
+                LanguageService.GetString("MsgUpdateCheckFailed"),
+                LanguageService.GetString("MsgUpdateCheckFailedTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        });
     }
 
     public void OpenDownloadPage(string? url = null)

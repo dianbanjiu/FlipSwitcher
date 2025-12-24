@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Windows;
 using FlipSwitcher.Core;
 
@@ -15,55 +16,54 @@ public class ThemeService
     private static ThemeService? _instance;
     public static ThemeService Instance => _instance ??= new ThemeService();
 
+    private const string FluentColorsDark = "pack://application:,,,/Themes/FluentColors.xaml";
+    private const string FluentColorsLight = "pack://application:,,,/Themes/FluentColors.Light.xaml";
+    private const string FluentColorsName = "FluentColors";
+    private const int DarkModeEnabled = 1;
+    private const int DarkModeDisabled = 0;
+
     private ThemeService()
     {
     }
 
+    private bool IsDarkTheme(AppTheme theme) => theme switch
+    {
+        AppTheme.Dark => true,
+        AppTheme.Light => false,
+        _ => true
+    };
+
+    private void RemoveColorDictionaries(Collection<ResourceDictionary> dictionaries)
+    {
+        for (int i = dictionaries.Count - 1; i >= 0; i--)
+        {
+            var sourceStr = dictionaries[i].Source?.OriginalString;
+            if (sourceStr != null && 
+                (sourceStr.Contains(FluentColorsName) || 
+                 sourceStr.EndsWith("/FluentColors") ||
+                 sourceStr.EndsWith("/FluentColors.Light")))
+            {
+                dictionaries.RemoveAt(i);
+            }
+        }
+    }
+
     public void ApplyTheme(AppTheme theme)
     {
-        bool isDark = theme switch
-        {
-            AppTheme.Dark => true,
-            AppTheme.Light => false,
-            _ => true
-        };
-
         var app = Application.Current;
         if (app == null) return;
 
-        var resources = app.Resources;
-        var mergedDictionaries = resources.MergedDictionaries;
+        bool isDark = IsDarkTheme(theme);
+        var dictionaries = app.Resources.MergedDictionaries;
 
-        // 移除现有的颜色资源
-        for (int i = mergedDictionaries.Count - 1; i >= 0; i--)
-        {
-            var dict = mergedDictionaries[i];
-            if (dict.Source != null)
-            {
-                var sourceStr = dict.Source.OriginalString;
-                if (sourceStr.Contains("FluentColors.xaml") || 
-                    sourceStr.Contains("FluentColors.Light.xaml") ||
-                    sourceStr.EndsWith("/FluentColors") ||
-                    sourceStr.EndsWith("/FluentColors.Light"))
-                {
-                    mergedDictionaries.RemoveAt(i);
-                }
-            }
-        }
+        RemoveColorDictionaries(dictionaries);
 
-        // 添加新的颜色资源
-        var colorDict = new ResourceDictionary();
-        if (isDark)
+        var colorDict = new ResourceDictionary
         {
-            colorDict.Source = new Uri("pack://application:,,,/Themes/FluentColors.xaml", UriKind.Absolute);
-        }
-        else
-        {
-            colorDict.Source = new Uri("pack://application:,,,/Themes/FluentColors.Light.xaml", UriKind.Absolute);
-        }
-        mergedDictionaries.Insert(0, colorDict);
+            Source = new Uri(isDark ? FluentColorsDark : FluentColorsLight, UriKind.Absolute)
+        };
+        dictionaries.Insert(0, colorDict);
 
-        // 更新所有窗口的 DWM 主题
         UpdateWindowThemes(isDark);
     }
 
@@ -76,7 +76,7 @@ public class ThemeService
                 var hwnd = new System.Windows.Interop.WindowInteropHelper(window).Handle;
                 if (hwnd != IntPtr.Zero)
                 {
-                    int darkMode = isDark ? 1 : 0;
+                    int darkMode = isDark ? DarkModeEnabled : DarkModeDisabled;
                     NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
                 }
             }

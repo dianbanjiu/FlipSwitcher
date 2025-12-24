@@ -209,33 +209,36 @@ public partial class SettingsWindow : Window
         if (_isInitializing) return;
 
         bool enable = StartWithWindowsCheckBox.IsChecked == true;
-
-        // Save setting first
         var settings = SettingsService.Instance.Settings;
         settings.StartWithWindows = enable;
         SettingsService.Instance.Save();
 
-        // Update registry/Task Scheduler
-        bool success = StartupService.SetStartupEnabled(enable);
-        
-        if (!success)
+        if (!StartupService.SetStartupEnabled(enable))
         {
-            var message = enable 
-                ? LanguageService.GetString("MsgStartupFailed")
-                : LanguageService.GetString("MsgStartupDisabledFailed");
-            MessageBox.Show(
-                message,
-                LanguageService.GetString("AppTitle"),
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
-            // Revert the checkbox
-            _isInitializing = true;
-            StartWithWindowsCheckBox.IsChecked = !enable;
-            settings.StartWithWindows = !enable;
-            SettingsService.Instance.Save();
-            _isInitializing = false;
+            ShowStartupErrorMessage(enable);
+            RevertStartupCheckbox(enable);
         }
+    }
+
+    private void ShowStartupErrorMessage(bool enable)
+    {
+        var message = enable 
+            ? LanguageService.GetString("MsgStartupFailed")
+            : LanguageService.GetString("MsgStartupDisabledFailed");
+        MessageBox.Show(
+            message,
+            LanguageService.GetString("AppTitle"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
+    }
+
+    private void RevertStartupCheckbox(bool enable)
+    {
+        _isInitializing = true;
+        StartWithWindowsCheckBox.IsChecked = !enable;
+        SettingsService.Instance.Settings.StartWithWindows = !enable;
+        SettingsService.Instance.Save();
+        _isInitializing = false;
     }
 
     private void HideOnFocusLostCheckBox_Changed(object sender, RoutedEventArgs e)
@@ -275,48 +278,62 @@ public partial class SettingsWindow : Window
 
     private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
     {
-        CheckForUpdatesButton.IsEnabled = false;
-        CheckForUpdatesButton.Content = LanguageService.GetString("SettingsCheckingUpdates");
+        SetUpdateButtonState(isChecking: true);
 
         try
         {
             var updateInfo = await UpdateService.Instance.CheckForUpdatesAsync(silent: false);
             if (updateInfo != null)
             {
-                var message = string.Format(
-                    LanguageService.GetString("MsgUpdateAvailable"),
-                    updateInfo.Version);
-                _isShowingDialog = true;
-                var result = MessageBox.Show(
-                    message,
-                    LanguageService.GetString("MsgUpdateAvailableTitle"),
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Information);
-                _isShowingDialog = false;
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    // 打开浏览器后允许窗口正常关闭
-                    UpdateService.Instance.OpenDownloadPage(updateInfo.DownloadUrl);
-                }
+                ShowUpdateAvailableDialog(updateInfo);
             }
             else
             {
-                _isShowingDialog = true;
-                MessageBox.Show(
-                    LanguageService.GetString("MsgNoUpdateAvailable"),
-                    LanguageService.GetString("MsgNoUpdateAvailableTitle"),
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-                _isShowingDialog = false;
+                ShowNoUpdateDialog();
             }
         }
         finally
         {
-            CheckForUpdatesButton.IsEnabled = true;
-            CheckForUpdatesButton.Content = LanguageService.GetString("SettingsCheckForUpdates");
-            _isShowingDialog = false;
+            SetUpdateButtonState(isChecking: false);
         }
+    }
+
+    private void SetUpdateButtonState(bool isChecking)
+    {
+        CheckForUpdatesButton.IsEnabled = !isChecking;
+        CheckForUpdatesButton.Content = isChecking
+            ? LanguageService.GetString("SettingsCheckingUpdates")
+            : LanguageService.GetString("SettingsCheckForUpdates");
+    }
+
+    private void ShowUpdateAvailableDialog(UpdateInfo updateInfo)
+    {
+        var message = string.Format(
+            LanguageService.GetString("MsgUpdateAvailable"),
+            updateInfo.Version);
+        _isShowingDialog = true;
+        var result = MessageBox.Show(
+            message,
+            LanguageService.GetString("MsgUpdateAvailableTitle"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Information);
+        _isShowingDialog = false;
+
+        if (result == MessageBoxResult.Yes)
+        {
+            UpdateService.Instance.OpenDownloadPage(updateInfo.DownloadUrl);
+        }
+    }
+
+    private void ShowNoUpdateDialog()
+    {
+        _isShowingDialog = true;
+        MessageBox.Show(
+            LanguageService.GetString("MsgNoUpdateAvailable"),
+            LanguageService.GetString("MsgNoUpdateAvailableTitle"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+        _isShowingDialog = false;
     }
 
     private void HotkeyCheckBox_Changed(object sender, RoutedEventArgs e)

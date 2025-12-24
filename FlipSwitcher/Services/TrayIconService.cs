@@ -11,6 +11,9 @@ namespace FlipSwitcher.Services;
 /// </summary>
 public class TrayIconService : IDisposable
 {
+    private const string IconResourcePath = "pack://application:,,,/Assets/flipswitcher.png";
+    private const string ToolTipText = "FlipSwitcher";
+
     private TaskbarIcon? _trayIcon;
     private System.Windows.Controls.MenuItem? _showItem;
     private System.Windows.Controls.MenuItem? _settingsItem;
@@ -44,31 +47,10 @@ public class TrayIconService : IDisposable
     {
         _trayIcon = new TaskbarIcon
         {
-            ToolTipText = "FlipSwitcher",
-            Visibility = Visibility.Visible
+            ToolTipText = ToolTipText,
+            Visibility = Visibility.Visible,
+            Icon = LoadTrayIcon()
         };
-
-        // Try to load icon from resources, fallback to system icon
-        try
-        {
-            var iconUri = new Uri("pack://application:,,,/Assets/flipswitcher.png", UriKind.Absolute);
-            var iconStream = System.Windows.Application.GetResourceStream(iconUri);
-            if (iconStream != null)
-            {
-                // Convert PNG to Icon
-                using var bitmap = new System.Drawing.Bitmap(iconStream.Stream);
-                _trayIcon.Icon = Icon.FromHandle(bitmap.GetHicon());
-            }
-            else
-            {
-                _trayIcon.Icon = SystemIcons.Application;
-            }
-        }
-        catch
-        {
-            // Use system application icon as fallback
-            _trayIcon.Icon = SystemIcons.Application;
-        }
 
         // Create context menu
         var contextMenu = new System.Windows.Controls.ContextMenu();
@@ -96,6 +78,25 @@ public class TrayIconService : IDisposable
         _trayIcon.TrayMouseDoubleClick += (s, e) => ShowMainWindow();
     }
 
+    private Icon LoadTrayIcon()
+    {
+        try
+        {
+            var iconUri = new Uri(IconResourcePath, UriKind.Absolute);
+            var iconStream = Application.GetResourceStream(iconUri);
+            if (iconStream != null)
+            {
+                using var bitmap = new System.Drawing.Bitmap(iconStream.Stream);
+                return Icon.FromHandle(bitmap.GetHicon());
+            }
+        }
+        catch
+        {
+            // Fall through to default icon
+        }
+        return SystemIcons.Application;
+    }
+
     private void ShowMainWindow()
     {
         var mainWindow = System.Windows.Application.Current.MainWindow;
@@ -108,21 +109,17 @@ public class TrayIconService : IDisposable
 
     private void ShowSettings()
     {
-        var mainWindow = System.Windows.Application.Current.MainWindow as FlipSwitcher.Views.MainWindow;
+        var mainWindow = Application.Current.MainWindow as Views.MainWindow;
         var hotkeyService = mainWindow?.HotkeyService;
-        if (hotkeyService != null)
+        
+        hotkeyService?.SetSettingsWindowOpen(true);
+        
+        var settingsWindow = new Views.SettingsWindow(hotkeyService)
         {
-            hotkeyService.SetSettingsWindowOpen(true);
-        }
-        var settingsWindow = new FlipSwitcher.Views.SettingsWindow(hotkeyService);
-        settingsWindow.Owner = System.Windows.Application.Current.MainWindow;
-        settingsWindow.Closed += (s, e) =>
-        {
-            if (hotkeyService != null)
-            {
-                hotkeyService.SetSettingsWindowOpen(false);
-            }
+            Owner = Application.Current.MainWindow
         };
+        
+        settingsWindow.Closed += (s, e) => hotkeyService?.SetSettingsWindowOpen(false);
         settingsWindow.ShowDialog();
     }
 

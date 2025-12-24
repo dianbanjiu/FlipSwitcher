@@ -187,13 +187,9 @@ public partial class MainWindow : Window
         if (!IsVisible) return;
 
         if (e.Direction == NavigationDirection.Next)
-        {
             _viewModel.MoveSelectionDown();
-        }
         else
-        {
             _viewModel.MoveSelectionUp();
-        }
         
         ScrollSelectedIntoView();
     }
@@ -232,18 +228,12 @@ public partial class MainWindow : Window
 
     private void EnterSearchMode()
     {
-        // Exit Alt+Tab mode to allow normal typing
         _isAltTabMode = false;
         _isSearchMode = true;
-        
-        // Tell hotkey service we're in search mode (don't intercept arrow keys)
         _hotkeyService.SetSearchMode(true);
         
-        // Force window to foreground and focus
         ForceActivateWindow();
         
-        // Focus the search box and allow typing
-        // Use Dispatcher to ensure focus happens after any pending operations
         Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
         {
             ForceActivateWindow();

@@ -33,13 +33,12 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <!-- Header (draggable) -->
             <Border Grid.Row="0"
                 Background="{StaticResource BackgroundSolidSecondaryBrush}"
-                CornerRadius="12,12,0,0"
+                CornerRadius="12,12,12,12"
                 Padding="20,16"
                 MouseLeftButtonDown="Header_MouseLeftButtonDown">
                 <Grid>
@@ -78,7 +77,7 @@
             <ScrollViewer Grid.Row="1"
                 Background="{StaticResource BackgroundSolidBaseBrush}"
                 VerticalScrollBarVisibility="Auto"
-                Padding="20,16"
+                Padding="20,16,20,20"
                 Style="{StaticResource FluentScrollViewerStyle}">
                 <StackPanel>
 
@@ -116,7 +115,8 @@
                                 ItemContainerStyle="{StaticResource FluentComboBoxItemStyle}">
                                 <ComboBoxItem Content="{DynamicResource LanguageEnglish}" Tag="0" />
                                 <ComboBoxItem Content="{DynamicResource LanguageChinese}" Tag="1" />
-                                <ComboBoxItem Content="{DynamicResource LanguageChineseTraditional}" Tag="2" />
+                                <ComboBoxItem Content="{DynamicResource LanguageChineseTraditional}"
+                                    Tag="2" />
                             </ComboBox>
                         </Grid>
                     </Border>
@@ -172,7 +172,8 @@
                                             Padding="6,2"
                                             Margin="8,0,0,0"
                                             VerticalAlignment="Center">
-                                            <TextBlock Text="{DynamicResource SettingsReplacesSystem}"
+                                            <TextBlock
+                                                Text="{DynamicResource SettingsReplacesSystem}"
                                                 Style="{StaticResource CaptionTextStyle}"
                                                 FontSize="10"
                                                 Foreground="{StaticResource TextOnAccentBrush}" />
@@ -427,7 +428,8 @@
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="{DynamicResource SettingsCheckForUpdatesAuto}"
                                         Style="{StaticResource BodyStrongTextStyle}" />
-                                    <TextBlock Text="{DynamicResource SettingsCheckForUpdatesAutoDesc}"
+                                    <TextBlock
+                                        Text="{DynamicResource SettingsCheckForUpdatesAutoDesc}"
                                         Style="{StaticResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
@@ -475,19 +477,6 @@
                     </Border>
                 </StackPanel>
             </ScrollViewer>
-
-            <!-- Footer -->
-            <Border Grid.Row="2"
-                Background="{StaticResource BackgroundSolidSecondaryBrush}"
-                CornerRadius="0,0,12,12"
-                Padding="20,12">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="{DynamicResource SettingsClose}"
-                        Style="{StaticResource FluentButtonStyle}"
-                        Click="CloseButton_Click"
-                        Width="100" />
-                </StackPanel>
-            </Border>
         </Grid>
     </Border>
 </Window>
