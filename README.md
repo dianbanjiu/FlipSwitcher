@@ -8,16 +8,6 @@
 
 A modern, beautiful Alt-Tab replacement for Windows, built with **Fluent 2 Design System**.
 
-## ✨ Features
-
-- 🎨 **Fluent 2 Design** - Modern dark theme with Mica/Acrylic effects
-- 🌓 **Theme Support** - Switch between dark and light themes (requires restart)
-- ⚡ **Fast Window Switching** - Instantly switch between open windows
-- 🔍 **Live Search** - Filter windows by title or process name as you type
-- ⌨️ **Keyboard-First** - Designed for power users who love keyboard shortcuts
-- 🖼️ **Window Icons** - Visual identification with application icons
-- 💾 **Lightweight** - Minimal resource usage, runs in system tray
-
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -56,31 +46,7 @@ dotnet run --project FlipSwitcher
 | `Alt + ,`     | Open settings                                         |
 | `Alt + ->`    | Summary selected app                                  |
 | `Alt + <-`    | Back to windows list                                  |
-
-## 🎨 Design
-
-FlipSwitcher is built following Microsoft's [Fluent 2 Design System](https://fluent2.microsoft.design/):
-
-- **Mica Material** - Translucent background that adapts to desktop wallpaper
-- **Rounded Corners** - Consistent 8px/12px corner radius
-- **Segoe UI Variable** - Modern variable font for crisp typography
-- **Theme Support** - Choose between dark and light themes in settings (restart required)
-- **Subtle Animations** - Smooth transitions and hover effects
-
-## 🏗️ Architecture
-
-```
-FlipSwitcher/
-├── Assets/         # Application icons and images
-├── Converters/     # WPF value converters
-├── Core/           # Windows API interop (NativeMethods)
-├── Models/         # Data models (AppWindow)
-├── Properties/     # Publish profiles
-├── Services/       # Business logic
-├── Themes/         # Fluent 2 styles and colors (dark/light themes)
-├── ViewModels/     # MVVM ViewModels
-└── Views/          # WPF Windows (MainWindow, SettingsWindow)
-```
+| `Alt + D`     | Stop the selected process                             |
 
 ## 🛠️ Technology Stack
 
@@ -91,7 +57,7 @@ FlipSwitcher/
 
 ## 🙏 Acknowledgments
 
-- Inspired by kvakulo [Switcheroo](https://github.com/kvakulo/Switcheroo) 
+- Inspired by kvakulo [Switcheroo](https://github.com/kvakulo/Switcheroo)
 - Microsoft [Fluent 2 Design System](https://fluent2.microsoft.design/)
 - [Segoe UI Variable](https://docs.microsoft.com/en-us/windows/apps/design/signature-experiences/typography) font
 
