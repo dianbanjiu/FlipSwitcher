@@ -60,6 +60,7 @@ dotnet run --project FlipSwitcher
 - Inspired by kvakulo [Switcheroo](https://github.com/kvakulo/Switcheroo)
 - Microsoft [Fluent 2 Design System](https://fluent2.microsoft.design/)
 - [Segoe UI Variable](https://docs.microsoft.com/en-us/windows/apps/design/signature-experiences/typography) font
+- [Inno Setup](https://jrsoftware.org/isinfo.php)
 
 ---
 
