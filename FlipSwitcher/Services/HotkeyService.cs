@@ -102,7 +102,7 @@ public class HotkeyService : IDisposable
     /// </summary>
     public event EventHandler? UngroupFromProcessRequested;
 
-    public string CurrentHotkey { get; private set; } = "Alt + Space";
+    public string CurrentHotkey { get; private set; } = "Alt + Tab";
     public bool IsAltTabEnabled => _useAltTab;
 
     public HotkeyService()
@@ -137,7 +137,7 @@ public class HotkeyService : IDisposable
         _isSettingsWindowOpen = isOpen;
     }
 
-    public void RegisterHotkeys(Window window, bool useAltSpace = true, bool useAltTab = false)
+    public void RegisterHotkeys(Window window, bool useAltSpace = false, bool useAltTab = true)
     {
         var helper = new WindowInteropHelper(window);
         _windowHandle = helper.EnsureHandle();

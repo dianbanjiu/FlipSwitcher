@@ -73,12 +73,12 @@ public class AppSettings
     /// <summary>
     /// Use Alt+Tab as the activation hotkey (replaces system Alt+Tab)
     /// </summary>
-    public bool UseAltTab { get; set; } = false;
+    public bool UseAltTab { get; set; } = true;
 
     /// <summary>
     /// Use Alt+Space as the activation hotkey
     /// </summary>
-    public bool UseAltSpace { get; set; } = true;
+    public bool UseAltSpace { get; set; } = false;
 
     /// <summary>
     /// Start with Windows
