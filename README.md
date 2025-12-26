@@ -48,6 +48,14 @@ dotnet run --project FlipSwitcher
 | `Alt + <-`    | Back to windows list                                  |
 | `Alt + D`     | Stop the selected process                             |
 
+## ✨ Features
+
+- **Fast Search** - Quickly filter windows by typing
+- **Pinyin Search** - Search Chinese window titles using pinyin initials or full pinyin (optional, disabled by default)
+- **Window Grouping** - Group windows by application
+- **Quick Close** - Close windows with Alt+W without leaving the switcher
+- **Process Control** - Terminate processes with Alt+D
+
 ## 🛠️ Technology Stack
 
 - **WPF** - Windows Presentation Foundation
