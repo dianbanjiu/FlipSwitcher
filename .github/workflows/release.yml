@@ -133,19 +133,6 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore FlipSwitcher/FlipSwitcher.csproj
 
-      # Self-contained version with runtime
-      - name: Build Self-Contained
-        run: |
-          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.get_version.outputs.VERSION }} -o publish/self-contained
-
-      - name: Rename Self-Contained exe
-        run: |
-          Move-Item -Path publish/self-contained/FlipSwitcher.exe -Destination publish/FlipSwitcher-windows-x64-SelfContained.exe
-
-      - name: Create Self-Contained zip
-        run: |
-          Compress-Archive -Path publish/FlipSwitcher-windows-x64-SelfContained.exe -DestinationPath publish/FlipSwitcher-windows-x64-SelfContained.exe.zip
-
       # Setup Installer (Inno Setup)
       - name: Build for Setup
         run: |
@@ -199,7 +186,6 @@ jobs:
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
           files: |
-            publish/FlipSwitcher-windows-x64-SelfContained.exe.zip
             publish/FlipSwitcher-windows-x64-Setup.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
