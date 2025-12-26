@@ -12,7 +12,6 @@ namespace FlipSwitcher.Services;
 public class TrayIconService : IDisposable
 {
     private const string IconResourcePath = "pack://application:,,,/Assets/flipswitcher.png";
-    private const string ToolTipText = "FlipSwitcher";
 
     private TaskbarIcon? _trayIcon;
     private System.Windows.Controls.MenuItem? _showItem;
@@ -41,13 +40,15 @@ public class TrayIconService : IDisposable
             _restartItem.Header = LanguageService.GetString("TrayRestart");
         if (_exitItem != null)
             _exitItem.Header = LanguageService.GetString("TrayExit");
+        if (_trayIcon != null)
+            _trayIcon.ToolTipText = LanguageService.GetString("TrayToolTip");
     }
 
     private void InitializeTrayIcon()
     {
         _trayIcon = new TaskbarIcon
         {
-            ToolTipText = ToolTipText,
+            ToolTipText = LanguageService.GetString("TrayToolTip"),
             Visibility = Visibility.Visible,
             Icon = LoadTrayIcon()
         };

@@ -53,11 +53,11 @@ public partial class SettingsWindow : Window
     private void UpdateVersionDisplay()
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version;
-        var versionStr = version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "preview";
-        VersionText.Text = $"FlipSwitcher v{versionStr}";
+        var versionStr = version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : LanguageService.GetString("VersionPreview");
+        VersionText.Text = string.Format(LanguageService.GetString("VersionFormat"), versionStr);
     }
 
-    private const string DefaultFontDisplayName = "默认 (Segoe UI Variable)";
+    private string DefaultFontDisplayName => LanguageService.GetString("DefaultFontDisplay");
 
     private void LoadFontFamilies()
     {
@@ -367,14 +367,14 @@ public partial class SettingsWindow : Window
         var hotkeys = new List<string>();
         
         if (AltSpaceCheckBox.IsChecked == true)
-            hotkeys.Add("Alt + Space");
+            hotkeys.Add(LanguageService.GetString("SettingsAltSpace"));
         
         if (AltTabCheckBox.IsChecked == true)
-            hotkeys.Add("Alt + Tab");
+            hotkeys.Add(LanguageService.GetString("SettingsAltTab"));
 
         CurrentHotkeyText.Text = hotkeys.Count > 0 
-            ? string.Join(" / ", hotkeys) 
-            : "None";
+            ? string.Join(LanguageService.GetString("HotkeySeparator"), hotkeys) 
+            : LanguageService.GetString("HotkeyNone");
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)

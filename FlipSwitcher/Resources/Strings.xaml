@@ -1,9 +1,9 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:system="clr-namespace:System;assembly=mscorlib">
 
     <!-- English (Default) -->
-    
+
     <!-- Main Window -->
     <system:String x:Key="AppTitle">FlipSwitcher</system:String>
     <system:String x:Key="WindowsCount">windows</system:String>
@@ -11,7 +11,7 @@
     <system:String x:Key="NoWindowsFound">No windows found</system:String>
     <system:String x:Key="TryDifferentSearch">Try a different search term</system:String>
     <system:String x:Key="Minimized">Minimized</system:String>
-    
+
     <!-- Footer Hints -->
     <system:String x:Key="HintEnter">Enter</system:String>
     <system:String x:Key="HintSwitch">Switch</system:String>
@@ -20,18 +20,18 @@
     <system:String x:Key="HintClose">Close</system:String>
     <system:String x:Key="HintSettings">Settings</system:String>
     <system:String x:Key="HintExit">Exit</system:String>
-    
+
     <!-- Settings Window -->
     <system:String x:Key="Settings">Settings</system:String>
     <system:String x:Key="SettingsClose">Close</system:String>
-    
+
     <!-- Settings - Language -->
     <system:String x:Key="SettingsLanguage">Language</system:String>
     <system:String x:Key="SettingsLanguageDesc">Choose your preferred language</system:String>
     <system:String x:Key="LanguageEnglish">English</system:String>
     <system:String x:Key="LanguageChinese">简体中文</system:String>
     <system:String x:Key="LanguageChineseTraditional">繁體中文</system:String>
-    
+
     <!-- Settings - Hotkey -->
     <system:String x:Key="SettingsHotkey">Hotkey</system:String>
     <system:String x:Key="SettingsAltSpace">Alt + Space</system:String>
@@ -40,7 +40,7 @@
     <system:String x:Key="SettingsAltTabDesc">Replace Windows Alt+Tab with FlipSwitcher</system:String>
     <system:String x:Key="SettingsReplacesSystem">Replaces System</system:String>
     <system:String x:Key="SettingsActiveHotkey">Active Hotkey:</system:String>
-    
+
     <!-- Settings - Appearance -->
     <system:String x:Key="SettingsAppearance">Appearance</system:String>
     <system:String x:Key="SettingsTheme">Theme</system:String>
@@ -50,52 +50,72 @@
     <system:String x:Key="ThemeSystem">System</system:String>
     <system:String x:Key="SettingsMicaEffect">Mica Effect</system:String>
     <system:String x:Key="SettingsMicaEffectDesc">Enable translucent background (Windows 11)</system:String>
-    
+
     <!-- Settings - Behavior -->
     <system:String x:Key="SettingsBehavior">Behavior</system:String>
     <system:String x:Key="SettingsRunAsAdmin">Run as Administrator</system:String>
-    <system:String x:Key="SettingsRunAsAdminDesc">Required to switch to elevated windows (requires restart)</system:String>
+    <system:String x:Key="SettingsRunAsAdminDesc">Required to switch to elevated windows (requires
+        restart)</system:String>
     <system:String x:Key="SettingsAdminEnabled">Enabled</system:String>
     <system:String x:Key="SettingsAdminDisabled">Disabled</system:String>
     <system:String x:Key="SettingsStartWithWindows">Start with Windows</system:String>
     <system:String x:Key="SettingsStartWithWindowsDesc">Launch FlipSwitcher when you sign in</system:String>
     <system:String x:Key="SettingsHideOnFocusLost">Hide on Focus Lost</system:String>
     <system:String x:Key="SettingsHideOnFocusLostDesc">Automatically hide when clicking outside</system:String>
-    
+
     <!-- Settings - Updates -->
     <system:String x:Key="SettingsUpdates">Updates</system:String>
     <system:String x:Key="SettingsCheckForUpdatesAuto">Check for updates automatically</system:String>
-    <system:String x:Key="SettingsCheckForUpdatesAutoDesc">Check for updates when the application starts</system:String>
+    <system:String x:Key="SettingsCheckForUpdatesAutoDesc">Check for updates when the application
+        starts</system:String>
     <system:String x:Key="SettingsCheckForUpdates">Check for Updates</system:String>
     <system:String x:Key="SettingsCheckingUpdates">Checking...</system:String>
-    
+
     <!-- Settings - About -->
     <system:String x:Key="SettingsAbout">About</system:String>
     <system:String x:Key="SettingsAboutDesc">A modern Alt-Tab replacement with Fluent 2 Design</system:String>
     <system:String x:Key="SettingsViewOnGitHub">View on GitHub</system:String>
-    
+
     <!-- Tray Menu -->
     <system:String x:Key="TrayShow">Show</system:String>
     <system:String x:Key="TraySettings">Settings</system:String>
     <system:String x:Key="TrayRestart">Restart</system:String>
     <system:String x:Key="TrayExit">Exit</system:String>
-    
+
     <!-- MessageBox -->
-    <system:String x:Key="MsgRestartRequired">FlipSwitcher needs to restart with administrator privileges. Restart now?</system:String>
-    <system:String x:Key="MsgRestartRequiredNormal">FlipSwitcher needs to restart without administrator privileges. Restart now?</system:String>
-    <system:String x:Key="MsgRestartFailed">Failed to restart the application. Please restart manually.</system:String>
+    <system:String x:Key="MsgRestartRequired">FlipSwitcher needs to restart with administrator
+        privileges. Restart now?</system:String>
+    <system:String x:Key="MsgRestartRequiredNormal">FlipSwitcher needs to restart without
+        administrator privileges. Restart now?</system:String>
+    <system:String x:Key="MsgRestartFailed">Failed to restart the application. Please restart
+        manually.</system:String>
     <system:String x:Key="MsgRestartFailedTitle">Restart Failed</system:String>
     <system:String x:Key="MsgRestartRequiredTitle">Restart Required</system:String>
-    <system:String x:Key="MsgStartupFailed">Failed to enable startup with Windows. Please try running as administrator.</system:String>
+    <system:String x:Key="MsgStartupFailed">Failed to enable startup with Windows. Please try
+        running as administrator.</system:String>
     <system:String x:Key="MsgStartupDisabledFailed">Failed to disable startup with Windows.</system:String>
     <system:String x:Key="MsgAtLeastOneHotkey">At least one hotkey must be enabled.</system:String>
     <system:String x:Key="MsgErrorOccurred">An error occurred: {0}</system:String>
     <system:String x:Key="MsgErrorTitle">FlipSwitcher Error</system:String>
-    <system:String x:Key="MsgUpdateAvailable">A new version ({0}) is available! Would you like to download it now?</system:String>
+    <system:String x:Key="MsgUpdateAvailable">A new version ({0}) is available! Would you like to
+        download it now?</system:String>
     <system:String x:Key="MsgUpdateAvailableTitle">Update Available</system:String>
     <system:String x:Key="MsgNoUpdateAvailable">You are using the latest version.</system:String>
     <system:String x:Key="MsgNoUpdateAvailableTitle">No Updates</system:String>
-    <system:String x:Key="MsgUpdateCheckFailed">Failed to check for updates. Please check your internet connection.</system:String>
+    <system:String x:Key="MsgUpdateCheckFailed">Failed to check for updates. Please check your
+        internet connection.</system:String>
     <system:String x:Key="MsgUpdateCheckFailedTitle">Update Check Failed</system:String>
+
+    <!-- Additional Strings -->
+    <system:String x:Key="SettingsWindowTitle">FlipSwitcher Settings</system:String>
+    <system:String x:Key="VersionPreview">preview</system:String>
+    <system:String x:Key="VersionFormat">FlipSwitcher v{0}</system:String>
+    <system:String x:Key="DefaultFontDisplay">Default (Segoe UI Variable)</system:String>
+    <system:String x:Key="HotkeyNone">None</system:String>
+    <system:String x:Key="HotkeySeparator"> / </system:String>
+    <system:String x:Key="SettingsThemeRestartHint">Restart Required</system:String>
+    <system:String x:Key="SettingsFont">Font</system:String>
+    <system:String x:Key="SettingsFontDesc">Choose the font used by the application</system:String>
+    <system:String x:Key="TrayToolTip">FlipSwitcher</system:String>
 
 </ResourceDictionary>

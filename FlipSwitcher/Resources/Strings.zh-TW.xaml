@@ -97,5 +97,17 @@
     <system:String x:Key="MsgNoUpdateAvailableTitle">無更新</system:String>
     <system:String x:Key="MsgUpdateCheckFailed">檢查更新失敗。請檢查您的網路連線。</system:String>
     <system:String x:Key="MsgUpdateCheckFailedTitle">更新檢查失敗</system:String>
+    
+    <!-- Additional Strings -->
+    <system:String x:Key="SettingsWindowTitle">FlipSwitcher 設定</system:String>
+    <system:String x:Key="VersionPreview">預覽版</system:String>
+    <system:String x:Key="VersionFormat">FlipSwitcher v{0}</system:String>
+    <system:String x:Key="DefaultFontDisplay">預設 (Segoe UI Variable)</system:String>
+    <system:String x:Key="HotkeyNone">無</system:String>
+    <system:String x:Key="HotkeySeparator"> / </system:String>
+    <system:String x:Key="SettingsThemeRestartHint">重新啟動生效</system:String>
+    <system:String x:Key="SettingsFont">字體</system:String>
+    <system:String x:Key="SettingsFontDesc">選擇應用程式使用的字體</system:String>
+    <system:String x:Key="TrayToolTip">FlipSwitcher</system:String>
 
 </ResourceDictionary>

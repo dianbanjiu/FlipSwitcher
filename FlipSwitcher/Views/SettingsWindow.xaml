@@ -4,7 +4,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Title="FlipSwitcher Settings"
+    Title="{DynamicResource SettingsWindowTitle}"
     Height="480"
     Width="500"
     WindowStyle="None"
@@ -241,7 +241,7 @@
                                             Padding="6,2"
                                             Margin="8,0,0,0"
                                             VerticalAlignment="Center">
-                                            <TextBlock Text="重启生效"
+                                            <TextBlock Text="{DynamicResource SettingsThemeRestartHint}"
                                                 Style="{StaticResource CaptionTextStyle}"
                                                 FontSize="10"
                                                 Foreground="{StaticResource TextOnAccentBrush}" />
@@ -272,9 +272,9 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="字体"
+                                    <TextBlock Text="{DynamicResource SettingsFont}"
                                         Style="{StaticResource BodyStrongTextStyle}" />
-                                    <TextBlock Text="选择应用程序使用的字体"
+                                    <TextBlock Text="{DynamicResource SettingsFontDesc}"
                                         Style="{StaticResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
