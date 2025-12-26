@@ -12,22 +12,42 @@ public partial class App : Application
     private static Mutex? _mutex;
     private const string MutexName = "FlipSwitcher_SingleInstance_Mutex";
 
+    /// <summary>
+    /// Release the Mutex to allow a new instance to start
+    /// </summary>
+    public static void ReleaseMutexForRestart()
+    {
+        if (_mutex != null)
+        {
+            try
+            {
+                _mutex.ReleaseMutex();
+                _mutex.Dispose();
+                _mutex = null;
+            }
+            catch
+            {
+                // Ignore errors
+            }
+        }
+    }
+
     protected override void OnStartup(StartupEventArgs e)
     {
-        // 检查是否已有实例运行
+        // Check if another instance is already running
         bool createdNew;
         _mutex = new Mutex(true, MutexName, out createdNew);
 
         if (!createdNew)
         {
-            // 已有实例运行，直接退出
+            // Another instance is already running, exit directly
             Shutdown();
             return;
         }
 
         base.OnStartup(e);
 
-        // Check if we need to restart with admin privileges
+        // Check if we need to restart with or without admin privileges
         var settings = SettingsService.Instance.Settings;
         bool isAdmin = AdminService.IsRunningAsAdmin();
 
@@ -45,6 +65,17 @@ public partial class App : Application
             // but update the setting to reflect reality
             settings.RunAsAdmin = false;
             SettingsService.Instance.Save();
+        }
+        else if (!settings.RunAsAdmin && isAdmin)
+        {
+            // Setting says run as normal user, but we're admin - restart as normal user
+            if (AdminService.RestartAsNormalUser())
+            {
+                _mutex?.ReleaseMutex();
+                _mutex?.Dispose();
+                Shutdown();
+                return;
+            }
         }
 
         // Initialize language service
@@ -90,6 +121,13 @@ public partial class App : Application
         {
             Dispatcher.Invoke(() =>
             {
+                // Check if settings window is open, if so set its dialog flag
+                var settingsWindow = FindOpenSettingsWindow();
+                if (settingsWindow != null)
+                {
+                    settingsWindow.SetShowingDialog(true);
+                }
+
                 var message = string.Format(
                     LanguageService.GetString("MsgUpdateAvailable"),
                     updateInfo.Version);
@@ -99,12 +137,29 @@ public partial class App : Application
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Information);
                 
+                if (settingsWindow != null)
+                {
+                    settingsWindow.SetShowingDialog(false);
+                }
+                
                 if (result == MessageBoxResult.Yes)
                 {
                     UpdateService.Instance.OpenDownloadPage(updateInfo.DownloadUrl);
                 }
             });
         }
+    }
+
+    private Views.SettingsWindow? FindOpenSettingsWindow()
+    {
+        foreach (Window window in Windows)
+        {
+            if (window is Views.SettingsWindow settingsWindow && settingsWindow.IsLoaded)
+            {
+                return settingsWindow;
+            }
+        }
+        return null;
     }
 
 

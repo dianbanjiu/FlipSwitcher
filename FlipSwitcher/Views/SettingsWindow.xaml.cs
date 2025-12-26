@@ -21,7 +21,16 @@ public partial class SettingsWindow : Window
     private bool _isInitializing = true;
     private bool _isClosing = false;
     private bool _isShowingDialog = false;
+    private bool _isRestarting = false;
     private HotkeyService? _hotkeyService;
+
+    /// <summary>
+    /// Set whether a dialog is being shown, used to prevent the window from closing when showing a dialog
+    /// </summary>
+    public void SetShowingDialog(bool showing)
+    {
+        _isShowingDialog = showing;
+    }
 
     public SettingsWindow()
     {
@@ -36,7 +45,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow(HotkeyService? hotkeyService = null) : this()
     {
         _hotkeyService = hotkeyService;
-        // 如果没有传递 HotkeyService，尝试从 MainWindow 获取
+        // If HotkeyService is not provided, try to get it from MainWindow
         if (_hotkeyService == null && Application.Current.MainWindow is MainWindow mainWindow)
         {
             _hotkeyService = mainWindow.HotkeyService;
@@ -46,7 +55,7 @@ public partial class SettingsWindow : Window
             _hotkeyService.EscapePressed += HotkeyService_EscapePressed;
         }
         
-        // 监听窗口失去焦点事件
+        // Listen for window deactivation event
         Deactivated += SettingsWindow_Deactivated;
     }
 
@@ -118,6 +127,7 @@ public partial class SettingsWindow : Window
 
     private void UpdateAdminStatusDisplay()
     {
+        // Display the actual state of the current process
         bool isAdmin = AdminService.IsRunningAsAdmin();
         
         if (isAdmin)
@@ -170,9 +180,13 @@ public partial class SettingsWindow : Window
             StartupService.SetStartupEnabled(true);
         }
 
+        // Update status display to reflect the new setting value
+        UpdateAdminStatusDisplay();
+
         // If the setting changed and requires a restart
         if (wantAdmin != isCurrentlyAdmin)
         {
+            _isShowingDialog = true;
             var message = wantAdmin 
                 ? LanguageService.GetString("MsgRestartRequired")
                 : LanguageService.GetString("MsgRestartRequiredNormal");
@@ -181,24 +195,38 @@ public partial class SettingsWindow : Window
                 LanguageService.GetString("MsgRestartRequiredTitle"),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
+            _isShowingDialog = false;
 
             if (result == MessageBoxResult.Yes)
             {
+                // Prevent multiple restart attempts
+                if (_isRestarting)
+                    return;
+                
+                _isRestarting = true;
+                
+                // Release Mutex BEFORE starting new process
+                App.ReleaseMutexForRestart();
+                
                 bool restartSuccess = wantAdmin 
                     ? AdminService.RestartAsAdmin() 
                     : AdminService.RestartAsNormalUser();
 
                 if (restartSuccess)
                 {
+                    // Use normal shutdown to ensure proper cleanup (tray icon, etc.)
                     Application.Current.Shutdown();
                 }
                 else
                 {
+                    _isRestarting = false;
+                    _isShowingDialog = true;
                     MessageBox.Show(
                         LanguageService.GetString("MsgRestartFailed"),
                         LanguageService.GetString("MsgRestartFailedTitle"),
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
+                    _isShowingDialog = false;
                 }
             }
         }
@@ -222,6 +250,7 @@ public partial class SettingsWindow : Window
 
     private void ShowStartupErrorMessage(bool enable)
     {
+        _isShowingDialog = true;
         var message = enable 
             ? LanguageService.GetString("MsgStartupFailed")
             : LanguageService.GetString("MsgStartupDisabledFailed");
@@ -230,6 +259,7 @@ public partial class SettingsWindow : Window
             LanguageService.GetString("AppTitle"),
             MessageBoxButton.OK,
             MessageBoxImage.Warning);
+        _isShowingDialog = false;
     }
 
     private void RevertStartupCheckbox(bool enable)
@@ -406,7 +436,7 @@ public partial class SettingsWindow : Window
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        // 支持 Esc 或 Alt+Esc 关闭（即使 Alt 键未松开）
+        // Support Esc or Alt+Esc to close (even if Alt key is not released)
         if (e.Key == Key.Escape && !_isClosing)
         {
             _isClosing = true;
@@ -417,15 +447,15 @@ public partial class SettingsWindow : Window
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
-        // 使用 OnKeyDown 作为备用，确保 Alt+Esc 能被捕获
+        // Use OnKeyDown as a fallback to ensure Alt+Esc can be captured
         if (e.Key == Key.Escape && !_isClosing)
         {
-            // 检查 Alt 键是否被按下（即使 WPF 的 Keyboard.Modifiers 可能检测不到）
+            // Check if Alt key is pressed (even if WPF's Keyboard.Modifiers might not detect it)
             bool altPressed = (NativeMethods.GetAsyncKeyState(NativeMethods.VK_MENU) & 0x8000) != 0 ||
                               (NativeMethods.GetAsyncKeyState(NativeMethods.VK_LMENU) & 0x8000) != 0 ||
                               (NativeMethods.GetAsyncKeyState(NativeMethods.VK_RMENU) & 0x8000) != 0;
             
-            // 无论 Alt 键是否被按下，都关闭窗口
+            // Close the window regardless of whether Alt key is pressed
             _isClosing = true;
             Close();
             e.Handled = true;
@@ -435,7 +465,7 @@ public partial class SettingsWindow : Window
 
     private void HotkeyService_EscapePressed(object? sender, EventArgs e)
     {
-        // 当 Alt+Esc 被按下时关闭设置窗口
+        // Close settings window when Alt+Esc is pressed
         if (!_isClosing && IsLoaded)
         {
             _isClosing = true;
@@ -445,11 +475,11 @@ public partial class SettingsWindow : Window
 
     private void SettingsWindow_Deactivated(object? sender, EventArgs e)
     {
-        // 当窗口失去焦点时关闭，但需要检查是否已经在关闭过程中或正在显示对话框
+        // Close when window loses focus, but need to check if already closing or showing a dialog
         if (!_isClosing && !_isShowingDialog && IsLoaded)
         {
             _isClosing = true;
-            // 使用 Dispatcher 延迟关闭，避免在窗口关闭过程中调用
+            // Use Dispatcher to delay closing, avoiding calls during window closing process
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 if (IsLoaded)

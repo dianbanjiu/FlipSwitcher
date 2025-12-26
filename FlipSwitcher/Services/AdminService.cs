@@ -62,7 +62,8 @@ public static class AdminService
     }
 
     /// <summary>
-    /// Restart the application without administrator privileges
+    /// Restart the application without administrator privileges.
+    /// Uses Explorer.exe as a broker to launch the process without admin rights.
     /// </summary>
     /// <returns>True if restart was initiated, false if failed</returns>
     public static bool RestartAsNormalUser()
@@ -75,11 +76,13 @@ public static class AdminService
                 return false;
             }
 
+            // Use Explorer.exe as a broker to start the process without admin privileges.
+            // Explorer always runs as the logged-in user, so processes it starts inherit normal user rights.
             var startInfo = new ProcessStartInfo
             {
-                FileName = exePath,
+                FileName = "explorer.exe",
+                Arguments = $"\"{exePath}\"",
                 UseShellExecute = true
-                // No Verb = "runas", so it runs as normal user
             };
 
             Process.Start(startInfo);
