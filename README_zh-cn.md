@@ -13,13 +13,12 @@
 ### 系统要求
 
 - Windows 10 (1903+) 或 Windows 11
-- .NET 8.0 运行时
 
 ### 安装
 
-1. 从 [Releases](https://github.com/dianbanjiu/FlipSwitcher/releases) 下载最新版本
-2. 解压并运行 `FlipSwitcher.exe`
-3. 应用程序将在系统托盘中启动
+1. 从 [Releases](https://github.com/dianbanjiu/FlipSwitcher/releases) 下载 `FlipSwitcher-windows-x64-Setup.exe`
+2. 运行安装程序并按提示完成安装
+3. 安装完成后应用程序将在系统托盘中启动
 
 ### 从源码构建
 

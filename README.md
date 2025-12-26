@@ -13,13 +13,12 @@ A modern, beautiful Alt-Tab replacement for Windows, built with **Fluent 2 Desig
 ### Prerequisites
 
 - Windows 10 (1903+) or Windows 11
-- .NET 8.0 Runtime
 
 ### Installation
 
-1. Download the latest release from [Releases](https://github.com/dianbanjiu/FlipSwitcher/releases)
-2. Extract and run `FlipSwitcher.exe`
-3. The app will start in the system tray
+1. Download `FlipSwitcher-windows-x64-Setup.exe` from [Releases](https://github.com/dianbanjiu/FlipSwitcher/releases)
+2. Run the installer and follow the prompts
+3. The app will start in the system tray after installation
 
 ### Building from Source
 
