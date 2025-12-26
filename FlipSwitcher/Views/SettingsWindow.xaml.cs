@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Navigation;
-using FlipSwitcher.Core;
 using FlipSwitcher.Services;
 
 namespace FlipSwitcher.Views;
@@ -180,55 +177,55 @@ public partial class SettingsWindow : Window
             StartupService.SetStartupEnabled(true);
         }
 
-        // Update status display to reflect the new setting value
-        UpdateAdminStatusDisplay();
-
-        // If the setting changed and requires a restart
-        if (wantAdmin != isCurrentlyAdmin)
+        // If no restart needed, just update display
+        if (wantAdmin == isCurrentlyAdmin)
         {
+            UpdateAdminStatusDisplay();
+            return;
+        }
+
+        // Prompt for restart
+        _isShowingDialog = true;
+        var message = wantAdmin 
+            ? LanguageService.GetString("MsgRestartRequired")
+            : LanguageService.GetString("MsgRestartRequiredNormal");
+        var result = MessageBox.Show(
+            message,
+            LanguageService.GetString("MsgRestartRequiredTitle"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+        _isShowingDialog = false;
+
+        if (result != MessageBoxResult.Yes)
+        {
+            UpdateAdminStatusDisplay();
+            return;
+        }
+
+        if (_isRestarting) return;
+        _isRestarting = true;
+        
+        App.ReleaseMutexForRestart();
+        
+        bool restartSuccess = wantAdmin 
+            ? AdminService.RestartAsAdmin() 
+            : AdminService.RestartAsNormalUser();
+
+        if (restartSuccess)
+        {
+            Application.Current.Shutdown();
+        }
+        else
+        {
+            _isRestarting = false;
             _isShowingDialog = true;
-            var message = wantAdmin 
-                ? LanguageService.GetString("MsgRestartRequired")
-                : LanguageService.GetString("MsgRestartRequiredNormal");
-            var result = MessageBox.Show(
-                message,
-                LanguageService.GetString("MsgRestartRequiredTitle"),
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
+            MessageBox.Show(
+                LanguageService.GetString("MsgRestartFailed"),
+                LanguageService.GetString("MsgRestartFailedTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             _isShowingDialog = false;
-
-            if (result == MessageBoxResult.Yes)
-            {
-                // Prevent multiple restart attempts
-                if (_isRestarting)
-                    return;
-                
-                _isRestarting = true;
-                
-                // Release Mutex BEFORE starting new process
-                App.ReleaseMutexForRestart();
-                
-                bool restartSuccess = wantAdmin 
-                    ? AdminService.RestartAsAdmin() 
-                    : AdminService.RestartAsNormalUser();
-
-                if (restartSuccess)
-                {
-                    // Use normal shutdown to ensure proper cleanup (tray icon, etc.)
-                    Application.Current.Shutdown();
-                }
-                else
-                {
-                    _isRestarting = false;
-                    _isShowingDialog = true;
-                    MessageBox.Show(
-                        LanguageService.GetString("MsgRestartFailed"),
-                        LanguageService.GetString("MsgRestartFailedTitle"),
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-                    _isShowingDialog = false;
-                }
-            }
+            UpdateAdminStatusDisplay();
         }
     }
 
@@ -447,15 +444,8 @@ public partial class SettingsWindow : Window
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
-        // Use OnKeyDown as a fallback to ensure Alt+Esc can be captured
         if (e.Key == Key.Escape && !_isClosing)
         {
-            // Check if Alt key is pressed (even if WPF's Keyboard.Modifiers might not detect it)
-            bool altPressed = (NativeMethods.GetAsyncKeyState(NativeMethods.VK_MENU) & 0x8000) != 0 ||
-                              (NativeMethods.GetAsyncKeyState(NativeMethods.VK_LMENU) & 0x8000) != 0 ||
-                              (NativeMethods.GetAsyncKeyState(NativeMethods.VK_RMENU) & 0x8000) != 0;
-            
-            // Close the window regardless of whether Alt key is pressed
             _isClosing = true;
             Close();
             e.Handled = true;
