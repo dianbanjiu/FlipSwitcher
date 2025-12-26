@@ -383,7 +383,7 @@
                             </Grid>
 
                             <!-- Hide on Focus Lost -->
-                            <Grid>
+                            <Grid Margin="0,0,0,16">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -402,6 +402,29 @@
                                     IsChecked="True"
                                     Checked="HideOnFocusLostCheckBox_Changed"
                                     Unchecked="HideOnFocusLostCheckBox_Changed"
+                                    Style="{StaticResource FluentCheckBoxStyle}" />
+                            </Grid>
+
+                            <!-- Pinyin Search -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{DynamicResource SettingsPinyinSearch}"
+                                        Style="{StaticResource BodyStrongTextStyle}" />
+                                    <TextBlock Text="{DynamicResource SettingsPinyinSearchDesc}"
+                                        Style="{StaticResource CaptionTextStyle}"
+                                        Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <CheckBox x:Name="PinyinSearchCheckBox"
+                                    Grid.Column="1"
+                                    IsChecked="False"
+                                    Checked="PinyinSearchCheckBox_Changed"
+                                    Unchecked="PinyinSearchCheckBox_Changed"
                                     Style="{StaticResource FluentCheckBoxStyle}" />
                             </Grid>
                         </StackPanel>

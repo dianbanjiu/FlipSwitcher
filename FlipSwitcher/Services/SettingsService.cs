@@ -119,5 +119,10 @@ public class AppSettings
     /// Font family name (empty string means use default)
     /// </summary>
     public string FontFamily { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Enable pinyin search for Chinese characters
+    /// </summary>
+    public bool EnablePinyinSearch { get; set; } = false;
 }
 

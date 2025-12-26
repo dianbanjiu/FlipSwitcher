@@ -293,8 +293,21 @@ public class AppWindow : INotifyPropertyChanged
             return true;
 
         var lowerFilter = filter.ToLowerInvariant();
-        return Title.ToLowerInvariant().Contains(lowerFilter) ||
-               ProcessName.ToLowerInvariant().Contains(lowerFilter);
+        
+        // Normal text matching
+        if (Title.ToLowerInvariant().Contains(lowerFilter) ||
+            ProcessName.ToLowerInvariant().Contains(lowerFilter))
+            return true;
+
+        // Pinyin matching (if enabled)
+        if (Services.SettingsService.Instance.Settings.EnablePinyinSearch)
+        {
+            if (Services.PinyinService.Instance.MatchesPinyin(Title, filter) ||
+                Services.PinyinService.Instance.MatchesPinyin(ProcessName, filter))
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>

@@ -61,6 +61,8 @@
     <system:String x:Key="SettingsStartWithWindowsDesc">登入時自動啟動 FlipSwitcher</system:String>
     <system:String x:Key="SettingsHideOnFocusLost">失去焦點時隱藏</system:String>
     <system:String x:Key="SettingsHideOnFocusLostDesc">點擊外部區域時自動隱藏</system:String>
+    <system:String x:Key="SettingsPinyinSearch">拼音搜尋</system:String>
+    <system:String x:Key="SettingsPinyinSearchDesc">使用拼音首字母或全拼搜尋視窗</system:String>
     
     <!-- Settings - Updates -->
     <system:String x:Key="SettingsUpdates">更新</system:String>

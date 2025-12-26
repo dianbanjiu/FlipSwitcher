@@ -62,6 +62,8 @@
     <system:String x:Key="SettingsStartWithWindowsDesc">Launch FlipSwitcher when you sign in</system:String>
     <system:String x:Key="SettingsHideOnFocusLost">Hide on Focus Lost</system:String>
     <system:String x:Key="SettingsHideOnFocusLostDesc">Automatically hide when clicking outside</system:String>
+    <system:String x:Key="SettingsPinyinSearch">Pinyin Search</system:String>
+    <system:String x:Key="SettingsPinyinSearchDesc">Search windows by Chinese pinyin</system:String>
 
     <!-- Settings - Updates -->
     <system:String x:Key="SettingsUpdates">Updates</system:String>
