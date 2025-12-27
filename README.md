@@ -20,6 +20,8 @@ A modern, beautiful Alt-Tab replacement for Windows, built with **Fluent 2 Desig
 2. Run the installer and follow the prompts
 3. The app will start in the system tray after installation
 
+> 💡 **Tip**: If you need to close or terminate administrator-level windows or processes, it is recommended to enable "Run as Administrator" in Settings.
+
 ### Building from Source
 
 ```bash
