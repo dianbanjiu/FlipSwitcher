@@ -234,6 +234,78 @@ public class HotkeyService : IDisposable
         Application.Current?.Dispatcher.BeginInvoke(action);
     }
 
+    private bool HandleEscapeKey(bool isKeyDown, uint vkCode)
+    {
+        if (!isKeyDown || vkCode != NativeMethods.VK_ESCAPE)
+            return false;
+
+        if ((_isSettingsWindowOpen && IsAltPressed()) || _isVisible)
+        {
+            InvokeOnDispatcher(() => EscapePressed?.Invoke(this, EventArgs.Empty));
+            return true;
+        }
+        return false;
+    }
+
+    private void HandleAltRelease(bool isKeyUp, uint vkCode)
+    {
+        if (!isKeyUp || !_isVisible)
+            return;
+
+        if (vkCode == NativeMethods.VK_MENU || 
+            vkCode == NativeMethods.VK_LMENU || 
+            vkCode == NativeMethods.VK_RMENU)
+        {
+            InvokeOnDispatcher(() => AltReleased?.Invoke(this, EventArgs.Empty));
+        }
+    }
+
+    private bool HandleNavigationKeys(uint vkCode)
+    {
+        if (!_isVisible || _isSearchMode)
+            return false;
+
+        switch (vkCode)
+        {
+            case NativeMethods.VK_UP:
+                InvokeOnDispatcher(() => NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Previous)));
+                return true;
+            case NativeMethods.VK_DOWN:
+                InvokeOnDispatcher(() => NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Next)));
+                return true;
+            case NativeMethods.VK_RIGHT:
+                InvokeOnDispatcher(() => GroupByProcessRequested?.Invoke(this, EventArgs.Empty));
+                return true;
+            case NativeMethods.VK_LEFT:
+                InvokeOnDispatcher(() => UngroupFromProcessRequested?.Invoke(this, EventArgs.Empty));
+                return true;
+        }
+        return false;
+    }
+
+    private bool HandleVisibleShortcuts(uint vkCode)
+    {
+        if (!_isVisible)
+            return false;
+
+        switch (vkCode)
+        {
+            case NativeMethods.VK_W:
+                InvokeOnDispatcher(() => CloseWindowRequested?.Invoke(this, EventArgs.Empty));
+                return true;
+            case NativeMethods.VK_D:
+                InvokeOnDispatcher(() => StopProcessRequested?.Invoke(this, EventArgs.Empty));
+                return true;
+            case NativeMethods.VK_S:
+                InvokeOnDispatcher(() => SearchModeRequested?.Invoke(this, EventArgs.Empty));
+                return true;
+            case NativeMethods.VK_OEM_COMMA:
+                InvokeOnDispatcher(() => SettingsRequested?.Invoke(this, EventArgs.Empty));
+                return true;
+        }
+        return false;
+    }
+
     private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
         if (nCode >= 0 && _useAltTab)
@@ -243,39 +315,18 @@ public class HotkeyService : IDisposable
             bool isKeyDown = msg == NativeMethods.WM_KEYDOWN || msg == NativeMethods.WM_SYSKEYDOWN;
             bool isKeyUp = msg == NativeMethods.WM_KEYUP || msg == NativeMethods.WM_SYSKEYUP;
 
-            // Escape key - ALWAYS close window regardless of any modifier keys
-            if (isKeyDown && hookStruct.vkCode == NativeMethods.VK_ESCAPE)
-            {
-                if ((_isSettingsWindowOpen && IsAltPressed()) || _isVisible)
-                {
-                    InvokeOnDispatcher(() => EscapePressed?.Invoke(this, EventArgs.Empty));
-                    return (IntPtr)1;
-                }
-            }
+            if (HandleEscapeKey(isKeyDown, hookStruct.vkCode))
+                return (IntPtr)1;
 
-            // Check for Alt key release - confirm selection
-            if (isKeyUp && (hookStruct.vkCode == NativeMethods.VK_MENU || 
-                           hookStruct.vkCode == NativeMethods.VK_LMENU || 
-                           hookStruct.vkCode == NativeMethods.VK_RMENU))
-            {
-                if (_isVisible)
-                {
-                    InvokeOnDispatcher(() => AltReleased?.Invoke(this, EventArgs.Empty));
-                }
-            }
+            HandleAltRelease(isKeyUp, hookStruct.vkCode);
 
-            // Check if Alt is pressed for navigation
-            bool altPressed = IsAltPressed();
-            
-            if (altPressed && isKeyDown)
+            if (IsAltPressed() && isKeyDown)
             {
-                // Tab key - navigate next/previous
+                // Tab 键 - 显示/导航
                 if (hookStruct.vkCode == NativeMethods.VK_TAB)
                 {
                     if (!_isVisible)
-                    {
                         InvokeOnDispatcher(() => HotkeyPressed?.Invoke(this, EventArgs.Empty));
-                    }
                     else
                     {
                         var direction = IsShiftPressed() ? NavigationDirection.Previous : NavigationDirection.Next;
@@ -283,62 +334,9 @@ public class HotkeyService : IDisposable
                     }
                     return (IntPtr)1;
                 }
-                
-                // Arrow keys - navigate while FlipSwitcher is visible (but not in search mode)
-                if (_isVisible && !_isSearchMode)
-                {
-                    if (hookStruct.vkCode == NativeMethods.VK_UP)
-                    {
-                        InvokeOnDispatcher(() => NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Previous)));
-                        return (IntPtr)1;
-                    }
-                    
-                    if (hookStruct.vkCode == NativeMethods.VK_DOWN)
-                    {
-                        InvokeOnDispatcher(() => NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Next)));
-                        return (IntPtr)1;
-                    }
 
-                    if (hookStruct.vkCode == NativeMethods.VK_RIGHT)
-                    {
-                        InvokeOnDispatcher(() => GroupByProcessRequested?.Invoke(this, EventArgs.Empty));
-                        return (IntPtr)1;
-                    }
-
-                    if (hookStruct.vkCode == NativeMethods.VK_LEFT)
-                    {
-                        InvokeOnDispatcher(() => UngroupFromProcessRequested?.Invoke(this, EventArgs.Empty));
-                        return (IntPtr)1;
-                    }
-                }
-
-                // These shortcuts work regardless of search mode
-                if (_isVisible)
-                {
-                    if (hookStruct.vkCode == NativeMethods.VK_W)
-                    {
-                        InvokeOnDispatcher(() => CloseWindowRequested?.Invoke(this, EventArgs.Empty));
-                        return (IntPtr)1;
-                    }
-
-                    if (hookStruct.vkCode == NativeMethods.VK_D)
-                    {
-                        InvokeOnDispatcher(() => StopProcessRequested?.Invoke(this, EventArgs.Empty));
-                        return (IntPtr)1;
-                    }
-
-                    if (hookStruct.vkCode == NativeMethods.VK_S)
-                    {
-                        InvokeOnDispatcher(() => SearchModeRequested?.Invoke(this, EventArgs.Empty));
-                        return (IntPtr)1;
-                    }
-
-                    if (hookStruct.vkCode == NativeMethods.VK_OEM_COMMA)
-                    {
-                        InvokeOnDispatcher(() => SettingsRequested?.Invoke(this, EventArgs.Empty));
-                        return (IntPtr)1;
-                    }
-                }
+                if (HandleNavigationKeys(hookStruct.vkCode) || HandleVisibleShortcuts(hookStruct.vkCode))
+                    return (IntPtr)1;
             }
         }
 

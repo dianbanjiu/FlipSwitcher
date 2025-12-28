@@ -1,12 +1,15 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Xml.Linq;
 using FlipSwitcher.Core;
 
 namespace FlipSwitcher.Models;
@@ -131,10 +134,265 @@ public class AppWindow : INotifyPropertyChanged
         }
     }
 
+    private bool IsUwpWindow => ClassName == "ApplicationFrameWindow";
+
+    private uint GetUwpChildProcessId()
+    {
+        try
+        {
+            // Find the actual UWP child window (Windows.UI.Core.CoreWindow)
+            var childHwnd = NativeMethods.FindWindowEx(Handle, IntPtr.Zero, "Windows.UI.Core.CoreWindow", null);
+            if (childHwnd != IntPtr.Zero)
+            {
+                NativeMethods.GetWindowThreadProcessId(childHwnd, out uint childProcessId);
+                if (childProcessId != 0 && childProcessId != ProcessId)
+                    return childProcessId;
+            }
+        }
+        catch
+        {
+            // Ignore errors
+        }
+        return ProcessId;
+    }
+
+    private string? GetProcessPath(uint processId)
+    {
+        IntPtr hProcess = IntPtr.Zero;
+        try
+        {
+            hProcess = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
+            if (hProcess == IntPtr.Zero)
+                return null;
+
+            var buffer = new StringBuilder(1024);
+            int size = buffer.Capacity;
+            if (NativeMethods.QueryFullProcessImageName(hProcess, 0, buffer, ref size))
+                return buffer.ToString();
+        }
+        catch
+        {
+            // Ignore errors
+        }
+        finally
+        {
+            if (hProcess != IntPtr.Zero)
+                NativeMethods.CloseHandle(hProcess);
+        }
+        return null;
+    }
+
+    private ImageSource? LoadIconFromShell(string filePath)
+    {
+        try
+        {
+            var shinfo = new NativeMethods.SHFILEINFO();
+            var result = NativeMethods.SHGetFileInfo(
+                filePath, 0, ref shinfo, (uint)System.Runtime.InteropServices.Marshal.SizeOf(shinfo),
+                NativeMethods.SHGFI_ICON | NativeMethods.SHGFI_LARGEICON);
+
+            if (result != 0 && shinfo.hIcon != IntPtr.Zero)
+            {
+                try
+                {
+                    using var icon = System.Drawing.Icon.FromHandle(shinfo.hIcon);
+                    using var clonedIcon = (System.Drawing.Icon)icon.Clone();
+                    return Imaging.CreateBitmapSourceFromHIcon(
+                        clonedIcon.Handle,
+                        Int32Rect.Empty,
+                        BitmapSizeOptions.FromEmptyOptions());
+                }
+                finally
+                {
+                    NativeMethods.DestroyIcon(shinfo.hIcon);
+                }
+            }
+        }
+        catch
+        {
+            // Ignore errors
+        }
+        return null;
+    }
+
+    private ImageSource? LoadIconFromImageFile(string imagePath)
+    {
+        try
+        {
+            if (!File.Exists(imagePath))
+                return null;
+
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(imagePath, UriKind.Absolute);
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private ImageSource? LoadIconFromAppxManifest(string exePath)
+    {
+        try
+        {
+            var appDir = Path.GetDirectoryName(exePath);
+            if (string.IsNullOrEmpty(appDir))
+                return null;
+
+            var manifestPath = Path.Combine(appDir, "AppxManifest.xml");
+            if (!File.Exists(manifestPath))
+                return null;
+
+            var doc = XDocument.Load(manifestPath);
+            var ns = doc.Root?.GetDefaultNamespace();
+            var uapNs = doc.Root?.GetNamespaceOfPrefix("uap") 
+                        ?? XNamespace.Get("http://schemas.microsoft.com/appx/manifest/uap/windows10");
+
+            // Try to find logo from VisualElements - Square44x44Logo has best targetsize variants for icons
+            var visualElements = doc.Descendants()
+                .FirstOrDefault(e => e.Name.LocalName == "VisualElements");
+
+            string? logoPath = null;
+            string? fallbackLogoPath = null;
+            if (visualElements != null)
+            {
+                // Square44x44Logo typically has large targetsize variants (256, 128, etc.)
+                logoPath = visualElements.Attribute("Square44x44Logo")?.Value;
+                fallbackLogoPath = visualElements.Attribute("Square150x150Logo")?.Value
+                                   ?? visualElements.Attribute("Square71x71Logo")?.Value;
+            }
+
+            // Fallback to Properties/Logo
+            if (string.IsNullOrEmpty(logoPath) && string.IsNullOrEmpty(fallbackLogoPath))
+            {
+                var logoElement = doc.Descendants()
+                    .FirstOrDefault(e => e.Name.LocalName == "Logo" && 
+                                         e.Parent?.Name.LocalName == "Properties");
+                logoPath = logoElement?.Value;
+            }
+
+            // Try logos in order of preference
+            var logoPaths = new[] { logoPath, fallbackLogoPath }
+                .Where(p => !string.IsNullOrEmpty(p))
+                .ToArray();
+
+            if (logoPaths.Length == 0)
+                return null;
+
+            foreach (var currentLogoPath in logoPaths)
+            {
+                var baseLogoPath = Path.Combine(appDir, currentLogoPath!);
+                var logoDir = Path.GetDirectoryName(baseLogoPath);
+                var logoName = Path.GetFileNameWithoutExtension(baseLogoPath);
+                var logoExt = Path.GetExtension(baseLogoPath);
+
+                if (!string.IsNullOrEmpty(logoDir))
+                {
+                    // Try targetsize variants first (prefer larger sizes) - these are optimized for icon display
+                    var sizes = new[] { ".targetsize-256", ".targetsize-128", ".targetsize-96", ".targetsize-64", 
+                                        ".targetsize-48", ".targetsize-32" };
+                    foreach (var size in sizes)
+                    {
+                        // Try with _altform-unplated suffix first (cleaner icons without background)
+                        var unplatedPath = Path.Combine(logoDir, $"{logoName}{size}_altform-unplated{logoExt}");
+                        var icon = LoadIconFromImageFile(unplatedPath);
+                        if (icon != null)
+                            return icon;
+
+                        var sizePath = Path.Combine(logoDir, $"{logoName}{size}{logoExt}");
+                        icon = LoadIconFromImageFile(sizePath);
+                        if (icon != null)
+                            return icon;
+                    }
+
+                    // Try scale variants
+                    var scales = new[] { ".scale-400", ".scale-200", ".scale-150", ".scale-125", ".scale-100", "" };
+                    foreach (var scale in scales)
+                    {
+                        var scaledPath = Path.Combine(logoDir, $"{logoName}{scale}{logoExt}");
+                        var icon = LoadIconFromImageFile(scaledPath);
+                        if (icon != null)
+                            return icon;
+                    }
+                }
+
+                // Try the exact path
+                var exactIcon = LoadIconFromImageFile(baseLogoPath);
+                if (exactIcon != null)
+                    return exactIcon;
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private ImageSource? LoadUwpIcon()
+    {
+        try
+        {
+            // Get the actual UWP process ID
+            var uwpProcessId = GetUwpChildProcessId();
+            
+            // Get executable path
+            var exePath = GetProcessPath(uwpProcessId);
+            if (!string.IsNullOrEmpty(exePath))
+            {
+                // Try to load icon from AppxManifest.xml
+                var manifestIcon = LoadIconFromAppxManifest(exePath);
+                if (manifestIcon != null)
+                    return manifestIcon;
+
+                // Try to get icon from the executable using Shell API
+                var icon = LoadIconFromShell(exePath);
+                if (icon != null)
+                    return icon;
+
+                // Fallback: try ExtractAssociatedIcon
+                try
+                {
+                    using var extractedIcon = System.Drawing.Icon.ExtractAssociatedIcon(exePath);
+                    if (extractedIcon != null)
+                    {
+                        return Imaging.CreateBitmapSourceFromHIcon(
+                            extractedIcon.Handle,
+                            Int32Rect.Empty,
+                            BitmapSizeOptions.FromEmptyOptions());
+                    }
+                }
+                catch
+                {
+                    // Ignore
+                }
+            }
+        }
+        catch
+        {
+            // Ignore errors
+        }
+        return null;
+    }
+
     private ImageSource? LoadIcon()
     {
         try
         {
+            // For UWP apps, try specialized method first
+            if (IsUwpWindow)
+            {
+                var uwpIcon = LoadUwpIcon();
+                if (uwpIcon != null)
+                    return uwpIcon;
+            }
+
             var iconHandle = GetWindowIconHandle();
             if (iconHandle != IntPtr.Zero)
             {

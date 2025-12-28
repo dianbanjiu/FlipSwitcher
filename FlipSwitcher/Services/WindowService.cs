@@ -39,22 +39,24 @@ public class WindowService
     private const int WPF_RESTORETOMAXIMIZED = 0x2;
     private const int MaxClassNameLength = 256;
 
-    private static bool ShouldSkipWindow(IntPtr hWnd, IntPtr shellWindow, uint currentProcessId)
+    private record struct WindowInfo(string Title, string ClassName, uint ProcessId, string ProcessName);
+
+    private static WindowInfo? TryGetWindowInfo(IntPtr hWnd, IntPtr shellWindow, uint currentProcessId)
     {
         if (hWnd == shellWindow || !NativeMethods.IsWindowVisible(hWnd))
-            return true;
+            return null;
 
         if (IsCloaked(hWnd))
-            return true;
+            return null;
 
         var exStyle = NativeMethods.GetWindowLong(hWnd, NativeMethods.GWL_EXSTYLE);
         if ((exStyle & (int)NativeMethods.WS_EX_TOOLWINDOW) != 0 &&
             (exStyle & (int)NativeMethods.WS_EX_APPWINDOW) == 0)
-            return true;
+            return null;
 
         NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
         if (processId == currentProcessId)
-            return true;
+            return null;
 
         var owner = NativeMethods.GetWindow(hWnd, NativeMethods.GW_OWNER);
         if (owner != IntPtr.Zero)
@@ -62,28 +64,30 @@ public class WindowService
             var rootOwner = NativeMethods.GetAncestor(hWnd, NativeMethods.GA_ROOTOWNER);
             var lastPopup = NativeMethods.GetLastActivePopup(rootOwner);
             if (lastPopup != hWnd && NativeMethods.IsWindowVisible(lastPopup))
-                return true;
+                return null;
         }
 
         var titleLength = NativeMethods.GetWindowTextLength(hWnd);
         if (titleLength == 0)
-            return true;
+            return null;
 
         var titleBuilder = new StringBuilder(titleLength + 1);
         NativeMethods.GetWindowText(hWnd, titleBuilder, titleBuilder.Capacity);
-        if (string.IsNullOrWhiteSpace(titleBuilder.ToString()))
-            return true;
+        var title = titleBuilder.ToString();
+        if (string.IsNullOrWhiteSpace(title))
+            return null;
 
         var classBuilder = new StringBuilder(MaxClassNameLength);
         NativeMethods.GetClassName(hWnd, classBuilder, classBuilder.Capacity);
-        if (ExcludedClassNames.Contains(classBuilder.ToString()))
-            return true;
+        var className = classBuilder.ToString();
+        if (ExcludedClassNames.Contains(className))
+            return null;
 
         var processName = GetProcessName(processId);
         if (ExcludedProcessNames.Contains(processName))
-            return true;
+            return null;
 
-        return false;
+        return new WindowInfo(title, className, processId, processName);
     }
 
     private static (bool isMinimized, bool isMaximized) GetWindowState(IntPtr hWnd)
@@ -114,23 +118,13 @@ public class WindowService
         {
             try
             {
-                if (ShouldSkipWindow(hWnd, shellWindow, currentProcessId))
+                var info = TryGetWindowInfo(hWnd, shellWindow, currentProcessId);
+                if (info is null)
                     return true;
 
-                var titleLength = NativeMethods.GetWindowTextLength(hWnd);
-                var titleBuilder = new StringBuilder(titleLength + 1);
-                NativeMethods.GetWindowText(hWnd, titleBuilder, titleBuilder.Capacity);
-                var title = titleBuilder.ToString();
-
-                var classBuilder = new StringBuilder(MaxClassNameLength);
-                NativeMethods.GetClassName(hWnd, classBuilder, classBuilder.Capacity);
-                var className = classBuilder.ToString();
-
-                NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
-                var processName = GetProcessName(processId);
                 var (isMinimized, isMaximized) = GetWindowState(hWnd);
-
-                var window = new AppWindow(hWnd, title, className, processId, processName, isMinimized, isMaximized);
+                var window = new AppWindow(hWnd, info.Value.Title, info.Value.ClassName, 
+                    info.Value.ProcessId, info.Value.ProcessName, isMinimized, isMaximized);
                 windows.Add(window);
             }
             catch
