@@ -46,6 +46,11 @@
     <Color x:Key="SubtleTransparent">#00FFFFFF</Color>
     <Color x:Key="SubtleSecondary">#0F000000</Color>
     
+    <!-- ScrollBar Colors -->
+    <Color x:Key="ScrollBarThumbDefault">#4D000000</Color>
+    <Color x:Key="ScrollBarThumbHover">#66000000</Color>
+    <Color x:Key="ScrollBarThumbPressed">#80000000</Color>
+    
     <!-- Brushes -->
     <SolidColorBrush x:Key="BackgroundAcrylicBaseBrush" Color="{StaticResource BackgroundAcrylicBase}"/>
     <SolidColorBrush x:Key="BackgroundAcrylicDefaultBrush" Color="{StaticResource BackgroundAcrylicDefault}"/>
@@ -80,6 +85,10 @@
     
     <SolidColorBrush x:Key="SubtleTransparentBrush" Color="{StaticResource SubtleTransparent}"/>
     <SolidColorBrush x:Key="SubtleSecondaryBrush" Color="{StaticResource SubtleSecondary}"/>
+    
+    <SolidColorBrush x:Key="ScrollBarThumbDefaultBrush" Color="{StaticResource ScrollBarThumbDefault}"/>
+    <SolidColorBrush x:Key="ScrollBarThumbHoverBrush" Color="{StaticResource ScrollBarThumbHover}"/>
+    <SolidColorBrush x:Key="ScrollBarThumbPressedBrush" Color="{StaticResource ScrollBarThumbPressed}"/>
     
     <!-- Gradient Brushes for Fluent Effects -->
     <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">

@@ -204,7 +204,7 @@
 
     <!-- Fluent 2 ScrollBar Thumb Style -->
     <Style x:Key="FluentScrollBarThumb" TargetType="Thumb">
-        <Setter Property="Background" Value="#4DFFFFFF"/>
+        <Setter Property="Background" Value="{DynamicResource ScrollBarThumbDefaultBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Thumb">
@@ -214,10 +214,10 @@
                             Margin="1"/>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ThumbBorder" Property="Background" Value="#66FFFFFF"/>
+                            <Setter TargetName="ThumbBorder" Property="Background" Value="{DynamicResource ScrollBarThumbHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsDragging" Value="True">
-                            <Setter TargetName="ThumbBorder" Property="Background" Value="#80FFFFFF"/>
+                            <Setter TargetName="ThumbBorder" Property="Background" Value="{DynamicResource ScrollBarThumbPressedBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
