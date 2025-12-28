@@ -520,7 +520,8 @@
                                     MinWidth="{TemplateBinding ActualWidth}"
                                     MaxHeight="{TemplateBinding MaxDropDownHeight}"
                                     Margin="0,4,0,0">
-                                <ScrollViewer Margin="4">
+                                <ScrollViewer Margin="4"
+                                              Style="{StaticResource FluentScrollViewerStyle}">
                                     <StackPanel IsItemsHost="True"/>
                                 </ScrollViewer>
                             </Border>
