@@ -18,16 +18,7 @@
     <Border Background="{StaticResource BackgroundSolidBaseBrush}"
         BorderBrush="{StaticResource SurfaceStrokeBrush}"
         BorderThickness="1"
-        CornerRadius="12"
-        Margin="16">
-
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="32"
-                ShadowDepth="8"
-                Direction="270"
-                Color="#000000"
-                Opacity="0.5" />
-        </Border.Effect>
+        CornerRadius="12">
 
         <Grid>
             <Grid.RowDefinitions>
