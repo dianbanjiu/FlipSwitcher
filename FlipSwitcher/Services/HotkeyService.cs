@@ -262,17 +262,26 @@ public class HotkeyService : IDisposable
 
     private bool HandleNavigationKeys(uint vkCode)
     {
-        if (!_isVisible || _isSearchMode)
+        if (!_isVisible)
             return false;
 
+        // Up/Down arrows: navigate only when not in search mode
+        if (!_isSearchMode)
+        {
+            switch (vkCode)
+            {
+                case NativeMethods.VK_UP:
+                    InvokeOnDispatcher(() => NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Previous)));
+                    return true;
+                case NativeMethods.VK_DOWN:
+                    InvokeOnDispatcher(() => NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Next)));
+                    return true;
+            }
+        }
+
+        // Left/Right arrows: always available (requires Alt in search mode)
         switch (vkCode)
         {
-            case NativeMethods.VK_UP:
-                InvokeOnDispatcher(() => NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Previous)));
-                return true;
-            case NativeMethods.VK_DOWN:
-                InvokeOnDispatcher(() => NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationDirection.Next)));
-                return true;
             case NativeMethods.VK_RIGHT:
                 InvokeOnDispatcher(() => GroupByProcessRequested?.Invoke(this, EventArgs.Empty));
                 return true;
@@ -322,7 +331,7 @@ public class HotkeyService : IDisposable
 
             if (IsAltPressed() && isKeyDown)
             {
-                // Tab 键 - 显示/导航
+                // Tab key - show/navigate
                 if (hookStruct.vkCode == NativeMethods.VK_TAB)
                 {
                     if (!_isVisible)

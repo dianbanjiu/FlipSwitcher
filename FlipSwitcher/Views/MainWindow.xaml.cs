@@ -394,24 +394,18 @@ public partial class MainWindow : Window
                 break;
 
             case Key.Right:
-                // 如果搜索框有焦点，让 TextBox 处理左右方向键（用于在文本中移动光标）
-                if (SearchBox.IsFocused)
-                {
-                    // 让 TextBox 处理，不拦截
+                // When search box focused: Alt+Right groups, plain Right moves cursor
+                if (SearchBox.IsFocused && Keyboard.Modifiers != ModifierKeys.Alt)
                     break;
-                }
                 _viewModel.GroupByProcess();
                 ScrollSelectedIntoView();
                 e.Handled = true;
                 break;
 
             case Key.Left:
-                // 如果搜索框有焦点，让 TextBox 处理左右方向键（用于在文本中移动光标）
-                if (SearchBox.IsFocused)
-                {
-                    // 让 TextBox 处理，不拦截
+                // When search box focused: Alt+Left ungroups, plain Left moves cursor
+                if (SearchBox.IsFocused && Keyboard.Modifiers != ModifierKeys.Alt)
                     break;
-                }
                 _viewModel.UngroupFromProcess();
                 ScrollSelectedIntoView();
                 e.Handled = true;
