@@ -70,343 +70,207 @@ public class AppWindow : INotifyPropertyChanged
         IsMaximized = isMaximized;
     }
 
-    private const uint IconTimeoutMs = 100;
-
-    private IntPtr GetWindowIconHandle()
-    {
-        IntPtr iconHandle = IntPtr.Zero;
-
-        var iconSizes = new[] { NativeMethods.ICON_BIG, NativeMethods.ICON_SMALL, NativeMethods.ICON_SMALL2 };
-        foreach (var iconSize in iconSizes)
-        {
-            NativeMethods.SendMessageTimeout(Handle, NativeMethods.WM_GETICON,
-                (IntPtr)iconSize, IntPtr.Zero,
-                NativeMethods.SMTO_ABORTIFHUNG, IconTimeoutMs, out iconHandle);
-            if (iconHandle != IntPtr.Zero)
-                return iconHandle;
-        }
-
-        iconHandle = NativeMethods.GetClassLongPtr(Handle, NativeMethods.GCL_HICON);
-        if (iconHandle != IntPtr.Zero)
-            return iconHandle;
-
-        return NativeMethods.GetClassLongPtr(Handle, NativeMethods.GCL_HICONSM);
-    }
-
-    private ImageSource? LoadIconFromHandle(IntPtr iconHandle)
-    {
-        try
-        {
-            using var icon = System.Drawing.Icon.FromHandle(iconHandle);
-            using var clonedIcon = (System.Drawing.Icon)icon.Clone();
-            return Imaging.CreateBitmapSourceFromHIcon(
-                clonedIcon.Handle,
-                Int32Rect.Empty,
-                BitmapSizeOptions.FromEmptyOptions());
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private ImageSource? LoadIconFromProcess()
-    {
-        try
-        {
-            using var process = Process.GetProcessById((int)ProcessId);
-            var mainModule = process.MainModule;
-            if (mainModule?.FileName == null)
-                return null;
-
-            using var icon = System.Drawing.Icon.ExtractAssociatedIcon(mainModule.FileName);
-            if (icon == null)
-                return null;
-
-            return Imaging.CreateBitmapSourceFromHIcon(
-                icon.Handle,
-                Int32Rect.Empty,
-                BitmapSizeOptions.FromEmptyOptions());
-        }
-        catch
-        {
-            return null;
-        }
-    }
+    private const uint IconTimeoutMs = 50;
 
     private bool IsUwpWindow => ClassName == "ApplicationFrameWindow";
 
-    private uint GetUwpChildProcessId()
+    // 统一的图标句柄转 ImageSource
+    private static ImageSource? IconHandleToImageSource(IntPtr iconHandle, bool destroyAfter = false)
     {
+        if (iconHandle == IntPtr.Zero) return null;
         try
         {
-            // Find the actual UWP child window (Windows.UI.Core.CoreWindow)
-            var childHwnd = NativeMethods.FindWindowEx(Handle, IntPtr.Zero, "Windows.UI.Core.CoreWindow", null);
-            if (childHwnd != IntPtr.Zero)
-            {
-                NativeMethods.GetWindowThreadProcessId(childHwnd, out uint childProcessId);
-                if (childProcessId != 0 && childProcessId != ProcessId)
-                    return childProcessId;
-            }
+            using var icon = System.Drawing.Icon.FromHandle(iconHandle);
+            using var cloned = (System.Drawing.Icon)icon.Clone();
+            return Imaging.CreateBitmapSourceFromHIcon(cloned.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
         }
-        catch
-        {
-            // Ignore errors
-        }
-        return ProcessId;
+        catch { return null; }
+        finally { if (destroyAfter) NativeMethods.DestroyIcon(iconHandle); }
     }
 
+    // 从窗口消息获取图标句柄
+    private IntPtr GetWindowIconHandle()
+    {
+        // 优先 ICON_BIG，跳过 ICON_SMALL2（较少使用）
+        NativeMethods.SendMessageTimeout(Handle, NativeMethods.WM_GETICON, (IntPtr)NativeMethods.ICON_BIG, IntPtr.Zero,
+            NativeMethods.SMTO_ABORTIFHUNG, IconTimeoutMs, out var h);
+        if (h != IntPtr.Zero) return h;
+
+        NativeMethods.SendMessageTimeout(Handle, NativeMethods.WM_GETICON, (IntPtr)NativeMethods.ICON_SMALL, IntPtr.Zero,
+            NativeMethods.SMTO_ABORTIFHUNG, IconTimeoutMs, out h);
+        if (h != IntPtr.Zero) return h;
+
+        h = NativeMethods.GetClassLongPtr(Handle, NativeMethods.GCL_HICON);
+        return h != IntPtr.Zero ? h : NativeMethods.GetClassLongPtr(Handle, NativeMethods.GCL_HICONSM);
+    }
+
+    // 获取进程路径
     private string? GetProcessPath(uint processId)
     {
-        IntPtr hProcess = IntPtr.Zero;
+        var hProcess = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
+        if (hProcess == IntPtr.Zero) return null;
         try
         {
-            hProcess = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
-            if (hProcess == IntPtr.Zero)
-                return null;
-
-            var buffer = new StringBuilder(1024);
+            var buffer = new StringBuilder(260);
             int size = buffer.Capacity;
-            if (NativeMethods.QueryFullProcessImageName(hProcess, 0, buffer, ref size))
-                return buffer.ToString();
+            return NativeMethods.QueryFullProcessImageName(hProcess, 0, buffer, ref size) ? buffer.ToString() : null;
         }
-        catch
-        {
-            // Ignore errors
-        }
-        finally
-        {
-            if (hProcess != IntPtr.Zero)
-                NativeMethods.CloseHandle(hProcess);
-        }
-        return null;
+        finally { NativeMethods.CloseHandle(hProcess); }
     }
 
+    // Shell API 获取图标（适用于所有应用包括 UWP）
     private ImageSource? LoadIconFromShell(string filePath)
     {
-        try
-        {
-            var shinfo = new NativeMethods.SHFILEINFO();
-            var result = NativeMethods.SHGetFileInfo(
-                filePath, 0, ref shinfo, (uint)System.Runtime.InteropServices.Marshal.SizeOf(shinfo),
-                NativeMethods.SHGFI_ICON | NativeMethods.SHGFI_LARGEICON);
-
-            if (result != 0 && shinfo.hIcon != IntPtr.Zero)
-            {
-                try
-                {
-                    using var icon = System.Drawing.Icon.FromHandle(shinfo.hIcon);
-                    using var clonedIcon = (System.Drawing.Icon)icon.Clone();
-                    return Imaging.CreateBitmapSourceFromHIcon(
-                        clonedIcon.Handle,
-                        Int32Rect.Empty,
-                        BitmapSizeOptions.FromEmptyOptions());
-                }
-                finally
-                {
-                    NativeMethods.DestroyIcon(shinfo.hIcon);
-                }
-            }
-        }
-        catch
-        {
-            // Ignore errors
-        }
-        return null;
+        var shinfo = new NativeMethods.SHFILEINFO();
+        var result = NativeMethods.SHGetFileInfo(filePath, 0, ref shinfo,
+            (uint)System.Runtime.InteropServices.Marshal.SizeOf(shinfo),
+            NativeMethods.SHGFI_ICON | NativeMethods.SHGFI_LARGEICON);
+        return result != 0 ? IconHandleToImageSource(shinfo.hIcon, destroyAfter: true) : null;
     }
 
+    // 从图片文件加载（UWP manifest 资源）
     private ImageSource? LoadIconFromImageFile(string imagePath)
     {
+        if (!File.Exists(imagePath)) return null;
         try
         {
-            if (!File.Exists(imagePath))
-                return null;
-
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
             bitmap.UriSource = new Uri(imagePath, UriKind.Absolute);
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.DecodePixelWidth = 48; // 限制解码尺寸提升性能
             bitmap.EndInit();
             bitmap.Freeze();
             return bitmap;
         }
-        catch
-        {
-            return null;
-        }
+        catch { return null; }
     }
 
-    private ImageSource? LoadIconFromAppxManifest(string exePath)
+    // UWP: 从 AppxManifest 获取图标
+    private ImageSource? LoadIconFromAppxManifest(string appDir)
     {
+        var manifestPath = Path.Combine(appDir, "AppxManifest.xml");
+        if (!File.Exists(manifestPath)) return null;
+
         try
         {
-            var appDir = Path.GetDirectoryName(exePath);
-            if (string.IsNullOrEmpty(appDir))
-                return null;
-
-            var manifestPath = Path.Combine(appDir, "AppxManifest.xml");
-            if (!File.Exists(manifestPath))
-                return null;
-
             var doc = XDocument.Load(manifestPath);
-            var ns = doc.Root?.GetDefaultNamespace();
-            var uapNs = doc.Root?.GetNamespaceOfPrefix("uap") 
-                        ?? XNamespace.Get("http://schemas.microsoft.com/appx/manifest/uap/windows10");
-
-            // Try to find logo from VisualElements - Square44x44Logo has best targetsize variants for icons
-            var visualElements = doc.Descendants()
-                .FirstOrDefault(e => e.Name.LocalName == "VisualElements");
-
-            string? logoPath = null;
-            string? fallbackLogoPath = null;
-            if (visualElements != null)
+            var visualElements = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "VisualElements");
+            
+            // 尝试多个 logo 属性
+            string?[] logoAttrs = [
+                visualElements?.Attribute("Square44x44Logo")?.Value,
+                visualElements?.Attribute("Square150x150Logo")?.Value,
+                visualElements?.Attribute("Square71x71Logo")?.Value
+            ];
+            
+            var logoPath = logoAttrs.FirstOrDefault(p => !string.IsNullOrEmpty(p));
+            if (string.IsNullOrEmpty(logoPath))
             {
-                // Square44x44Logo typically has large targetsize variants (256, 128, etc.)
-                logoPath = visualElements.Attribute("Square44x44Logo")?.Value;
-                fallbackLogoPath = visualElements.Attribute("Square150x150Logo")?.Value
-                                   ?? visualElements.Attribute("Square71x71Logo")?.Value;
-            }
-
-            // Fallback to Properties/Logo
-            if (string.IsNullOrEmpty(logoPath) && string.IsNullOrEmpty(fallbackLogoPath))
-            {
-                var logoElement = doc.Descendants()
-                    .FirstOrDefault(e => e.Name.LocalName == "Logo" && 
-                                         e.Parent?.Name.LocalName == "Properties");
+                var logoElement = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "Logo" && e.Parent?.Name.LocalName == "Properties");
                 logoPath = logoElement?.Value;
             }
+            if (string.IsNullOrEmpty(logoPath)) return null;
 
-            // Try logos in order of preference
-            var logoPaths = new[] { logoPath, fallbackLogoPath }
-                .Where(p => !string.IsNullOrEmpty(p))
-                .ToArray();
+            var baseLogoPath = Path.Combine(appDir, logoPath);
+            var logoDir = Path.GetDirectoryName(baseLogoPath);
+            var logoName = Path.GetFileNameWithoutExtension(baseLogoPath);
+            var logoExt = Path.GetExtension(baseLogoPath);
 
-            if (logoPaths.Length == 0)
-                return null;
+            if (string.IsNullOrEmpty(logoDir)) return null;
 
-            foreach (var currentLogoPath in logoPaths)
+            // 尝试常用变体（优先大尺寸和 unplated）
+            string[] suffixes = [
+                ".targetsize-256_altform-unplated", ".targetsize-256",
+                ".targetsize-64_altform-unplated", ".targetsize-64",
+                ".targetsize-48_altform-unplated", ".targetsize-48",
+                ".targetsize-32_altform-unplated", ".targetsize-32",
+                ".scale-200", ".scale-100", ""
+            ];
+            foreach (var suffix in suffixes)
             {
-                var baseLogoPath = Path.Combine(appDir, currentLogoPath!);
-                var logoDir = Path.GetDirectoryName(baseLogoPath);
-                var logoName = Path.GetFileNameWithoutExtension(baseLogoPath);
-                var logoExt = Path.GetExtension(baseLogoPath);
-
-                if (!string.IsNullOrEmpty(logoDir))
-                {
-                    // Try targetsize variants first (prefer larger sizes) - these are optimized for icon display
-                    var sizes = new[] { ".targetsize-256", ".targetsize-128", ".targetsize-96", ".targetsize-64", 
-                                        ".targetsize-48", ".targetsize-32" };
-                    foreach (var size in sizes)
-                    {
-                        // Try with _altform-unplated suffix first (cleaner icons without background)
-                        var unplatedPath = Path.Combine(logoDir, $"{logoName}{size}_altform-unplated{logoExt}");
-                        var icon = LoadIconFromImageFile(unplatedPath);
-                        if (icon != null)
-                            return icon;
-
-                        var sizePath = Path.Combine(logoDir, $"{logoName}{size}{logoExt}");
-                        icon = LoadIconFromImageFile(sizePath);
-                        if (icon != null)
-                            return icon;
-                    }
-
-                    // Try scale variants
-                    var scales = new[] { ".scale-400", ".scale-200", ".scale-150", ".scale-125", ".scale-100", "" };
-                    foreach (var scale in scales)
-                    {
-                        var scaledPath = Path.Combine(logoDir, $"{logoName}{scale}{logoExt}");
-                        var icon = LoadIconFromImageFile(scaledPath);
-                        if (icon != null)
-                            return icon;
-                    }
-                }
-
-                // Try the exact path
-                var exactIcon = LoadIconFromImageFile(baseLogoPath);
-                if (exactIcon != null)
-                    return exactIcon;
+                var icon = LoadIconFromImageFile(Path.Combine(logoDir, $"{logoName}{suffix}{logoExt}"));
+                if (icon != null) return icon;
             }
-
-            return null;
+            return LoadIconFromImageFile(baseLogoPath);
         }
-        catch
-        {
-            return null;
-        }
+        catch { return null; }
     }
 
+    // UWP 图标加载
     private ImageSource? LoadUwpIcon()
     {
-        try
+        // 获取真实 UWP 进程 ID（尝试多种子窗口类型）
+        uint uwpPid = ProcessId;
+        string[] childClasses = ["Windows.UI.Core.CoreWindow", "Windows.UI.Composition.DesktopWindowContentBridge"];
+        foreach (var cls in childClasses)
         {
-            // Get the actual UWP process ID
-            var uwpProcessId = GetUwpChildProcessId();
-            
-            // Get executable path
-            var exePath = GetProcessPath(uwpProcessId);
-            if (!string.IsNullOrEmpty(exePath))
+            var childHwnd = NativeMethods.FindWindowEx(Handle, IntPtr.Zero, cls, null);
+            if (childHwnd != IntPtr.Zero)
             {
-                // Try to load icon from AppxManifest.xml
-                var manifestIcon = LoadIconFromAppxManifest(exePath);
-                if (manifestIcon != null)
-                    return manifestIcon;
-
-                // Try to get icon from the executable using Shell API
-                var icon = LoadIconFromShell(exePath);
-                if (icon != null)
-                    return icon;
-
-                // Fallback: try ExtractAssociatedIcon
-                try
+                NativeMethods.GetWindowThreadProcessId(childHwnd, out uint childPid);
+                if (childPid != 0 && childPid != ProcessId)
                 {
-                    using var extractedIcon = System.Drawing.Icon.ExtractAssociatedIcon(exePath);
-                    if (extractedIcon != null)
-                    {
-                        return Imaging.CreateBitmapSourceFromHIcon(
-                            extractedIcon.Handle,
-                            Int32Rect.Empty,
-                            BitmapSizeOptions.FromEmptyOptions());
-                    }
-                }
-                catch
-                {
-                    // Ignore
+                    uwpPid = childPid;
+                    break;
                 }
             }
         }
-        catch
+
+        var exePath = GetProcessPath(uwpPid);
+        if (string.IsNullOrEmpty(exePath)) return null;
+
+        var appDir = Path.GetDirectoryName(exePath);
+        
+        // 优先 Manifest（更准确）
+        if (!string.IsNullOrEmpty(appDir))
         {
-            // Ignore errors
+            var icon = LoadIconFromAppxManifest(appDir);
+            if (icon != null) return icon;
         }
-        return null;
+
+        // 备选：Shell API
+        return LoadIconFromShell(exePath);
     }
 
     private ImageSource? LoadIcon()
     {
+        // UWP 应用走专用路径
+        if (IsUwpWindow)
+        {
+            var uwpIcon = LoadUwpIcon();
+            if (uwpIcon != null) return uwpIcon;
+        }
+
+        // 1. 窗口图标句柄（最快）
+        var iconHandle = GetWindowIconHandle();
+        if (iconHandle != IntPtr.Zero)
+        {
+            var icon = IconHandleToImageSource(iconHandle);
+            if (icon != null) return icon;
+        }
+
+        // 2. Shell API（可靠）
+        var exePath = GetProcessPath(ProcessId);
+        if (!string.IsNullOrEmpty(exePath))
+        {
+            var icon = LoadIconFromShell(exePath);
+            if (icon != null) return icon;
+        }
+
+        // 3. 从进程模块提取（兜底）
         try
         {
-            // For UWP apps, try specialized method first
-            if (IsUwpWindow)
+            using var process = Process.GetProcessById((int)ProcessId);
+            if (process.MainModule?.FileName != null)
             {
-                var uwpIcon = LoadUwpIcon();
-                if (uwpIcon != null)
-                    return uwpIcon;
+                using var ico = System.Drawing.Icon.ExtractAssociatedIcon(process.MainModule.FileName);
+                if (ico != null) return IconHandleToImageSource(ico.Handle);
             }
-
-            var iconHandle = GetWindowIconHandle();
-            if (iconHandle != IntPtr.Zero)
-            {
-                var icon = LoadIconFromHandle(iconHandle);
-                if (icon != null)
-                    return icon;
-            }
-
-            return LoadIconFromProcess();
         }
-        catch
-        {
-            return null;
-        }
+        catch { }
+
+        return null;
     }
 
     public void Activate()
