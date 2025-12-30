@@ -21,6 +21,7 @@ UninstallDisplayIcon={app}\FlipSwitcher.exe
 CloseApplications=yes
 CloseApplicationsFilter=FlipSwitcher.exe
 RestartApplications=no
+SetupIconFile=Assets\flipswitcher.ico
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
