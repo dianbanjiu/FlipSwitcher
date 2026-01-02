@@ -16,7 +16,7 @@
 
 ### 安装
 
-1. 从 [Releases](https://github.com/dianbanjiu/FlipSwitcher/releases) 下载 `FlipSwitcher-windows-x64-Setup.exe`
+1. 从 [Releases](https://github.com/dianbanjiu/FlipSwitcher/releases/latest) 下载 `FlipSwitcher-windows-x64-Setup.exe`
 2. 运行安装程序并按提示完成安装
 3. 安装完成后应用程序将在系统托盘中启动
 

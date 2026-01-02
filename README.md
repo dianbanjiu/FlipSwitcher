@@ -16,7 +16,7 @@ A modern, beautiful Alt-Tab replacement for Windows, built with **Fluent 2 Desig
 
 ### Installation
 
-1. Download `FlipSwitcher-windows-x64-Setup.exe` from [Releases](https://github.com/dianbanjiu/FlipSwitcher/releases)
+1. Download `FlipSwitcher-windows-x64-Setup.exe` from [Releases](https://github.com/dianbanjiu/FlipSwitcher/releases/latest)
 2. Run the installer and follow the prompts
 3. The app will start in the system tray after installation
 
