@@ -339,10 +339,16 @@ public partial class MainWindow : Window
 
     private void Window_Deactivated(object sender, EventArgs e)
     {
-        // Don't hide if in Alt+Tab mode (user might be holding Alt)
+        // Don't hide if in Alt+Tab mode AND Alt key is still pressed (user might be holding Alt)
         if (_isAltTabMode)
         {
-            return;
+            // Check if Alt is still pressed - if not, we should hide
+            if (IsAltKeyPressed())
+            {
+                return;
+            }
+            // Alt is no longer pressed, exit Alt+Tab mode
+            _isAltTabMode = false;
         }
         
         // Check if HideOnFocusLost setting is enabled
@@ -365,6 +371,16 @@ public partial class MainWindow : Window
         }
         
         HideWindow();
+    }
+
+    /// <summary>
+    /// Check if any Alt key is currently pressed
+    /// </summary>
+    private bool IsAltKeyPressed()
+    {
+        return (NativeMethods.GetAsyncKeyState(NativeMethods.VK_MENU) & 0x8000) != 0 ||
+               (NativeMethods.GetAsyncKeyState(NativeMethods.VK_LMENU) & 0x8000) != 0 ||
+               (NativeMethods.GetAsyncKeyState(NativeMethods.VK_RMENU) & 0x8000) != 0;
     }
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
