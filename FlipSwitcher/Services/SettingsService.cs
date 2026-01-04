@@ -91,11 +91,6 @@ public class AppSettings
     public bool HideOnFocusLost { get; set; } = true;
 
     /// <summary>
-    /// Enable Mica effect (Windows 11)
-    /// </summary>
-    public bool EnableMicaEffect { get; set; } = true;
-
-    /// <summary>
     /// Theme: 0 = Dark, 1 = Light
     /// </summary>
     public int Theme { get; set; } = 0;

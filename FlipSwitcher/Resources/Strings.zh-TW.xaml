@@ -48,8 +48,6 @@
     <system:String x:Key="ThemeDark">深色</system:String>
     <system:String x:Key="ThemeLight">淺色</system:String>
     <system:String x:Key="ThemeSystem">跟隨系統</system:String>
-    <system:String x:Key="SettingsMicaEffect">雲母效果</system:String>
-    <system:String x:Key="SettingsMicaEffectDesc">啟用半透明背景 (Windows 11)</system:String>
     
     <!-- Settings - Behavior -->
     <system:String x:Key="SettingsBehavior">行為</system:String>

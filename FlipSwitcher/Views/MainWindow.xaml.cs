@@ -44,7 +44,7 @@ public partial class MainWindow : Window
         // Listen for settings changes
         SettingsService.Instance.SettingsChanged += OnSettingsChanged;
 
-        // Apply Mica/Acrylic effect on Windows 11
+        // Apply theme on Windows 11
         Loaded += (s, e) => ApplyWindowEffects();
 
         // Prevent double-click maximize
@@ -98,22 +98,12 @@ public partial class MainWindow : Window
         
         // Update hotkey display
         UpdateHotkeyDisplay();
-        
-        // Re-apply window effects if Mica setting changed
-        if (IsLoaded)
-        {
-            ApplyWindowEffects();
-        }
     }
 
     private const int ThemeDark = 0;
     private const int ThemeLight = 1;
-    private const int DWMSBT_MAINWINDOW = 2;
-    private const int DWMSBT_NONE = 0;
-    private const int MicaEffectEnabled = 1;
     private const int DarkModeEnabled = 1;
     private const int DarkModeDisabled = 0;
-    private const int FullMargin = -1;
 
     private void UpdateHotkeyDisplay()
     {
@@ -135,36 +125,10 @@ public partial class MainWindow : Window
             };
             int darkMode = isDark ? DarkModeEnabled : DarkModeDisabled;
             NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
-
-            if (settings.EnableMicaEffect)
-            {
-                int backdropType = DWMSBT_MAINWINDOW;
-                var result = NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_SYSTEMBACKDROP_TYPE, ref backdropType, sizeof(int));
-
-                if (result != 0)
-                {
-                    int micaEffect = MicaEffectEnabled;
-                    NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_MICA_EFFECT, ref micaEffect, sizeof(int));
-                }
-
-                var margins = new NativeMethods.MARGINS
-                {
-                    cxLeftWidth = FullMargin,
-                    cxRightWidth = FullMargin,
-                    cyTopHeight = FullMargin,
-                    cyBottomHeight = FullMargin
-                };
-                NativeMethods.DwmExtendFrameIntoClientArea(hwnd, ref margins);
-            }
-            else
-            {
-                int backdropType = DWMSBT_NONE;
-                NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_SYSTEMBACKDROP_TYPE, ref backdropType, sizeof(int));
-            }
         }
         catch
         {
-            // Fallback to solid background on older Windows versions
+            // Fallback on older Windows versions
         }
     }
 

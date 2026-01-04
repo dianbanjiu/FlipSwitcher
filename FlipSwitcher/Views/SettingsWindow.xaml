@@ -278,28 +278,6 @@
                                     ItemContainerStyle="{StaticResource FluentComboBoxItemStyle}" />
                             </Grid>
 
-                            <!-- Mica Effect Option -->
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{DynamicResource SettingsMicaEffect}"
-                                        Style="{StaticResource BodyStrongTextStyle}" />
-                                    <TextBlock Text="{DynamicResource SettingsMicaEffectDesc}"
-                                        Style="{StaticResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
-                                </StackPanel>
-
-                                <CheckBox x:Name="MicaEffectCheckBox"
-                                    Grid.Column="1"
-                                    IsChecked="True"
-                                    Checked="MicaEffectCheckBox_Changed"
-                                    Unchecked="MicaEffectCheckBox_Changed"
-                                    Style="{StaticResource FluentCheckBoxStyle}" />
-                            </Grid>
                         </StackPanel>
                     </Border>
 

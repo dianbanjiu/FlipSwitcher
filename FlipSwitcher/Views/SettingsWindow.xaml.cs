@@ -116,7 +116,6 @@ public partial class SettingsWindow : Window
         StartWithWindowsCheckBox.IsChecked = settings.StartWithWindows;
         HideOnFocusLostCheckBox.IsChecked = settings.HideOnFocusLost;
         PinyinSearchCheckBox.IsChecked = settings.EnablePinyinSearch;
-        MicaEffectCheckBox.IsChecked = settings.EnableMicaEffect;
         ThemeComboBox.SelectedIndex = settings.Theme;
         CheckForUpdatesCheckBox.IsChecked = settings.CheckForUpdates;
         
@@ -277,11 +276,6 @@ public partial class SettingsWindow : Window
     private void PinyinSearchCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         SaveSetting((s, v) => s.EnablePinyinSearch = v, PinyinSearchCheckBox.IsChecked == true);
-    }
-
-    private void MicaEffectCheckBox_Changed(object sender, RoutedEventArgs e)
-    {
-        SaveSetting((s, v) => s.EnableMicaEffect = v, MicaEffectCheckBox.IsChecked == true);
     }
 
     private void ThemeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)

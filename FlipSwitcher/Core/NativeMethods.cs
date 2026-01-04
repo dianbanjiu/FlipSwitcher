@@ -285,8 +285,6 @@ internal static class NativeMethods
 
     public const int DWMWA_CLOAKED = 14;
     public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
-    public const int DWMWA_MICA_EFFECT = 1029;
-    public const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
 
     // Hotkey modifiers
     public const uint MOD_ALT = 0x0001;

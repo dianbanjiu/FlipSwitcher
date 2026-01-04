@@ -48,8 +48,6 @@
     <system:String x:Key="ThemeDark">Dark</system:String>
     <system:String x:Key="ThemeLight">Light</system:String>
     <system:String x:Key="ThemeSystem">System</system:String>
-    <system:String x:Key="SettingsMicaEffect">Mica Effect</system:String>
-    <system:String x:Key="SettingsMicaEffectDesc">Enable translucent background (Windows 11)</system:String>
 
     <!-- Settings - Behavior -->
     <system:String x:Key="SettingsBehavior">Behavior</system:String>
