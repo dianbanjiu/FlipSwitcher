@@ -73,7 +73,7 @@ public class UpdateService
             if (latestVersion <= GetCurrentVersion())
                 return null;
 
-            var downloadUrl = FindSetupDownloadUrl(release) ?? GitHubReleasesUrl;
+            var downloadUrl = FindSetupDownloadUrl(release, versionStr) ?? GitHubReleasesUrl;
             var releaseNotes = GetReleaseNotes(release);
             var publishedAt = GetPublishedDate(release);
 
@@ -99,11 +99,26 @@ public class UpdateService
         }
     }
 
-    private string? FindSetupDownloadUrl(JsonElement release)
+    private string? FindSetupDownloadUrl(JsonElement release, string version)
     {
         if (!release.TryGetProperty(AssetsProperty, out var assets) || assets.GetArrayLength() == 0)
             return null;
 
+        // 优先查找带版本号的安装包
+        var versionedFileName = $"FlipSwitcher-{version}-windows-x64-Setup.exe";
+        foreach (var asset in assets.EnumerateArray())
+        {
+            if (asset.TryGetProperty(BrowserDownloadUrlProperty, out var url))
+            {
+                var urlStr = url.GetString();
+                if (!string.IsNullOrEmpty(urlStr) && urlStr.EndsWith(versionedFileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return urlStr;
+                }
+            }
+        }
+
+        // 回退到通用安装包
         foreach (var asset in assets.EnumerateArray())
         {
             if (asset.TryGetProperty(BrowserDownloadUrlProperty, out var url))

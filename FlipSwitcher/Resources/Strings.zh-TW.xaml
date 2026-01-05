@@ -91,7 +91,7 @@
     <system:String x:Key="MsgAtLeastOneHotkey">至少需要啟用一個快速鍵。</system:String>
     <system:String x:Key="MsgErrorOccurred">發生錯誤：{0}</system:String>
     <system:String x:Key="MsgErrorTitle">FlipSwitcher 錯誤</system:String>
-    <system:String x:Key="MsgUpdateAvailable">發現新版本 ({0})！是否立即下載？</system:String>
+    <system:String x:Key="MsgUpdateAvailable">發現 FlipSwitcher 新版本 {0}！是否立即下載？</system:String>
     <system:String x:Key="MsgUpdateAvailableTitle">發現更新</system:String>
     <system:String x:Key="MsgNoUpdateAvailable">您正在使用最新版本。</system:String>
     <system:String x:Key="MsgNoUpdateAvailableTitle">無更新</system:String>

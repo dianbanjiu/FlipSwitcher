@@ -97,7 +97,7 @@
     <system:String x:Key="MsgAtLeastOneHotkey">At least one hotkey must be enabled.</system:String>
     <system:String x:Key="MsgErrorOccurred">An error occurred: {0}</system:String>
     <system:String x:Key="MsgErrorTitle">FlipSwitcher Error</system:String>
-    <system:String x:Key="MsgUpdateAvailable">A new version ({0}) is available! Would you like to
+    <system:String x:Key="MsgUpdateAvailable">FlipSwitcher new version {0} is available! Would you like to
         download it now?</system:String>
     <system:String x:Key="MsgUpdateAvailableTitle">Update Available</system:String>
     <system:String x:Key="MsgNoUpdateAvailable">You are using the latest version.</system:String>
