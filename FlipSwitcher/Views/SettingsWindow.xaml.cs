@@ -221,14 +221,15 @@ public partial class SettingsWindow : Window
         var message = wantAdmin 
             ? LanguageService.GetString("MsgRestartRequired")
             : LanguageService.GetString("MsgRestartRequiredNormal");
-        var result = MessageBox.Show(
+        var result = FluentDialog.Show(
             message,
             LanguageService.GetString("MsgRestartRequiredTitle"),
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
+            FluentDialogButton.YesNo,
+            FluentDialogIcon.Question,
+            this);
         _isShowingDialog = false;
 
-        if (result != MessageBoxResult.Yes)
+        if (result != FluentDialogResult.Yes)
         {
             UpdateAdminStatusDisplay();
             return;
@@ -251,11 +252,12 @@ public partial class SettingsWindow : Window
         {
             _isRestarting = false;
             _isShowingDialog = true;
-            MessageBox.Show(
+            FluentDialog.Show(
                 LanguageService.GetString("MsgRestartFailed"),
                 LanguageService.GetString("MsgRestartFailedTitle"),
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
+                FluentDialogButton.OK,
+                FluentDialogIcon.Warning,
+                this);
             _isShowingDialog = false;
             UpdateAdminStatusDisplay();
         }
@@ -283,11 +285,12 @@ public partial class SettingsWindow : Window
         var message = enable 
             ? LanguageService.GetString("MsgStartupFailed")
             : LanguageService.GetString("MsgStartupDisabledFailed");
-        MessageBox.Show(
+        FluentDialog.Show(
             message,
             LanguageService.GetString("AppTitle"),
-            MessageBoxButton.OK,
-            MessageBoxImage.Warning);
+            FluentDialogButton.OK,
+            FluentDialogIcon.Warning,
+            this);
         _isShowingDialog = false;
     }
 
@@ -371,14 +374,15 @@ public partial class SettingsWindow : Window
             LanguageService.GetString("MsgUpdateAvailable"),
             updateInfo.Version);
         _isShowingDialog = true;
-        var result = MessageBox.Show(
+        var result = FluentDialog.Show(
             message,
             LanguageService.GetString("MsgUpdateAvailableTitle"),
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Information);
+            FluentDialogButton.YesNo,
+            FluentDialogIcon.Information,
+            this);
         _isShowingDialog = false;
 
-        if (result == MessageBoxResult.Yes)
+        if (result == FluentDialogResult.Yes)
         {
             UpdateService.Instance.OpenDownloadPage(updateInfo.DownloadUrl);
         }
@@ -387,11 +391,12 @@ public partial class SettingsWindow : Window
     private void ShowNoUpdateDialog()
     {
         _isShowingDialog = true;
-        MessageBox.Show(
+        FluentDialog.Show(
             LanguageService.GetString("MsgNoUpdateAvailable"),
             LanguageService.GetString("MsgNoUpdateAvailableTitle"),
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+            FluentDialogButton.OK,
+            FluentDialogIcon.Information,
+            this);
         _isShowingDialog = false;
     }
 
@@ -408,11 +413,12 @@ public partial class SettingsWindow : Window
             else
                 AltTabCheckBox.IsChecked = true;
 
-            MessageBox.Show(
+            FluentDialog.Show(
                 LanguageService.GetString("MsgAtLeastOneHotkey"), 
                 LanguageService.GetString("AppTitle"),
-                MessageBoxButton.OK, 
-                MessageBoxImage.Warning);
+                FluentDialogButton.OK, 
+                FluentDialogIcon.Warning,
+                this);
             return;
         }
 

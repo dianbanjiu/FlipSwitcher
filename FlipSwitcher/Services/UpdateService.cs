@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using FlipSwitcher.Views;
 
 namespace FlipSwitcher.Services;
 
@@ -142,11 +142,11 @@ public class UpdateService
     {
         Application.Current.Dispatcher.Invoke(() =>
         {
-            MessageBox.Show(
+            FluentDialog.Show(
                 LanguageService.GetString("MsgUpdateCheckFailed"),
                 LanguageService.GetString("MsgUpdateCheckFailedTitle"),
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
+                FluentDialogButton.OK,
+                FluentDialogIcon.Warning);
         });
     }
 

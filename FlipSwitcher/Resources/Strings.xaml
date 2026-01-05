@@ -118,4 +118,10 @@
     <system:String x:Key="SettingsFontDesc">Choose the font used by the application</system:String>
     <system:String x:Key="TrayToolTip">FlipSwitcher</system:String>
 
+    <!-- Dialog Buttons -->
+    <system:String x:Key="DialogOK">OK</system:String>
+    <system:String x:Key="DialogCancel">Cancel</system:String>
+    <system:String x:Key="DialogYes">Yes</system:String>
+    <system:String x:Key="DialogNo">No</system:String>
+
 </ResourceDictionary>

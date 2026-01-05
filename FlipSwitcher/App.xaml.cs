@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using FlipSwitcher.Services;
+using FlipSwitcher.Views;
 
 namespace FlipSwitcher;
 
@@ -108,8 +109,8 @@ public partial class App : Application
         DispatcherUnhandledException += (s, args) =>
         {
             var message = string.Format(LanguageService.GetString("MsgErrorOccurred"), args.Exception.Message);
-            MessageBox.Show(message, LanguageService.GetString("MsgErrorTitle"),
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            FluentDialog.Show(message, LanguageService.GetString("MsgErrorTitle"),
+                FluentDialogButton.OK, FluentDialogIcon.Error);
             args.Handled = true;
         };
     }
@@ -131,18 +132,19 @@ public partial class App : Application
                 var message = string.Format(
                     LanguageService.GetString("MsgUpdateAvailable"),
                     updateInfo.Version);
-                var result = MessageBox.Show(
+                var result = FluentDialog.Show(
                     message,
                     LanguageService.GetString("MsgUpdateAvailableTitle"),
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Information);
+                    FluentDialogButton.YesNo,
+                    FluentDialogIcon.Information,
+                    settingsWindow);
                 
                 if (settingsWindow != null)
                 {
                     settingsWindow.SetShowingDialog(false);
                 }
                 
-                if (result == MessageBoxResult.Yes)
+                if (result == FluentDialogResult.Yes)
                 {
                     UpdateService.Instance.OpenDownloadPage(updateInfo.DownloadUrl);
                 }

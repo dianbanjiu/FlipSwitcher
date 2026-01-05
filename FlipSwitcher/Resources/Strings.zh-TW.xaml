@@ -110,4 +110,10 @@
     <system:String x:Key="SettingsFontDesc">選擇應用程式使用的字體</system:String>
     <system:String x:Key="TrayToolTip">FlipSwitcher</system:String>
 
+    <!-- Dialog Buttons -->
+    <system:String x:Key="DialogOK">確定</system:String>
+    <system:String x:Key="DialogCancel">取消</system:String>
+    <system:String x:Key="DialogYes">是</system:String>
+    <system:String x:Key="DialogNo">否</system:String>
+
 </ResourceDictionary>
