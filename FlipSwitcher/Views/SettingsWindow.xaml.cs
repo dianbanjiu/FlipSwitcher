@@ -4,8 +4,10 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Navigation;
+using FlipSwitcher.Core;
 using FlipSwitcher.Services;
 
 namespace FlipSwitcher.Views;
@@ -54,6 +56,36 @@ public partial class SettingsWindow : Window
         
         // Listen for window deactivation event
         Deactivated += SettingsWindow_Deactivated;
+        
+        // Ensure window gets focus after content is rendered (fixes first-open focus issue)
+        ContentRendered += SettingsWindow_ContentRendered;
+    }
+
+    private void SettingsWindow_ContentRendered(object? sender, EventArgs e)
+    {
+        // Only need to handle once
+        ContentRendered -= SettingsWindow_ContentRendered;
+        
+        // Force activate using same technique as MainWindow
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+        {
+            ForceActivateWindow();
+        }));
+    }
+
+    private void ForceActivateWindow()
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        
+        // Simulate Alt key to allow SetForegroundWindow
+        NativeMethods.keybd_event(NativeMethods.VK_ALT, 0, NativeMethods.KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
+        NativeMethods.keybd_event(NativeMethods.VK_ALT, 0, NativeMethods.KEYEVENTF_EXTENDEDKEY | NativeMethods.KEYEVENTF_KEYUP, UIntPtr.Zero);
+        
+        NativeMethods.SetForegroundWindow(hwnd);
+        NativeMethods.BringWindowToTop(hwnd);
+        
+        Activate();
+        Focus();
     }
 
     private void UpdateVersionDisplay()
