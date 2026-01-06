@@ -88,7 +88,9 @@ public class TrayIconService : IDisposable
             if (iconStream != null)
             {
                 using var bitmap = new System.Drawing.Bitmap(iconStream.Stream);
-                return Icon.FromHandle(bitmap.GetHicon());
+                var hIcon = bitmap.GetHicon();
+                var icon = Icon.FromHandle(hIcon);
+                return (Icon)icon.Clone();
             }
         }
         catch

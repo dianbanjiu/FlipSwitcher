@@ -17,7 +17,7 @@ public class UpdateInfo
     public DateTime PublishedAt { get; set; }
 }
 
-public class UpdateService
+public class UpdateService : IDisposable
 {
     private static UpdateService? _instance;
     public static UpdateService Instance => _instance ??= new UpdateService();

@@ -130,12 +130,8 @@ public class MainViewModel : ObservableObject
     /// <param name="selectSecondWindow">If true, select the second window (Alt+Tab behavior)</param>
     public void RefreshWindows(bool selectSecondWindow = false)
     {
-        _windows.Clear();
         var windows = _windowService.GetWindows();
-        foreach (var window in windows)
-        {
-            _windows.Add(window);
-        }
+        _windows = new ObservableCollection<AppWindow>(windows);
 
         // 如果处于分组模式，保持分组状态
         if (_isGroupedByProcess && _groupedProcessName != null)

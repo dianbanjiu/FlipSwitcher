@@ -414,14 +414,10 @@ public class AppWindow : INotifyPropertyChanged
         if (string.IsNullOrWhiteSpace(filter))
             return true;
 
-        var lowerFilter = filter.ToLowerInvariant();
-        
-        // Normal text matching
-        if (Title.ToLowerInvariant().Contains(lowerFilter) ||
-            ProcessName.ToLowerInvariant().Contains(lowerFilter))
+        if (Title.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+            ProcessName.Contains(filter, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        // Pinyin matching (if enabled)
         if (Services.SettingsService.Instance.Settings.EnablePinyinSearch)
         {
             if (Services.PinyinService.Instance.MatchesPinyin(Title, filter) ||
