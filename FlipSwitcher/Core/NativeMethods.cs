@@ -53,6 +53,10 @@ internal static class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
 
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
     [StructLayout(LayoutKind.Sequential)]
     public struct WINDOWPLACEMENT
     {
@@ -134,7 +138,7 @@ internal static class NativeMethods
 
     public const int LSFW_UNLOCK = 2;
     public const int ASFW_ANY = -1;
-    
+
     public const uint SPI_GETFOREGROUNDLOCKTIMEOUT = 0x2000;
     public const uint SPI_SETFOREGROUNDLOCKTIMEOUT = 0x2001;
     public const uint SPIF_SENDCHANGE = 0x2;

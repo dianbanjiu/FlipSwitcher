@@ -54,6 +54,15 @@ public class WindowService
             (exStyle & (int)NativeMethods.WS_EX_APPWINDOW) == 0)
             return null;
 
+        // Filter windows with WS_EX_NOACTIVATE (non-activatable windows should not appear in task switcher)
+        if ((exStyle & (int)NativeMethods.WS_EX_NOACTIVATE) != 0 &&
+            (exStyle & (int)NativeMethods.WS_EX_APPWINDOW) == 0)
+            return null;
+
+        // Filter windows that are too small (skip check for minimized windows)
+        if (!NativeMethods.IsIconic(hWnd) && !HasValidWindowSize(hWnd))
+            return null;
+
         NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
         if (processId == currentProcessId)
             return null;
@@ -61,6 +70,10 @@ public class WindowService
         var owner = NativeMethods.GetWindow(hWnd, NativeMethods.GW_OWNER);
         if (owner != IntPtr.Zero)
         {
+            // Owned windows without WS_EX_APPWINDOW should not be shown (matches Alt-Tab behavior)
+            if ((exStyle & (int)NativeMethods.WS_EX_APPWINDOW) == 0)
+                return null;
+
             var rootOwner = NativeMethods.GetAncestor(hWnd, NativeMethods.GA_ROOTOWNER);
             var lastPopup = NativeMethods.GetLastActivePopup(rootOwner);
             if (lastPopup != hWnd && NativeMethods.IsWindowVisible(lastPopup))
@@ -123,7 +136,7 @@ public class WindowService
                     return true;
 
                 var (isMinimized, isMaximized) = GetWindowState(hWnd);
-                var window = new AppWindow(hWnd, info.Value.Title, info.Value.ClassName, 
+                var window = new AppWindow(hWnd, info.Value.Title, info.Value.ClassName,
                     info.Value.ProcessId, info.Value.ProcessName, isMinimized, isMaximized);
                 windows.Add(window);
             }
@@ -145,6 +158,27 @@ public class WindowService
             var result = NativeMethods.DwmGetWindowAttribute(hWnd, NativeMethods.DWMWA_CLOAKED,
                 out int cloakedState, sizeof(int));
             return result == 0 && cloakedState != 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private const int MinWindowSize = 50; // Minimum window size threshold
+
+    private static bool HasValidWindowSize(IntPtr hWnd)
+    {
+        try
+        {
+            if (NativeMethods.GetWindowRect(hWnd, out var rect))
+            {
+                var width = rect.Right - rect.Left;
+                var height = rect.Bottom - rect.Top;
+                // Filter windows that are too small (e.g., 2x2 hidden windows)
+                return width >= MinWindowSize && height >= MinWindowSize;
+            }
+            return false;
         }
         catch
         {
