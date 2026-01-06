@@ -282,8 +282,11 @@ public partial class MainWindow : Window
             SearchBox.SelectAll();
         }
 
-        // Scroll selected window into view
-        ScrollSelectedIntoView();
+        // Delay scroll execution to ensure layout is complete
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+        {
+            ScrollToTopThenSelected();
+        }));
     }
 
     private void HideWindow()
@@ -444,6 +447,44 @@ public partial class MainWindow : Window
         {
             WindowList.ScrollIntoView(_viewModel.SelectedWindow);
         }
+    }
+
+    /// <summary>
+    /// Force scroll to top of list (used during initialization)
+    /// </summary>
+    private void ScrollToTopThenSelected()
+    {
+        if (_viewModel.FilteredWindows.Count == 0) return;
+        
+        // Get the internal ScrollViewer and force scroll to top
+        var scrollViewer = GetScrollViewer(WindowList);
+        if (scrollViewer != null)
+        {
+            scrollViewer.ScrollToTop();
+        }
+        else
+        {
+            // Fallback: scroll to first item
+            WindowList.ScrollIntoView(_viewModel.FilteredWindows[0]);
+        }
+    }
+
+    /// <summary>
+    /// Get the internal ScrollViewer of a ListBox
+    /// </summary>
+    private static System.Windows.Controls.ScrollViewer? GetScrollViewer(System.Windows.DependencyObject element)
+    {
+        if (element is System.Windows.Controls.ScrollViewer sv)
+            return sv;
+
+        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(element, i);
+            var result = GetScrollViewer(child);
+            if (result != null)
+                return result;
+        }
+        return null;
     }
 
     private void WindowList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
