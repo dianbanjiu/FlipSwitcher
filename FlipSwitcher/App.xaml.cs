@@ -79,6 +79,10 @@ public partial class App : Application
             }
         }
 
+        // Update startup registration to ensure it matches current admin state
+        // This is needed because creating admin startup task requires admin privileges
+        StartupService.UpdateStartupRegistration();
+
         // Initialize language service
         LanguageService.Instance.Initialize();
 
