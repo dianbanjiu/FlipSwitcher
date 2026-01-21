@@ -48,6 +48,8 @@
     <system:String x:Key="SettingsThemeDesc">選擇淺色或深色模式</system:String>
     <system:String x:Key="ThemeDark">深色</system:String>
     <system:String x:Key="ThemeLight">淺色</system:String>
+    <system:String x:Key="ThemeLatte">拿鐵</system:String>
+    <system:String x:Key="ThemeMocha">摩卡</system:String>
     <system:String x:Key="ThemeSystem">跟隨系統</system:String>
     
     <!-- Settings - Behavior -->

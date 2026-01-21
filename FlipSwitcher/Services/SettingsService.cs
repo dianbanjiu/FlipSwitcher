@@ -91,7 +91,7 @@ public class AppSettings
     public bool HideOnFocusLost { get; set; } = true;
 
     /// <summary>
-    /// Theme: 0 = Dark, 1 = Light
+    /// Theme: 0 = Dark, 1 = Light, 2 = Latte, 3 = Mocha
     /// </summary>
     public int Theme { get; set; } = 0;
 

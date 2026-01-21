@@ -252,6 +252,8 @@
                                     ItemContainerStyle="{StaticResource FluentComboBoxItemStyle}">
                                     <ComboBoxItem Content="{DynamicResource ThemeDark}" />
                                     <ComboBoxItem Content="{DynamicResource ThemeLight}" />
+                                    <ComboBoxItem Content="{DynamicResource ThemeLatte}" />
+                                    <ComboBoxItem Content="{DynamicResource ThemeMocha}" />
                                 </ComboBox>
                             </Grid>
 

@@ -8,7 +8,9 @@ namespace FlipSwitcher.Services;
 public enum AppTheme
 {
     Dark = 0,
-    Light = 1
+    Light = 1,
+    Latte = 2,
+    Mocha = 3
 }
 
 public class ThemeService
@@ -18,6 +20,8 @@ public class ThemeService
 
     private const string FluentColorsDark = "pack://application:,,,/Themes/FluentColors.xaml";
     private const string FluentColorsLight = "pack://application:,,,/Themes/FluentColors.Light.xaml";
+    private const string FluentColorsLatte = "pack://application:,,,/Themes/FluentColors.Latte.xaml";
+    private const string FluentColorsMocha = "pack://application:,,,/Themes/FluentColors.Mocha.xaml";
     private const string FluentColorsName = "FluentColors";
     private const int DarkModeEnabled = 1;
     private const int DarkModeDisabled = 0;
@@ -30,7 +34,18 @@ public class ThemeService
     {
         AppTheme.Dark => true,
         AppTheme.Light => false,
+        AppTheme.Latte => false,
+        AppTheme.Mocha => true,
         _ => true
+    };
+
+    private string GetThemeUri(AppTheme theme) => theme switch
+    {
+        AppTheme.Dark => FluentColorsDark,
+        AppTheme.Light => FluentColorsLight,
+        AppTheme.Latte => FluentColorsLatte,
+        AppTheme.Mocha => FluentColorsMocha,
+        _ => FluentColorsDark
     };
 
     private void RemoveColorDictionaries(Collection<ResourceDictionary> dictionaries)
@@ -41,7 +56,9 @@ public class ThemeService
             if (sourceStr != null && 
                 (sourceStr.Contains(FluentColorsName) || 
                  sourceStr.EndsWith("/FluentColors") ||
-                 sourceStr.EndsWith("/FluentColors.Light")))
+                 sourceStr.EndsWith("/FluentColors.Light") ||
+                 sourceStr.EndsWith("/FluentColors.Latte") ||
+                 sourceStr.EndsWith("/FluentColors.Mocha")))
             {
                 dictionaries.RemoveAt(i);
             }
@@ -60,7 +77,7 @@ public class ThemeService
 
         var colorDict = new ResourceDictionary
         {
-            Source = new Uri(isDark ? FluentColorsDark : FluentColorsLight, UriKind.Absolute)
+            Source = new Uri(GetThemeUri(theme), UriKind.Absolute)
         };
         dictionaries.Insert(0, colorDict);
 

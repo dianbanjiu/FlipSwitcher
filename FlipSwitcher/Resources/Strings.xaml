@@ -48,6 +48,8 @@
     <system:String x:Key="SettingsThemeDesc">Choose between light and dark mode</system:String>
     <system:String x:Key="ThemeDark">Dark</system:String>
     <system:String x:Key="ThemeLight">Light</system:String>
+    <system:String x:Key="ThemeLatte">Latte</system:String>
+    <system:String x:Key="ThemeMocha">Mocha</system:String>
     <system:String x:Key="ThemeSystem">System</system:String>
 
     <!-- Settings - Behavior -->

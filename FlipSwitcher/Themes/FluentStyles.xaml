@@ -176,7 +176,8 @@
                             BorderThickness="1"
                             CornerRadius="8"
                             Padding="{TemplateBinding Padding}"
-                            Margin="{TemplateBinding Margin}">
+                            Margin="{TemplateBinding Margin}"
+                            TextElement.Foreground="{StaticResource TextPrimaryBrush}">
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="Center"/>
                     </Border>
@@ -188,6 +189,7 @@
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentDefaultBrush}"/>
                             <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentLight1Brush}"/>
+                            <Setter TargetName="Border" Property="TextElement.Foreground" Value="{StaticResource TextOnAccentBrush}"/>
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -195,6 +197,7 @@
                                 <Condition Property="IsMouseOver" Value="True"/>
                             </MultiTrigger.Conditions>
                             <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentLight1Brush}"/>
+                            <Setter TargetName="Border" Property="TextElement.Foreground" Value="{StaticResource TextOnAccentBrush}"/>
                         </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
