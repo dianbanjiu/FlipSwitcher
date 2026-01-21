@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
+using FlipSwitcher.Services;
 
 namespace FlipSwitcher.Converters;
 
@@ -53,3 +54,42 @@ public class InverseBoolToVisibilityConverter : IValueConverter
     }
 }
 
+/// <summary>
+/// Converts elevated window flag to Opacity (dimmed when not running as admin)
+/// </summary>
+public class ElevatedToOpacityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is bool isElevated && isElevated && !AdminService.IsRunningAsAdmin())
+        {
+            return 0.5;
+        }
+        return 1.0;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Converts elevated window flag to Visibility (visible when not running as admin)
+/// </summary>
+public class ElevatedToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is bool isElevated && isElevated && !AdminService.IsRunningAsAdmin())
+        {
+            return Visibility.Visible;
+        }
+        return Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}

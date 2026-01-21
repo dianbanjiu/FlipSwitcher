@@ -22,6 +22,7 @@ public class AppWindow : INotifyPropertyChanged
     private bool _isSelected;
     private ImageSource? _icon;
     private bool _iconLoaded;
+    private bool? _isElevated;
 
     public IntPtr Handle { get; }
     public string Title { get; }
@@ -30,6 +31,61 @@ public class AppWindow : INotifyPropertyChanged
     public uint ProcessId { get; }
     public bool IsMinimized { get; }
     public bool IsMaximized { get; }
+
+    /// <summary>
+    /// Whether the window's process is running with administrator privileges
+    /// </summary>
+    public bool IsElevated
+    {
+        get
+        {
+            _isElevated ??= CheckProcessElevation();
+            return _isElevated.Value;
+        }
+    }
+
+    private bool CheckProcessElevation()
+    {
+        var hProcess = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION, false, ProcessId);
+        if (hProcess == IntPtr.Zero) return false;
+
+        try
+        {
+            if (!NativeMethods.OpenProcessToken(hProcess, NativeMethods.TOKEN_QUERY, out var tokenHandle))
+                return false;
+
+            try
+            {
+                var elevationSize = System.Runtime.InteropServices.Marshal.SizeOf<NativeMethods.TOKEN_ELEVATION>();
+                var elevationPtr = System.Runtime.InteropServices.Marshal.AllocHGlobal(elevationSize);
+                try
+                {
+                    if (NativeMethods.GetTokenInformation(tokenHandle, NativeMethods.TokenElevation, elevationPtr, elevationSize, out _))
+                    {
+                        var elevation = System.Runtime.InteropServices.Marshal.PtrToStructure<NativeMethods.TOKEN_ELEVATION>(elevationPtr);
+                        return elevation.TokenIsElevated != 0;
+                    }
+                }
+                finally
+                {
+                    System.Runtime.InteropServices.Marshal.FreeHGlobal(elevationPtr);
+                }
+            }
+            finally
+            {
+                NativeMethods.CloseHandle(tokenHandle);
+            }
+        }
+        catch
+        {
+            // Assume normal privileges if detection fails
+        }
+        finally
+        {
+            NativeMethods.CloseHandle(hProcess);
+        }
+        return false;
+    }
 
     public bool IsSelected
     {

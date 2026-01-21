@@ -219,11 +219,19 @@ public class MainViewModel : ObservableObject
     /// <summary>
     /// Close the selected window and refresh the list
     /// </summary>
-    public void CloseSelectedWindow()
+    /// <returns>true if closed successfully, false if the window is elevated and we're not admin</returns>
+    public bool CloseSelectedWindow()
     {
-        if (SelectedWindow == null) return;
+        if (SelectedWindow == null) return true;
 
         var windowToClose = SelectedWindow;
+
+        // Check if admin privileges are required
+        if (windowToClose.IsElevated && !Services.AdminService.IsRunningAsAdmin())
+        {
+            return false;
+        }
+
         var currentIndex = FilteredWindows.IndexOf(windowToClose);
 
         // Close the window
@@ -233,6 +241,7 @@ public class MainViewModel : ObservableObject
         FilteredWindows.Remove(windowToClose);
         NotifyWindowCountChanged();
         SelectWindowAfterRemoval(currentIndex);
+        return true;
     }
 
     /// <summary>

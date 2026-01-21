@@ -173,7 +173,21 @@ public partial class MainWindow : Window
     {
         if (!IsVisible) return;
 
-        _viewModel.CloseSelectedWindow();
+        TryCloseSelectedWindow();
+    }
+
+    private void TryCloseSelectedWindow()
+    {
+        if (!_viewModel.CloseSelectedWindow())
+        {
+            // Cannot close elevated window, show prompt
+            FluentDialog.Show(
+                LanguageService.GetString("MsgCannotCloseElevatedWindow"),
+                LanguageService.GetString("AppTitle"),
+                FluentDialogButton.OK,
+                FluentDialogIcon.Warning,
+                this);
+        }
     }
 
     private void HotkeyService_StopProcessRequested(object? sender, EventArgs e)
@@ -407,7 +421,7 @@ public partial class MainWindow : Window
                 // Alt+W to close selected window
                 if (Keyboard.Modifiers == ModifierKeys.Alt)
                 {
-                    _viewModel.CloseSelectedWindow();
+                    TryCloseSelectedWindow();
                     e.Handled = true;
                 }
                 break;

@@ -370,5 +370,24 @@ internal static class NativeMethods
     public const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
 
     #endregion
+
+    #region Process Token (for elevation check)
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    public static extern bool OpenProcessToken(IntPtr ProcessHandle, uint DesiredAccess, out IntPtr TokenHandle);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    public static extern bool GetTokenInformation(IntPtr TokenHandle, int TokenInformationClass, IntPtr TokenInformation, int TokenInformationLength, out int ReturnLength);
+
+    public const uint TOKEN_QUERY = 0x0008;
+    public const int TokenElevation = 20;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct TOKEN_ELEVATION
+    {
+        public int TokenIsElevated;
+    }
+
+    #endregion
 }
 

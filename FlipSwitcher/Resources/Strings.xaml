@@ -11,6 +11,7 @@
     <system:String x:Key="NoWindowsFound">No windows found</system:String>
     <system:String x:Key="TryDifferentSearch">Try a different search term</system:String>
     <system:String x:Key="Minimized">Minimized</system:String>
+    <system:String x:Key="ElevatedWindow">Admin</system:String>
 
     <!-- Footer Hints -->
     <system:String x:Key="HintEnter">Enter</system:String>
@@ -95,6 +96,7 @@
         running as administrator.</system:String>
     <system:String x:Key="MsgStartupDisabledFailed">Failed to disable startup with Windows.</system:String>
     <system:String x:Key="MsgAtLeastOneHotkey">At least one hotkey must be enabled.</system:String>
+    <system:String x:Key="MsgCannotCloseElevatedWindow">Cannot close administrator windows. Please enable "Run as Administrator" in Settings.</system:String>
     <system:String x:Key="MsgErrorOccurred">An error occurred: {0}</system:String>
     <system:String x:Key="MsgErrorTitle">FlipSwitcher Error</system:String>
     <system:String x:Key="MsgUpdateAvailable">FlipSwitcher new version {0} is available! Would you like to

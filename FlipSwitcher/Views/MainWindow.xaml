@@ -4,6 +4,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:FlipSwitcher.ViewModels"
+    xmlns:converters="clr-namespace:FlipSwitcher.Converters"
     mc:Ignorable="d"
     Title="{DynamicResource AppTitle}"
     Height="520"
@@ -22,6 +23,11 @@
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
+
+    <Window.Resources>
+        <converters:ElevatedToOpacityConverter x:Key="ElevatedToOpacityConverter" />
+        <converters:ElevatedToVisibilityConverter x:Key="ElevatedToVisibilityConverter" />
+    </Window.Resources>
 
     <!-- Main Container with Acrylic-like background -->
     <Border x:Name="MainBorder"
@@ -113,10 +119,11 @@
                         VirtualizingPanel.VirtualizationMode="Recycling">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="2,0">
+                                <Grid Margin="2,0" Opacity="{Binding IsElevated, Converter={StaticResource ElevatedToOpacityConverter}}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
@@ -147,8 +154,21 @@
                                             Margin="0,2,0,0" />
                                     </StackPanel>
 
-                                    <!-- Minimized Indicator -->
+                                    <!-- Elevated Indicator (Admin window when not running as admin) -->
                                     <Border Grid.Column="2"
+                                        Visibility="{Binding IsElevated, Converter={StaticResource ElevatedToVisibilityConverter}}"
+                                        Background="{StaticResource SystemFillColorCautionBackgroundBrush}"
+                                        CornerRadius="4"
+                                        Padding="8,4"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center">
+                                        <TextBlock Text="{DynamicResource ElevatedWindow}"
+                                            Style="{StaticResource CaptionTextStyle}"
+                                            Foreground="{StaticResource SystemFillColorCautionBrush}" />
+                                    </Border>
+
+                                    <!-- Minimized Indicator -->
+                                    <Border Grid.Column="3"
                                         Visibility="{Binding IsMinimized, Converter={StaticResource BoolToVisibilityConverter}}"
                                         Background="{StaticResource ControlDefaultBrush}"
                                         CornerRadius="4"

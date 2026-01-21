@@ -46,6 +46,10 @@
     <Color x:Key="SubtleTransparent">#00FFFFFF</Color>
     <Color x:Key="SubtleSecondary">#0FFFFFFF</Color>
     
+    <!-- System Fill Colors - Caution (for elevated windows) -->
+    <Color x:Key="SystemFillColorCaution">#FFFCE100</Color>
+    <Color x:Key="SystemFillColorCautionBackground">#33FCE100</Color>
+    
     <!-- ScrollBar Colors -->
     <Color x:Key="ScrollBarThumbDefault">#4DFFFFFF</Color>
     <Color x:Key="ScrollBarThumbHover">#66FFFFFF</Color>
@@ -85,6 +89,9 @@
     
     <SolidColorBrush x:Key="SubtleTransparentBrush" Color="{StaticResource SubtleTransparent}"/>
     <SolidColorBrush x:Key="SubtleSecondaryBrush" Color="{StaticResource SubtleSecondary}"/>
+    
+    <SolidColorBrush x:Key="SystemFillColorCautionBrush" Color="{StaticResource SystemFillColorCaution}"/>
+    <SolidColorBrush x:Key="SystemFillColorCautionBackgroundBrush" Color="{StaticResource SystemFillColorCautionBackground}"/>
     
     <SolidColorBrush x:Key="ScrollBarThumbDefaultBrush" Color="{StaticResource ScrollBarThumbDefault}"/>
     <SolidColorBrush x:Key="ScrollBarThumbHoverBrush" Color="{StaticResource ScrollBarThumbHover}"/>
