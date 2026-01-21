@@ -51,6 +51,7 @@ public class HotkeyService : IDisposable
     private bool _isVisible;
     private bool _isSearchMode;
     private bool _isSettingsWindowOpen;
+    private bool _ignoreAltRelease;
 
     /// <summary>
     /// Fired when the activation hotkey is pressed (to show/hide FlipSwitcher)
@@ -135,6 +136,14 @@ public class HotkeyService : IDisposable
     public void SetSettingsWindowOpen(bool isOpen)
     {
         _isSettingsWindowOpen = isOpen;
+    }
+
+    /// <summary>
+    /// Temporarily ignore Alt release events (used during window activation to prevent re-triggering)
+    /// </summary>
+    public void SetIgnoreAltRelease(bool ignore)
+    {
+        _ignoreAltRelease = ignore;
     }
 
     public void RegisterHotkeys(Window window, bool useAltSpace = false, bool useAltTab = true)
@@ -249,7 +258,7 @@ public class HotkeyService : IDisposable
 
     private void HandleAltRelease(bool isKeyUp, uint vkCode)
     {
-        if (!isKeyUp || !_isVisible)
+        if (!isKeyUp || !_isVisible || _ignoreAltRelease)
             return;
 
         if (vkCode == NativeMethods.VK_MENU || 

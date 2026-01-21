@@ -165,8 +165,25 @@ public partial class MainWindow : Window
         // When Alt is released in Alt+Tab mode, activate the selected window
         if (_isAltTabMode)
         {
-            _viewModel.ActivateSelected();
+            ActivateSelectedWindow();
         }
+    }
+
+    private void ActivateSelectedWindow()
+    {
+        var selectedWindow = _viewModel.SelectedWindow;
+        if (selectedWindow == null) return;
+
+        // Skip activation for elevated windows when not running as admin
+        if (selectedWindow.IsElevated && !AdminService.IsRunningAsAdmin())
+        {
+            HideWindow();
+            return;
+        }
+
+        // Ignore simulated Alt release events during window activation
+        _hotkeyService.SetIgnoreAltRelease(true);
+        _viewModel.ActivateSelected();
     }
 
     private void HotkeyService_CloseWindowRequested(object? sender, EventArgs e)
@@ -374,7 +391,7 @@ public partial class MainWindow : Window
                 break;
 
             case Key.Enter:
-                _viewModel.ActivateSelected();
+                ActivateSelectedWindow();
                 e.Handled = true;
                 break;
 
@@ -503,18 +520,20 @@ public partial class MainWindow : Window
 
     private void WindowList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        // 单击时直接激活选中的窗口
+        // Activate the selected window on click
         if (_viewModel.SelectedWindow != null)
         {
-            _viewModel.ActivateSelected();
+            ActivateSelectedWindow();
         }
     }
 
     private void ViewModel_WindowActivated(object? sender, EventArgs e)
     {
-        // 重置分组状态，确保下次打开时显示总列表
+        // Reset grouping state for next time
         _viewModel.ResetGrouping();
         HideWindow();
+        // Reset the ignore flag after window is hidden
+        _hotkeyService.SetIgnoreAltRelease(false);
     }
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)

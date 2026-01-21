@@ -91,6 +91,7 @@
     <system:String x:Key="MsgStartupDisabledFailed">无法禁用开机自启。</system:String>
     <system:String x:Key="MsgAtLeastOneHotkey">至少需要启用一个快捷键。</system:String>
     <system:String x:Key="MsgCannotCloseElevatedWindow">无法关闭管理员窗口，请在设置中启用"以管理员身份运行"。</system:String>
+    <system:String x:Key="MsgCannotSwitchToElevatedWindow">无法切换到管理员窗口，请在设置中启用"以管理员身份运行"。</system:String>
     <system:String x:Key="MsgErrorOccurred">发生错误：{0}</system:String>
     <system:String x:Key="MsgErrorTitle">FlipSwitcher 错误</system:String>
     <system:String x:Key="MsgUpdateAvailable">发现 FlipSwitcher 新版本 {0}！是否立即下载？</system:String>
