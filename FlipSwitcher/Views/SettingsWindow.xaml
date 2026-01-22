@@ -15,8 +15,8 @@
     PreviewKeyDown="Window_PreviewKeyDown">
 
     <!-- Main Container -->
-    <Border Background="{StaticResource BackgroundSolidBaseBrush}"
-        BorderBrush="{StaticResource SurfaceStrokeBrush}"
+    <Border Background="{DynamicResource BackgroundSolidBaseBrush}"
+        BorderBrush="{DynamicResource SurfaceStrokeBrush}"
         BorderThickness="1"
         CornerRadius="12">
 
@@ -28,7 +28,7 @@
 
             <!-- Header (draggable) -->
             <Border Grid.Row="0"
-                Background="{StaticResource BackgroundSolidSecondaryBrush}"
+                Background="{DynamicResource BackgroundSolidSecondaryBrush}"
                 CornerRadius="12,12,12,12"
                 Padding="20,16"
                 MouseLeftButtonDown="Header_MouseLeftButtonDown">
@@ -41,7 +41,7 @@
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
                         <!-- Settings Icon -->
                         <Border Width="32" Height="32"
-                            Background="{StaticResource AccentGradientBrush}"
+                            Background="{DynamicResource AccentGradientBrush}"
                             CornerRadius="8"
                             Margin="0,0,12,0">
                             <Path
@@ -53,32 +53,32 @@
                                 VerticalAlignment="Center" />
                         </Border>
                         <TextBlock Text="{DynamicResource Settings}"
-                            Style="{StaticResource TitleTextStyle}"
+                            Style="{DynamicResource TitleTextStyle}"
                             VerticalAlignment="Center" />
                     </StackPanel>
 
                     <!-- Close Button -->
                     <Button Grid.Column="1"
                         Click="CloseButton_Click"
-                        Style="{StaticResource FluentCloseButtonStyle}" />
+                        Style="{DynamicResource FluentCloseButtonStyle}" />
                 </Grid>
             </Border>
 
             <!-- Settings Content -->
             <ScrollViewer Grid.Row="1"
-                Background="{StaticResource BackgroundSolidBaseBrush}"
+                Background="{DynamicResource BackgroundSolidBaseBrush}"
                 VerticalScrollBarVisibility="Auto"
                 Padding="20,16,20,20"
-                Style="{StaticResource FluentScrollViewerStyle}">
+                Style="{DynamicResource FluentScrollViewerStyle}">
                 <StackPanel>
 
                     <!-- Language Section -->
                     <TextBlock Text="{DynamicResource SettingsLanguage}"
-                        Style="{StaticResource SubtitleTextStyle}"
+                        Style="{DynamicResource SubtitleTextStyle}"
                         Margin="0,0,0,12" />
 
-                    <Border Background="{StaticResource CardBackgroundBrush}"
-                        BorderBrush="{StaticResource SurfaceStrokeDefaultBrush}"
+                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource SurfaceStrokeDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="16"
@@ -91,9 +91,9 @@
 
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="{DynamicResource SettingsLanguage}"
-                                    Style="{StaticResource BodyStrongTextStyle}" />
+                                    Style="{DynamicResource BodyStrongTextStyle}" />
                                 <TextBlock Text="{DynamicResource SettingsLanguageDesc}"
-                                    Style="{StaticResource CaptionTextStyle}"
+                                    Style="{DynamicResource CaptionTextStyle}"
                                     Margin="0,4,0,0" />
                             </StackPanel>
 
@@ -102,8 +102,8 @@
                                 Width="120"
                                 SelectedIndex="0"
                                 SelectionChanged="LanguageComboBox_SelectionChanged"
-                                Style="{StaticResource FluentComboBoxStyle}"
-                                ItemContainerStyle="{StaticResource FluentComboBoxItemStyle}">
+                                Style="{DynamicResource FluentComboBoxStyle}"
+                                ItemContainerStyle="{DynamicResource FluentComboBoxItemStyle}">
                                 <ComboBoxItem Content="{DynamicResource LanguageEnglish}" Tag="0" />
                                 <ComboBoxItem Content="{DynamicResource LanguageChinese}" Tag="1" />
                                 <ComboBoxItem Content="{DynamicResource LanguageChineseTraditional}"
@@ -114,11 +114,11 @@
 
                     <!-- Hotkey Section -->
                     <TextBlock Text="{DynamicResource SettingsHotkey}"
-                        Style="{StaticResource SubtitleTextStyle}"
+                        Style="{DynamicResource SubtitleTextStyle}"
                         Margin="0,0,0,12" />
 
-                    <Border Background="{StaticResource CardBackgroundBrush}"
-                        BorderBrush="{StaticResource SurfaceStrokeDefaultBrush}"
+                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource SurfaceStrokeDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="16"
@@ -133,9 +133,9 @@
 
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="{DynamicResource SettingsAltSpace}"
-                                        Style="{StaticResource BodyStrongTextStyle}" />
+                                        Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsAltSpaceDesc}"
-                                        Style="{StaticResource CaptionTextStyle}"
+                                        Style="{DynamicResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
@@ -144,7 +144,7 @@
                                     IsChecked="True"
                                     Checked="HotkeyCheckBox_Changed"
                                     Unchecked="HotkeyCheckBox_Changed"
-                                    Style="{StaticResource FluentCheckBoxStyle}" />
+                                    Style="{DynamicResource FluentCheckBoxStyle}" />
                             </Grid>
 
                             <!-- Alt + Tab Option -->
@@ -157,21 +157,21 @@
                                 <StackPanel Grid.Column="0">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{DynamicResource SettingsAltTab}"
-                                            Style="{StaticResource BodyStrongTextStyle}" />
-                                        <Border Background="{StaticResource AccentDefaultBrush}"
+                                            Style="{DynamicResource BodyStrongTextStyle}" />
+                                        <Border Background="{DynamicResource AccentDefaultBrush}"
                                             CornerRadius="4"
                                             Padding="6,2"
                                             Margin="8,0,0,0"
                                             VerticalAlignment="Center">
                                             <TextBlock
                                                 Text="{DynamicResource SettingsReplacesSystem}"
-                                                Style="{StaticResource CaptionTextStyle}"
+                                                Style="{DynamicResource CaptionTextStyle}"
                                                 FontSize="10"
-                                                Foreground="{StaticResource TextOnAccentBrush}" />
+                                                Foreground="{DynamicResource TextOnAccentBrush}" />
                                         </Border>
                                     </StackPanel>
                                     <TextBlock Text="{DynamicResource SettingsAltTabDesc}"
-                                        Style="{StaticResource CaptionTextStyle}"
+                                        Style="{DynamicResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
@@ -180,24 +180,24 @@
                                     IsChecked="False"
                                     Checked="HotkeyCheckBox_Changed"
                                     Unchecked="HotkeyCheckBox_Changed"
-                                    Style="{StaticResource FluentCheckBoxStyle}" />
+                                    Style="{DynamicResource FluentCheckBoxStyle}" />
                             </Grid>
 
                             <!-- Current Hotkey Display -->
-                            <Border Background="{StaticResource ControlDefaultBrush}"
+                            <Border Background="{DynamicResource ControlDefaultBrush}"
                                 CornerRadius="6"
                                 Padding="12,8"
                                 Margin="0,16,0,0">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{DynamicResource SettingsActiveHotkey}"
-                                        Style="{StaticResource CaptionTextStyle}"
-                                        Foreground="{StaticResource TextSecondaryBrush}"
+                                        Style="{DynamicResource CaptionTextStyle}"
+                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                         VerticalAlignment="Center"
                                         Margin="0,0,8,0" />
                                     <TextBlock x:Name="CurrentHotkeyText"
                                         Text="Alt + Space"
-                                        Style="{StaticResource BodyStrongTextStyle}"
-                                        Foreground="{StaticResource AccentDefaultBrush}"
+                                        Style="{DynamicResource BodyStrongTextStyle}"
+                                        Foreground="{DynamicResource AccentDefaultBrush}"
                                         VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
@@ -206,11 +206,11 @@
 
                     <!-- Appearance Section -->
                     <TextBlock Text="{DynamicResource SettingsAppearance}"
-                        Style="{StaticResource SubtitleTextStyle}"
+                        Style="{DynamicResource SubtitleTextStyle}"
                         Margin="0,0,0,12" />
 
-                    <Border Background="{StaticResource CardBackgroundBrush}"
-                        BorderBrush="{StaticResource SurfaceStrokeDefaultBrush}"
+                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource SurfaceStrokeDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="16"
@@ -224,22 +224,10 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{DynamicResource SettingsTheme}"
-                                            Style="{StaticResource BodyStrongTextStyle}" />
-                                        <Border Background="{StaticResource AccentDefaultBrush}"
-                                            CornerRadius="4"
-                                            Padding="6,2"
-                                            Margin="8,0,0,0"
-                                            VerticalAlignment="Center">
-                                            <TextBlock Text="{DynamicResource SettingsThemeRestartHint}"
-                                                Style="{StaticResource CaptionTextStyle}"
-                                                FontSize="10"
-                                                Foreground="{StaticResource TextOnAccentBrush}" />
-                                        </Border>
-                                    </StackPanel>
+                                    <TextBlock Text="{DynamicResource SettingsTheme}"
+                                        Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsThemeDesc}"
-                                        Style="{StaticResource CaptionTextStyle}"
+                                        Style="{DynamicResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
@@ -248,8 +236,8 @@
                                     Width="120"
                                     SelectedIndex="0"
                                     SelectionChanged="ThemeComboBox_SelectionChanged"
-                                    Style="{StaticResource FluentComboBoxStyle}"
-                                    ItemContainerStyle="{StaticResource FluentComboBoxItemStyle}">
+                                    Style="{DynamicResource FluentComboBoxStyle}"
+                                    ItemContainerStyle="{DynamicResource FluentComboBoxItemStyle}">
                                     <ComboBoxItem Content="{DynamicResource ThemeDark}" />
                                     <ComboBoxItem Content="{DynamicResource ThemeLight}" />
                                     <ComboBoxItem Content="{DynamicResource ThemeLatte}" />
@@ -266,9 +254,9 @@
 
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="{DynamicResource SettingsFont}"
-                                        Style="{StaticResource BodyStrongTextStyle}" />
+                                        Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsFontDesc}"
-                                        Style="{StaticResource CaptionTextStyle}"
+                                        Style="{DynamicResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
@@ -276,8 +264,8 @@
                                     Grid.Column="1"
                                     Width="200"
                                     SelectionChanged="FontFamilyComboBox_SelectionChanged"
-                                    Style="{StaticResource FluentComboBoxStyle}"
-                                    ItemContainerStyle="{StaticResource FluentComboBoxItemStyle}" />
+                                    Style="{DynamicResource FluentComboBoxStyle}"
+                                    ItemContainerStyle="{DynamicResource FluentComboBoxItemStyle}" />
                             </Grid>
 
                         </StackPanel>
@@ -285,11 +273,11 @@
 
                     <!-- Behavior Section -->
                     <TextBlock Text="{DynamicResource SettingsBehavior}"
-                        Style="{StaticResource SubtitleTextStyle}"
+                        Style="{DynamicResource SubtitleTextStyle}"
                         Margin="0,0,0,12" />
 
-                    <Border Background="{StaticResource CardBackgroundBrush}"
-                        BorderBrush="{StaticResource SurfaceStrokeDefaultBrush}"
+                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource SurfaceStrokeDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="16"
@@ -305,20 +293,20 @@
                                 <StackPanel Grid.Column="0">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{DynamicResource SettingsRunAsAdmin}"
-                                            Style="{StaticResource BodyStrongTextStyle}" />
+                                            Style="{DynamicResource BodyStrongTextStyle}" />
                                         <Border x:Name="AdminStatusBadge"
                                             CornerRadius="4"
                                             Padding="6,2"
                                             Margin="8,0,0,0"
                                             VerticalAlignment="Center">
                                             <TextBlock x:Name="AdminStatusText"
-                                                Style="{StaticResource CaptionTextStyle}"
+                                                Style="{DynamicResource CaptionTextStyle}"
                                                 FontSize="10" />
                                         </Border>
                                     </StackPanel>
                                     <TextBlock
                                         Text="{DynamicResource SettingsRunAsAdminDesc}"
-                                        Style="{StaticResource CaptionTextStyle}"
+                                        Style="{DynamicResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
@@ -327,7 +315,7 @@
                                     IsChecked="False"
                                     Checked="RunAsAdminCheckBox_Changed"
                                     Unchecked="RunAsAdminCheckBox_Changed"
-                                    Style="{StaticResource FluentCheckBoxStyle}" />
+                                    Style="{DynamicResource FluentCheckBoxStyle}" />
                             </Grid>
 
                             <!-- Start with Windows -->
@@ -339,9 +327,9 @@
 
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="{DynamicResource SettingsStartWithWindows}"
-                                        Style="{StaticResource BodyStrongTextStyle}" />
+                                        Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsStartWithWindowsDesc}"
-                                        Style="{StaticResource CaptionTextStyle}"
+                                        Style="{DynamicResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
@@ -350,7 +338,7 @@
                                     IsChecked="False"
                                     Checked="StartWithWindowsCheckBox_Changed"
                                     Unchecked="StartWithWindowsCheckBox_Changed"
-                                    Style="{StaticResource FluentCheckBoxStyle}" />
+                                    Style="{DynamicResource FluentCheckBoxStyle}" />
                             </Grid>
 
                             <!-- Hide on Focus Lost -->
@@ -362,9 +350,9 @@
 
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="{DynamicResource SettingsHideOnFocusLost}"
-                                        Style="{StaticResource BodyStrongTextStyle}" />
+                                        Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsHideOnFocusLostDesc}"
-                                        Style="{StaticResource CaptionTextStyle}"
+                                        Style="{DynamicResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
@@ -373,7 +361,7 @@
                                     IsChecked="True"
                                     Checked="HideOnFocusLostCheckBox_Changed"
                                     Unchecked="HideOnFocusLostCheckBox_Changed"
-                                    Style="{StaticResource FluentCheckBoxStyle}" />
+                                    Style="{DynamicResource FluentCheckBoxStyle}" />
                             </Grid>
 
                             <!-- Pinyin Search -->
@@ -385,9 +373,9 @@
 
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="{DynamicResource SettingsPinyinSearch}"
-                                        Style="{StaticResource BodyStrongTextStyle}" />
+                                        Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsPinyinSearchDesc}"
-                                        Style="{StaticResource CaptionTextStyle}"
+                                        Style="{DynamicResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
@@ -396,18 +384,18 @@
                                     IsChecked="False"
                                     Checked="PinyinSearchCheckBox_Changed"
                                     Unchecked="PinyinSearchCheckBox_Changed"
-                                    Style="{StaticResource FluentCheckBoxStyle}" />
+                                    Style="{DynamicResource FluentCheckBoxStyle}" />
                             </Grid>
                         </StackPanel>
                     </Border>
 
                     <!-- Updates Section -->
                     <TextBlock Text="{DynamicResource SettingsUpdates}"
-                        Style="{StaticResource SubtitleTextStyle}"
+                        Style="{DynamicResource SubtitleTextStyle}"
                         Margin="0,0,0,12" />
 
-                    <Border Background="{StaticResource CardBackgroundBrush}"
-                        BorderBrush="{StaticResource SurfaceStrokeDefaultBrush}"
+                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource SurfaceStrokeDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="16"
@@ -421,10 +409,10 @@
 
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="{DynamicResource SettingsCheckForUpdatesAuto}"
-                                        Style="{StaticResource BodyStrongTextStyle}" />
+                                        Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock
                                         Text="{DynamicResource SettingsCheckForUpdatesAutoDesc}"
-                                        Style="{StaticResource CaptionTextStyle}"
+                                        Style="{DynamicResource CaptionTextStyle}"
                                         Margin="0,4,0,0" />
                                 </StackPanel>
 
@@ -433,35 +421,35 @@
                                     IsChecked="False"
                                     Checked="CheckForUpdatesCheckBox_Changed"
                                     Unchecked="CheckForUpdatesCheckBox_Changed"
-                                    Style="{StaticResource FluentCheckBoxStyle}" />
+                                    Style="{DynamicResource FluentCheckBoxStyle}" />
                             </Grid>
 
                             <Button x:Name="CheckForUpdatesButton"
                                 Content="{DynamicResource SettingsCheckForUpdates}"
                                 Click="CheckForUpdatesButton_Click"
-                                Style="{StaticResource FluentButtonStyle}"
+                                Style="{DynamicResource FluentButtonStyle}"
                                 HorizontalAlignment="Left" />
                         </StackPanel>
                     </Border>
 
                     <!-- About Section -->
                     <TextBlock Text="{DynamicResource SettingsAbout}"
-                        Style="{StaticResource SubtitleTextStyle}"
+                        Style="{DynamicResource SubtitleTextStyle}"
                         Margin="0,0,0,12" />
 
-                    <Border Background="{StaticResource CardBackgroundBrush}"
-                        BorderBrush="{StaticResource SurfaceStrokeDefaultBrush}"
+                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource SurfaceStrokeDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="16">
                         <StackPanel>
                             <TextBlock x:Name="VersionText"
-                                Style="{StaticResource BodyStrongTextStyle}" />
+                                Style="{DynamicResource BodyStrongTextStyle}" />
                             <TextBlock Text="{DynamicResource SettingsAboutDesc}"
-                                Style="{StaticResource CaptionTextStyle}"
+                                Style="{DynamicResource CaptionTextStyle}"
                                 Margin="0,4,0,8" />
-                            <TextBlock Style="{StaticResource CaptionTextStyle}"
-                                Foreground="{StaticResource AccentDefaultBrush}">
+                            <TextBlock Style="{DynamicResource CaptionTextStyle}"
+                                Foreground="{DynamicResource AccentDefaultBrush}">
                                 <Hyperlink NavigateUri="https://github.com/dianbanjiu/FlipSwitcher"
                                     RequestNavigate="Hyperlink_RequestNavigate">
                                     <Run Text="{DynamicResource SettingsViewOnGitHub}" />

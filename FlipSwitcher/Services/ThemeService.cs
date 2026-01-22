@@ -22,7 +22,9 @@ public class ThemeService
     private const string FluentColorsLight = "pack://application:,,,/Themes/FluentColors.Light.xaml";
     private const string FluentColorsLatte = "pack://application:,,,/Themes/FluentColors.Latte.xaml";
     private const string FluentColorsMocha = "pack://application:,,,/Themes/FluentColors.Mocha.xaml";
+    private const string FluentStyles = "pack://application:,,,/Themes/FluentStyles.xaml";
     private const string FluentColorsName = "FluentColors";
+    private const string FluentStylesName = "FluentStyles";
     private const int DarkModeEnabled = 1;
     private const int DarkModeDisabled = 0;
 
@@ -48,17 +50,14 @@ public class ThemeService
         _ => FluentColorsDark
     };
 
-    private void RemoveColorDictionaries(Collection<ResourceDictionary> dictionaries)
+    private void RemoveThemeDictionaries(Collection<ResourceDictionary> dictionaries)
     {
         for (int i = dictionaries.Count - 1; i >= 0; i--)
         {
             var sourceStr = dictionaries[i].Source?.OriginalString;
             if (sourceStr != null && 
                 (sourceStr.Contains(FluentColorsName) || 
-                 sourceStr.EndsWith("/FluentColors") ||
-                 sourceStr.EndsWith("/FluentColors.Light") ||
-                 sourceStr.EndsWith("/FluentColors.Latte") ||
-                 sourceStr.EndsWith("/FluentColors.Mocha")))
+                 sourceStr.Contains(FluentStylesName)))
             {
                 dictionaries.RemoveAt(i);
             }
@@ -73,13 +72,20 @@ public class ThemeService
         bool isDark = IsDarkTheme(theme);
         var dictionaries = app.Resources.MergedDictionaries;
 
-        RemoveColorDictionaries(dictionaries);
+        RemoveThemeDictionaries(dictionaries);
 
+        // 先加载颜色资源，再加载样式资源（样式依赖颜色）
         var colorDict = new ResourceDictionary
         {
             Source = new Uri(GetThemeUri(theme), UriKind.Absolute)
         };
         dictionaries.Insert(0, colorDict);
+
+        var stylesDict = new ResourceDictionary
+        {
+            Source = new Uri(FluentStyles, UriKind.Absolute)
+        };
+        dictionaries.Insert(1, stylesDict);
 
         UpdateWindowThemes(isDark);
     }

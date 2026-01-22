@@ -110,7 +110,6 @@
     <system:String x:Key="DefaultFontDisplay">默认 (Segoe UI Variable)</system:String>
     <system:String x:Key="HotkeyNone">无</system:String>
     <system:String x:Key="HotkeySeparator"> / </system:String>
-    <system:String x:Key="SettingsThemeRestartHint">重启生效</system:String>
     <system:String x:Key="SettingsFont">字体</system:String>
     <system:String x:Key="SettingsFontDesc">选择应用程序使用的字体</system:String>
     <system:String x:Key="TrayToolTip">FlipSwitcher</system:String>

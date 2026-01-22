@@ -118,7 +118,6 @@
     <system:String x:Key="DefaultFontDisplay">Default (Segoe UI Variable)</system:String>
     <system:String x:Key="HotkeyNone">None</system:String>
     <system:String x:Key="HotkeySeparator"> / </system:String>
-    <system:String x:Key="SettingsThemeRestartHint">Restart Required</system:String>
     <system:String x:Key="SettingsFont">Font</system:String>
     <system:String x:Key="SettingsFontDesc">Choose the font used by the application</system:String>
     <system:String x:Key="TrayToolTip">FlipSwitcher</system:String>

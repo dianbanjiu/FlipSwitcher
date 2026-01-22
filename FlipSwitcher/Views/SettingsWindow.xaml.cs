@@ -53,10 +53,10 @@ public partial class SettingsWindow : Window
         {
             _hotkeyService.EscapePressed += HotkeyService_EscapePressed;
         }
-        
+
         // Listen for window deactivation event
         Deactivated += SettingsWindow_Deactivated;
-        
+
         // Ensure window gets focus after content is rendered (fixes first-open focus issue)
         ContentRendered += SettingsWindow_ContentRendered;
     }
@@ -65,7 +65,7 @@ public partial class SettingsWindow : Window
     {
         // Only need to handle once
         ContentRendered -= SettingsWindow_ContentRendered;
-        
+
         // Force activate using same technique as MainWindow
         Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
         {
@@ -76,14 +76,14 @@ public partial class SettingsWindow : Window
     private void ForceActivateWindow()
     {
         var hwnd = new WindowInteropHelper(this).Handle;
-        
+
         // Simulate Alt key to allow SetForegroundWindow
         NativeMethods.keybd_event(NativeMethods.VK_ALT, 0, NativeMethods.KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
         NativeMethods.keybd_event(NativeMethods.VK_ALT, 0, NativeMethods.KEYEVENTF_EXTENDEDKEY | NativeMethods.KEYEVENTF_KEYUP, UIntPtr.Zero);
-        
+
         NativeMethods.SetForegroundWindow(hwnd);
         NativeMethods.BringWindowToTop(hwnd);
-        
+
         Activate();
         Focus();
     }
@@ -102,7 +102,7 @@ public partial class SettingsWindow : Window
         var fonts = FontService.Instance.GetInstalledFonts();
         FontFamilyComboBox.Items.Clear();
         FontFamilyComboBox.Items.Add(DefaultFontDisplayName);
-        
+
         foreach (var font in fonts)
         {
             FontFamilyComboBox.Items.Add(font);
@@ -115,10 +115,10 @@ public partial class SettingsWindow : Window
         AltSpaceCheckBox.IsChecked = settings.UseAltSpace;
         AltTabCheckBox.IsChecked = settings.UseAltTab;
         RunAsAdminCheckBox.IsChecked = settings.RunAsAdmin;
-        
+
         // Load language setting
         LanguageComboBox.SelectedIndex = settings.Language;
-        
+
         // Load font setting
         const int DefaultFontIndex = 0;
         if (string.IsNullOrWhiteSpace(settings.FontFamily))
@@ -137,7 +137,7 @@ public partial class SettingsWindow : Window
                 FontFamilyComboBox.SelectedIndex = 0;
             }
         }
-        
+
         // Sync startup setting with actual registry/Task Scheduler state
         bool actualStartupEnabled = StartupService.IsStartupEnabled();
         if (settings.StartWithWindows != actualStartupEnabled)
@@ -150,7 +150,7 @@ public partial class SettingsWindow : Window
         PinyinSearchCheckBox.IsChecked = settings.EnablePinyinSearch;
         ThemeComboBox.SelectedIndex = settings.Theme;
         CheckForUpdatesCheckBox.IsChecked = settings.CheckForUpdates;
-        
+
         UpdateCurrentHotkeyDisplay();
     }
 
@@ -158,7 +158,7 @@ public partial class SettingsWindow : Window
     {
         // Display the actual state of the current process
         bool isAdmin = AdminService.IsRunningAsAdmin();
-        
+
         if (isAdmin)
         {
             AdminStatusBadge.Background = (Brush)FindResource("AccentDefaultBrush");
@@ -218,7 +218,7 @@ public partial class SettingsWindow : Window
 
         // Prompt for restart
         _isShowingDialog = true;
-        var message = wantAdmin 
+        var message = wantAdmin
             ? LanguageService.GetString("MsgRestartRequired")
             : LanguageService.GetString("MsgRestartRequiredNormal");
         var result = FluentDialog.Show(
@@ -237,11 +237,11 @@ public partial class SettingsWindow : Window
 
         if (_isRestarting) return;
         _isRestarting = true;
-        
+
         App.ReleaseMutexForRestart();
-        
-        bool restartSuccess = wantAdmin 
-            ? AdminService.RestartAsAdmin() 
+
+        bool restartSuccess = wantAdmin
+            ? AdminService.RestartAsAdmin()
             : AdminService.RestartAsNormalUser();
 
         if (restartSuccess)
@@ -282,7 +282,7 @@ public partial class SettingsWindow : Window
     private void ShowStartupErrorMessage(bool enable)
     {
         _isShowingDialog = true;
-        var message = enable 
+        var message = enable
             ? LanguageService.GetString("MsgStartupFailed")
             : LanguageService.GetString("MsgStartupDisabledFailed");
         FluentDialog.Show(
@@ -315,7 +315,11 @@ public partial class SettingsWindow : Window
 
     private void ThemeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        SaveSetting((s, v) => s.Theme = v, ThemeComboBox.SelectedIndex);
+        SaveSetting((s, v) => s.Theme = v, ThemeComboBox.SelectedIndex, () =>
+        {
+            ThemeService.Instance.ApplyTheme((AppTheme)ThemeComboBox.SelectedIndex);
+            UpdateAdminStatusDisplay();
+        });
     }
 
     private void FontFamilyComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -414,9 +418,9 @@ public partial class SettingsWindow : Window
                 AltTabCheckBox.IsChecked = true;
 
             FluentDialog.Show(
-                LanguageService.GetString("MsgAtLeastOneHotkey"), 
+                LanguageService.GetString("MsgAtLeastOneHotkey"),
                 LanguageService.GetString("AppTitle"),
-                FluentDialogButton.OK, 
+                FluentDialogButton.OK,
                 FluentDialogIcon.Warning,
                 this);
             return;
@@ -430,15 +434,15 @@ public partial class SettingsWindow : Window
     private void UpdateCurrentHotkeyDisplay()
     {
         var hotkeys = new List<string>();
-        
+
         if (AltSpaceCheckBox.IsChecked == true)
             hotkeys.Add(LanguageService.GetString("SettingsAltSpace"));
-        
+
         if (AltTabCheckBox.IsChecked == true)
             hotkeys.Add(LanguageService.GetString("SettingsAltTab"));
 
-        CurrentHotkeyText.Text = hotkeys.Count > 0 
-            ? string.Join(LanguageService.GetString("HotkeySeparator"), hotkeys) 
+        CurrentHotkeyText.Text = hotkeys.Count > 0
+            ? string.Join(LanguageService.GetString("HotkeySeparator"), hotkeys)
             : LanguageService.GetString("HotkeyNone");
     }
 

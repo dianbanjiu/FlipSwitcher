@@ -12,8 +12,8 @@
     ShowInTaskbar="False"
     PreviewKeyDown="Window_PreviewKeyDown">
 
-    <Border Background="{StaticResource BackgroundSolidBaseBrush}"
-        BorderBrush="{StaticResource SurfaceStrokeBrush}"
+    <Border Background="{DynamicResource BackgroundSolidBaseBrush}"
+        BorderBrush="{DynamicResource SurfaceStrokeBrush}"
         BorderThickness="1"
         CornerRadius="12">
         <Grid>
@@ -25,7 +25,7 @@
 
             <!-- Header -->
             <Border Grid.Row="0"
-                Background="{StaticResource BackgroundSolidSecondaryBrush}"
+                Background="{DynamicResource BackgroundSolidSecondaryBrush}"
                 CornerRadius="12,12,0,0"
                 Padding="20,16"
                 MouseLeftButtonDown="Header_MouseLeftButtonDown">
@@ -51,14 +51,14 @@
 
                     <TextBlock x:Name="TitleText"
                         Grid.Column="1"
-                        Style="{StaticResource TitleTextStyle}"
+                        Style="{DynamicResource TitleTextStyle}"
                         VerticalAlignment="Center"
                         TextTrimming="CharacterEllipsis" />
 
                     <!-- Close Button -->
                     <Button Grid.Column="2"
                         Click="CloseButton_Click"
-                        Style="{StaticResource FluentCloseButtonStyle}" />
+                        Style="{DynamicResource FluentCloseButtonStyle}" />
                 </Grid>
             </Border>
 
@@ -66,13 +66,13 @@
             <Border Grid.Row="1"
                 Padding="20,16">
                 <TextBlock x:Name="MessageText"
-                    Style="{StaticResource BodyTextStyle}"
+                    Style="{DynamicResource BodyTextStyle}"
                     TextWrapping="Wrap" />
             </Border>
 
             <!-- Buttons -->
             <Border Grid.Row="2"
-                Background="{StaticResource BackgroundSolidSecondaryBrush}"
+                Background="{DynamicResource BackgroundSolidSecondaryBrush}"
                 CornerRadius="0,0,12,12"
                 Padding="20,12">
                 <StackPanel x:Name="ButtonPanel"
