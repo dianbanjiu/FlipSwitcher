@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -32,14 +35,31 @@ jobs:
       - name: Get tag message
         id: get_tag_message
         run: |
-          $tagMessage = git for-each-ref refs/tags/${{ github.ref_name }} --format='%(contents)'
-          if ($tagMessage) {
-            # Handle multiline output for GITHUB_OUTPUT
-            $escapedMessage = $tagMessage -join "`n"
-            # Use delimiter for multiline output
+          $tag = "${{ github.ref_name }}"
+          # Check if it's an annotated tag
+          $tagType = git cat-file -t $tag 2>$null
+          if ($tagType -eq "tag") {
+            # Annotated tag: extract message (skip header lines)
+            $tagContent = git cat-file tag $tag
+            $inMessage = $false
+            $messageLines = @()
+            foreach ($line in $tagContent) {
+              if ($inMessage) {
+                $messageLines += $line
+              } elseif ($line -eq "") {
+                $inMessage = $true
+              }
+            }
+            $tagMessage = $messageLines -join "`n"
+          } else {
+            # Lightweight tag: no message
+            $tagMessage = ""
+          }
+          
+          if ($tagMessage -and $tagMessage.Trim()) {
             $delimiter = "EOF_$(Get-Random)"
             echo "TAG_MESSAGE<<$delimiter" >> $env:GITHUB_OUTPUT
-            echo "$escapedMessage" >> $env:GITHUB_OUTPUT
+            echo "$tagMessage" >> $env:GITHUB_OUTPUT
             echo "$delimiter" >> $env:GITHUB_OUTPUT
           } else {
             echo "TAG_MESSAGE=" >> $env:GITHUB_OUTPUT
