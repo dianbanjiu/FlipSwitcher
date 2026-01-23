@@ -70,12 +70,12 @@
                 VerticalScrollBarVisibility="Auto"
                 Padding="20,16,20,20"
                 Style="{DynamicResource FluentScrollViewerStyle}">
-                <StackPanel>
+                <StackPanel Margin="8,8,0,8">
 
                     <!-- Language Section -->
                     <TextBlock Text="{DynamicResource SettingsLanguage}"
                         Style="{DynamicResource SubtitleTextStyle}"
-                        Margin="0,0,0,12" />
+                        Margin="16,0,0,12" />
 
                     <Border Background="{DynamicResource CardBackgroundBrush}"
                         BorderBrush="{DynamicResource SurfaceStrokeDefaultBrush}"
@@ -115,7 +115,7 @@
                     <!-- Hotkey Section -->
                     <TextBlock Text="{DynamicResource SettingsHotkey}"
                         Style="{DynamicResource SubtitleTextStyle}"
-                        Margin="0,0,0,12" />
+                        Margin="16,0,0,12" />
 
                     <Border Background="{DynamicResource CardBackgroundBrush}"
                         BorderBrush="{DynamicResource SurfaceStrokeDefaultBrush}"
@@ -207,7 +207,7 @@
                     <!-- Appearance Section -->
                     <TextBlock Text="{DynamicResource SettingsAppearance}"
                         Style="{DynamicResource SubtitleTextStyle}"
-                        Margin="0,0,0,12" />
+                        Margin="16,0,0,12" />
 
                     <Border Background="{DynamicResource CardBackgroundBrush}"
                         BorderBrush="{DynamicResource SurfaceStrokeDefaultBrush}"
@@ -274,7 +274,7 @@
                     <!-- Behavior Section -->
                     <TextBlock Text="{DynamicResource SettingsBehavior}"
                         Style="{DynamicResource SubtitleTextStyle}"
-                        Margin="0,0,0,12" />
+                        Margin="16,0,0,12" />
 
                     <Border Background="{DynamicResource CardBackgroundBrush}"
                         BorderBrush="{DynamicResource SurfaceStrokeDefaultBrush}"
@@ -392,7 +392,7 @@
                     <!-- Updates Section -->
                     <TextBlock Text="{DynamicResource SettingsUpdates}"
                         Style="{DynamicResource SubtitleTextStyle}"
-                        Margin="0,0,0,12" />
+                        Margin="16,0,0,12" />
 
                     <Border Background="{DynamicResource CardBackgroundBrush}"
                         BorderBrush="{DynamicResource SurfaceStrokeDefaultBrush}"
@@ -435,7 +435,7 @@
                     <!-- About Section -->
                     <TextBlock Text="{DynamicResource SettingsAbout}"
                         Style="{DynamicResource SubtitleTextStyle}"
-                        Margin="0,0,0,12" />
+                        Margin="16,0,0,12" />
 
                     <Border Background="{DynamicResource CardBackgroundBrush}"
                         BorderBrush="{DynamicResource SurfaceStrokeDefaultBrush}"
