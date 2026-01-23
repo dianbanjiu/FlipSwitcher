@@ -172,7 +172,11 @@ public partial class MainWindow : Window
     private void ActivateSelectedWindow()
     {
         var selectedWindow = _viewModel.SelectedWindow;
-        if (selectedWindow == null) return;
+        if (selectedWindow == null)
+        {
+            HideWindow();
+            return;
+        }
 
         // Skip activation for elevated windows when not running as admin
         if (selectedWindow.IsElevated && !AdminService.IsRunningAsAdmin())
