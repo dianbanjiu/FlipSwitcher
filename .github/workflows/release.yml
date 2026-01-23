@@ -29,6 +29,22 @@ jobs:
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
 
+      - name: Get tag message
+        id: get_tag_message
+        run: |
+          $tagMessage = git for-each-ref refs/tags/${{ github.ref_name }} --format='%(contents)'
+          if ($tagMessage) {
+            # Handle multiline output for GITHUB_OUTPUT
+            $escapedMessage = $tagMessage -join "`n"
+            # Use delimiter for multiline output
+            $delimiter = "EOF_$(Get-Random)"
+            echo "TAG_MESSAGE<<$delimiter" >> $env:GITHUB_OUTPUT
+            echo "$escapedMessage" >> $env:GITHUB_OUTPUT
+            echo "$delimiter" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "TAG_MESSAGE=" >> $env:GITHUB_OUTPUT
+          }
+
       - name: Install Inno Setup
         run: |
           choco install innosetup --yes --no-progress
@@ -187,6 +203,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ steps.get_version.outputs.TAG }}
+          body: ${{ steps.get_tag_message.outputs.TAG_MESSAGE }}
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
