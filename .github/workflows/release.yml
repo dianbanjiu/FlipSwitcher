@@ -8,6 +8,11 @@ on:
 permissions:
   contents: write
 
+env:
+  DOTNET_VERSION: "8.0.x"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
 jobs:
   build:
     runs-on: windows-latest
@@ -22,213 +27,114 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Get version from tag
-        id: get_version
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Get version and tag info
+        id: info
         run: |
           $tag = "${{ github.ref_name }}"
           $version = $tag -replace '^v', ''
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
-
-      - name: Get tag message
-        id: get_tag_message
-        run: |
-          $tag = "${{ github.ref_name }}"
-          # Check if it's an annotated tag
+          
+          # Get tag message for annotated tags
           $tagType = git cat-file -t $tag 2>$null
           if ($tagType -eq "tag") {
-            # Annotated tag: extract message (skip header lines)
             $tagContent = git cat-file tag $tag
             $inMessage = $false
             $messageLines = @()
             foreach ($line in $tagContent) {
-              if ($inMessage) {
-                $messageLines += $line
-              } elseif ($line -eq "") {
-                $inMessage = $true
-              }
+              if ($inMessage) { $messageLines += $line }
+              elseif ($line -eq "") { $inMessage = $true }
             }
             $tagMessage = $messageLines -join "`n"
-          } else {
-            # Lightweight tag: no message
-            $tagMessage = ""
+            if ($tagMessage.Trim()) {
+              $delimiter = "EOF_$(Get-Random)"
+              echo "TAG_MESSAGE<<$delimiter" >> $env:GITHUB_OUTPUT
+              echo "$tagMessage" >> $env:GITHUB_OUTPUT
+              echo "$delimiter" >> $env:GITHUB_OUTPUT
+              return
+            }
           }
-          
-          if ($tagMessage -and $tagMessage.Trim()) {
-            $delimiter = "EOF_$(Get-Random)"
-            echo "TAG_MESSAGE<<$delimiter" >> $env:GITHUB_OUTPUT
-            echo "$tagMessage" >> $env:GITHUB_OUTPUT
-            echo "$delimiter" >> $env:GITHUB_OUTPUT
-          } else {
-            echo "TAG_MESSAGE=" >> $env:GITHUB_OUTPUT
-          }
+          echo "TAG_MESSAGE=" >> $env:GITHUB_OUTPUT
 
-      - name: Install Inno Setup
+      - name: Setup Inno Setup
+        id: inno
         run: |
           choco install innosetup --yes --no-progress
-
-      - name: Download Chinese language files
-        run: |
-          # Find Inno Setup installation path
-          $innoPath = $null
-          $possiblePaths = @(
+          
+          # Find Inno Setup path
+          $paths = @(
             "C:\Program Files (x86)\Inno Setup 6",
-            "C:\Program Files\Inno Setup 6",
-            "C:\Program Files (x86)\Inno Setup 5",
-            "C:\Program Files\Inno Setup 5"
+            "C:\Program Files\Inno Setup 6"
           )
-          foreach ($path in $possiblePaths) {
-            if (Test-Path "$path\ISCC.exe") {
-              $innoPath = $path
-              break
-            }
-          }
-          if (-not $innoPath) {
-            $isccPath = Get-Command ISCC.exe -ErrorAction SilentlyContinue
-            if ($isccPath) {
-              $innoPath = Split-Path $isccPath.Source
-            }
-          }
-          if ($innoPath) {
-            $langDir = Join-Path $innoPath "Languages"
-            if (-not (Test-Path $langDir)) {
-              New-Item -ItemType Directory -Path $langDir -Force | Out-Null
-            }
-            # Download Chinese Simplified from GitHub
-            $chineseSimplified = Join-Path $langDir "ChineseSimplified.isl"
-            if (-not (Test-Path $chineseSimplified)) {
-              try {
-                $urls = @(
-                  "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl",
-                  "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/ChineseSimplified.isl"
-                )
-                $downloaded = $false
-                foreach ($url in $urls) {
-                  try {
-                    Invoke-WebRequest -Uri $url -OutFile $chineseSimplified -UseBasicParsing -ErrorAction Stop
-                    Write-Host "Downloaded ChineseSimplified.isl from $url"
-                    $downloaded = $true
-                    break
-                  } catch {
-                    continue
-                  }
+          foreach ($p in $paths) {
+            if (Test-Path "$p\ISCC.exe") {
+              echo "PATH=$p" >> $env:GITHUB_OUTPUT
+              
+              # Download Chinese language files
+              $langDir = "$p\Languages"
+              @("ChineseSimplified", "ChineseTraditional") | ForEach-Object {
+                $file = "$langDir\$_.isl"
+                if (-not (Test-Path $file)) {
+                  $url = "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/$_.isl"
+                  Invoke-WebRequest -Uri $url -OutFile $file -UseBasicParsing -ErrorAction SilentlyContinue
                 }
-                if (-not $downloaded) {
-                  # Try to copy from project directory if exists
-                  $projectLangFile = Join-Path $PWD "FlipSwitcher\InnoSetupLanguages\ChineseSimplified.isl"
-                  if (Test-Path $projectLangFile) {
-                    Copy-Item $projectLangFile $chineseSimplified -Force
-                    Write-Host "Copied ChineseSimplified.isl from project directory"
-                    $downloaded = $true
-                  } else {
-                    Write-Warning "Failed to download ChineseSimplified.isl from all sources and not found in project"
-                  }
-                }
-              } catch {
-                Write-Warning "Failed to download ChineseSimplified.isl: $_"
               }
-            }
-            # Download Chinese Traditional from GitHub
-            $chineseTraditional = Join-Path $langDir "ChineseTraditional.isl"
-            if (-not (Test-Path $chineseTraditional)) {
-              try {
-                $urls = @(
-                  "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseTraditional.isl",
-                  "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/ChineseTraditional.isl"
-                )
-                $downloaded = $false
-                foreach ($url in $urls) {
-                  try {
-                    Invoke-WebRequest -Uri $url -OutFile $chineseTraditional -UseBasicParsing -ErrorAction Stop
-                    Write-Host "Downloaded ChineseTraditional.isl from $url"
-                    $downloaded = $true
-                    break
-                  } catch {
-                    continue
-                  }
-                }
-                if (-not $downloaded) {
-                  # Try to copy from project directory if exists
-                  $projectLangFile = Join-Path $PWD "FlipSwitcher\InnoSetupLanguages\ChineseTraditional.isl"
-                  if (Test-Path $projectLangFile) {
-                    Copy-Item $projectLangFile $chineseTraditional -Force
-                    Write-Host "Copied ChineseTraditional.isl from project directory"
-                    $downloaded = $true
-                  } else {
-                    Write-Warning "Failed to download ChineseTraditional.isl from all sources and not found in project"
-                  }
-                }
-              } catch {
-                Write-Warning "Failed to download ChineseTraditional.isl: $_"
-              }
+              return
             }
           }
+          Write-Error "Inno Setup not found"
+          exit 1
 
-      - name: Restore dependencies
-        run: dotnet restore FlipSwitcher/FlipSwitcher.csproj
-
-      # Setup Installer (Inno Setup)
-      - name: Build for Setup
+      - name: Build and publish
         run: |
-          dotnet publish FlipSwitcher/FlipSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.get_version.outputs.VERSION }} -o publish/setup
+          dotnet publish FlipSwitcher/FlipSwitcher.csproj `
+            -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=false `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
+            -p:Version=${{ steps.info.outputs.VERSION }} `
+            -o publish/setup
 
-      - name: Build Setup Installer
+      - name: Build installer
         run: |
-          $version = "${{ steps.get_version.outputs.VERSION }}"
-          $publishDir = Join-Path $PWD "publish"
-          $setupDir = Join-Path $publishDir "setup"
-          $issFile = Join-Path $PWD "FlipSwitcher\FlipSwitcher.iss"
-
-          # Find Inno Setup installation path
-          $innoPath = $null
-          $possiblePaths = @(
-            "C:\Program Files (x86)\Inno Setup 6",
-            "C:\Program Files\Inno Setup 6",
-            "C:\Program Files (x86)\Inno Setup 5",
-            "C:\Program Files\Inno Setup 5"
-          )
-          foreach ($path in $possiblePaths) {
-            if (Test-Path "$path\ISCC.exe") {
-              $innoPath = $path
-              break
-            }
-          }
-          if (-not $innoPath) {
-            # Try to find from PATH
-            $isccPath = Get-Command ISCC.exe -ErrorAction SilentlyContinue
-            if ($isccPath) {
-              $innoPath = Split-Path $isccPath.Source
-            } else {
-              Write-Error "Inno Setup not found. Please install it."
-              exit 1
-            }
-          }
-          Write-Host "Using Inno Setup from: $innoPath"
-
-          # Compile Inno Setup script
-          & "$innoPath\ISCC.exe" /DVersion="$version" /DPublishDir="$setupDir" "$issFile"
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Inno Setup compilation failed"
-            exit 1
-          }
-
-      - name: Copy versioned installer
-        run: |
-          $version = "${{ steps.get_version.outputs.VERSION }}"
-          Copy-Item "publish/FlipSwitcher-windows-x64-Setup.exe" "publish/FlipSwitcher-$version-windows-x64-Setup.exe"
+          $version = "${{ steps.info.outputs.VERSION }}"
+          $innoPath = "${{ steps.inno.outputs.PATH }}"
+          
+          & "$innoPath\ISCC.exe" `
+            /DVersion="$version" `
+            /DPublishDir="$(Join-Path $PWD 'publish/setup')" `
+            "FlipSwitcher\FlipSwitcher.iss"
+          
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          
+          # Create versioned copy and checksum
+          $installer = "publish/FlipSwitcher-windows-x64-Setup.exe"
+          $versionedInstaller = "publish/FlipSwitcher-$version-windows-x64-Setup.exe"
+          Copy-Item $installer $versionedInstaller
+          
+          # Generate SHA256 checksum
+          $hash = (Get-FileHash $versionedInstaller -Algorithm SHA256).Hash
+          "$hash  FlipSwitcher-$version-windows-x64-Setup.exe" | Out-File "publish/SHA256SUMS.txt" -Encoding utf8
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ steps.get_version.outputs.TAG }}
-          body: ${{ steps.get_tag_message.outputs.TAG_MESSAGE }}
+          name: ${{ steps.info.outputs.TAG }}
+          body: ${{ steps.info.outputs.TAG_MESSAGE }}
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
           files: |
-            publish/FlipSwitcher-windows-x64-Setup.exe
-            publish/FlipSwitcher-${{ steps.get_version.outputs.VERSION }}-windows-x64-Setup.exe
+            publish/FlipSwitcher-${{ steps.info.outputs.VERSION }}-windows-x64-Setup.exe
+            publish/SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
