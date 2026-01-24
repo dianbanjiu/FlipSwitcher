@@ -365,7 +365,7 @@
                             </Grid>
 
                             <!-- Pinyin Search -->
-                            <Grid>
+                            <Grid Margin="0,0,0,16">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -384,6 +384,29 @@
                                     IsChecked="False"
                                     Checked="PinyinSearchCheckBox_Changed"
                                     Unchecked="PinyinSearchCheckBox_Changed"
+                                    Style="{DynamicResource FluentCheckBoxStyle}" />
+                            </Grid>
+
+                            <!-- Show Monitor Info -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{DynamicResource SettingsShowMonitorInfo}"
+                                        Style="{DynamicResource BodyStrongTextStyle}" />
+                                    <TextBlock Text="{DynamicResource SettingsShowMonitorInfoDesc}"
+                                        Style="{DynamicResource CaptionTextStyle}"
+                                        Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <CheckBox x:Name="ShowMonitorInfoCheckBox"
+                                    Grid.Column="1"
+                                    IsChecked="False"
+                                    Checked="ShowMonitorInfoCheckBox_Changed"
+                                    Unchecked="ShowMonitorInfoCheckBox_Changed"
                                     Style="{DynamicResource FluentCheckBoxStyle}" />
                             </Grid>
                         </StackPanel>

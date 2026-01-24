@@ -12,6 +12,7 @@
     <system:String x:Key="TryDifferentSearch">Try a different search term</system:String>
     <system:String x:Key="Minimized">Minimized</system:String>
     <system:String x:Key="ElevatedWindow">Admin</system:String>
+    <system:String x:Key="MonitorPrefix">Monitor </system:String>
 
     <!-- Footer Hints -->
     <system:String x:Key="HintEnter">Enter</system:String>
@@ -65,6 +66,8 @@
     <system:String x:Key="SettingsHideOnFocusLostDesc">Automatically hide when clicking outside</system:String>
     <system:String x:Key="SettingsPinyinSearch">Pinyin Search</system:String>
     <system:String x:Key="SettingsPinyinSearchDesc">Search windows by Chinese pinyin</system:String>
+    <system:String x:Key="SettingsShowMonitorInfo">Show Monitor Info</system:String>
+    <system:String x:Key="SettingsShowMonitorInfoDesc">Display which monitor each window is on</system:String>
 
     <!-- Settings - Updates -->
     <system:String x:Key="SettingsUpdates">Updates</system:String>

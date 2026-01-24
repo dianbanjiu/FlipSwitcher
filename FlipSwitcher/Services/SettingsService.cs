@@ -119,5 +119,10 @@ public class AppSettings
     /// Enable pinyin search for Chinese characters
     /// </summary>
     public bool EnablePinyinSearch { get; set; } = false;
+
+    /// <summary>
+    /// Show which monitor each window is on
+    /// </summary>
+    public bool ShowMonitorInfo { get; set; } = false;
 }
 

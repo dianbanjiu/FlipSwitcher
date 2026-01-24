@@ -148,6 +148,7 @@ public partial class SettingsWindow : Window
         StartWithWindowsCheckBox.IsChecked = settings.StartWithWindows;
         HideOnFocusLostCheckBox.IsChecked = settings.HideOnFocusLost;
         PinyinSearchCheckBox.IsChecked = settings.EnablePinyinSearch;
+        ShowMonitorInfoCheckBox.IsChecked = settings.ShowMonitorInfo;
         ThemeComboBox.SelectedIndex = settings.Theme;
         CheckForUpdatesCheckBox.IsChecked = settings.CheckForUpdates;
 
@@ -311,6 +312,11 @@ public partial class SettingsWindow : Window
     private void PinyinSearchCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         SaveSetting((s, v) => s.EnablePinyinSearch = v, PinyinSearchCheckBox.IsChecked == true);
+    }
+
+    private void ShowMonitorInfoCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        SaveSetting((s, v) => s.ShowMonitorInfo = v, ShowMonitorInfoCheckBox.IsChecked == true);
     }
 
     private void ThemeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)

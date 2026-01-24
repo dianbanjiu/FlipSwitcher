@@ -12,6 +12,7 @@
     <system:String x:Key="TryDifferentSearch">嘗試其他搜尋詞</system:String>
     <system:String x:Key="Minimized">已最小化</system:String>
     <system:String x:Key="ElevatedWindow">系統管理員</system:String>
+    <system:String x:Key="MonitorPrefix">顯示器 </system:String>
     
     <!-- Footer Hints -->
     <system:String x:Key="HintEnter">Enter</system:String>
@@ -64,6 +65,8 @@
     <system:String x:Key="SettingsHideOnFocusLostDesc">點擊外部區域時自動隱藏</system:String>
     <system:String x:Key="SettingsPinyinSearch">拼音搜尋</system:String>
     <system:String x:Key="SettingsPinyinSearchDesc">使用拼音首字母或全拼搜尋視窗</system:String>
+    <system:String x:Key="SettingsShowMonitorInfo">顯示顯示器資訊</system:String>
+    <system:String x:Key="SettingsShowMonitorInfoDesc">顯示每個視窗所在的顯示器編號</system:String>
     
     <!-- Settings - Updates -->
     <system:String x:Key="SettingsUpdates">更新</system:String>

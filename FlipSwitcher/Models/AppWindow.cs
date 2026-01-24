@@ -23,6 +23,7 @@ public class AppWindow : INotifyPropertyChanged
     private ImageSource? _icon;
     private bool _iconLoaded;
     private bool? _isElevated;
+    private int? _monitorNumber;
 
     public IntPtr Handle { get; }
     public string Title { get; }
@@ -42,6 +43,34 @@ public class AppWindow : INotifyPropertyChanged
             _isElevated ??= CheckProcessElevation();
             return _isElevated.Value;
         }
+    }
+
+    /// <summary>
+    /// The monitor number (1-based) where this window is located
+    /// </summary>
+    public int MonitorNumber
+    {
+        get
+        {
+            _monitorNumber ??= GetMonitorNumber();
+            return _monitorNumber.Value;
+        }
+    }
+
+    private int GetMonitorNumber()
+    {
+        var hMonitor = NativeMethods.MonitorFromWindow(Handle, NativeMethods.MONITOR_DEFAULTTONEAREST);
+        if (hMonitor == IntPtr.Zero) return 1;
+
+        var monitors = new System.Collections.Generic.List<IntPtr>();
+        NativeMethods.EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, (IntPtr hMon, IntPtr hdc, ref NativeMethods.RECT rect, IntPtr data) =>
+        {
+            monitors.Add(hMon);
+            return true;
+        }, IntPtr.Zero);
+
+        int index = monitors.IndexOf(hMonitor);
+        return index >= 0 ? index + 1 : 1;
     }
 
     private bool CheckProcessElevation()

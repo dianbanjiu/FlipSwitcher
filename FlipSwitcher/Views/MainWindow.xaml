@@ -27,6 +27,7 @@
     <Window.Resources>
         <converters:ElevatedToOpacityConverter x:Key="ElevatedToOpacityConverter" />
         <converters:ElevatedToVisibilityConverter x:Key="ElevatedToVisibilityConverter" />
+        <converters:MonitorInfoVisibilityConverter x:Key="MonitorInfoVisibilityConverter" />
     </Window.Resources>
 
     <!-- Main Container with Acrylic-like background -->
@@ -125,6 +126,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
                                     <!-- Window Icon -->
@@ -154,8 +156,26 @@
                                             Margin="0,2,0,0" />
                                     </StackPanel>
 
-                                    <!-- Elevated Indicator (Admin window when not running as admin) -->
+                                    <!-- Monitor Indicator -->
                                     <Border Grid.Column="2"
+                                        Visibility="{Binding MonitorNumber, Converter={StaticResource MonitorInfoVisibilityConverter}}"
+                                        Background="{DynamicResource ControlDefaultBrush}"
+                                        CornerRadius="4"
+                                        Padding="8,4"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{DynamicResource MonitorPrefix}"
+                                                Style="{DynamicResource CaptionTextStyle}"
+                                                Foreground="{DynamicResource TextTertiaryBrush}" />
+                                            <TextBlock Text="{Binding MonitorNumber}"
+                                                Style="{DynamicResource CaptionTextStyle}"
+                                                Foreground="{DynamicResource TextTertiaryBrush}" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Elevated Indicator (Admin window when not running as admin) -->
+                                    <Border Grid.Column="3"
                                         Visibility="{Binding IsElevated, Converter={StaticResource ElevatedToVisibilityConverter}}"
                                         Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
                                         CornerRadius="4"
@@ -168,7 +188,7 @@
                                     </Border>
 
                                     <!-- Minimized Indicator -->
-                                    <Border Grid.Column="3"
+                                    <Border Grid.Column="4"
                                         Visibility="{Binding IsMinimized, Converter={StaticResource BoolToVisibilityConverter}}"
                                         Background="{DynamicResource ControlDefaultBrush}"
                                         CornerRadius="4"
