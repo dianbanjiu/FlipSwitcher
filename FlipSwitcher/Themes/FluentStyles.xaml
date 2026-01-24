@@ -11,49 +11,49 @@
     
     <!-- Text Styles -->
     <Style x:Key="DisplayTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource SegoeUIVariable}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource SegoeUIVariable}"/>
         <Setter Property="FontSize" Value="40"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
     </Style>
     
     <Style x:Key="TitleLargeTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource SegoeUIVariable}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource SegoeUIVariable}"/>
         <Setter Property="FontSize" Value="28"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
     </Style>
     
     <Style x:Key="TitleTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource SegoeUIVariable}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource SegoeUIVariable}"/>
         <Setter Property="FontSize" Value="20"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
     </Style>
     
     <Style x:Key="SubtitleTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource SegoeUIVariable}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource SegoeUIVariable}"/>
         <Setter Property="FontSize" Value="16"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
     </Style>
     
     <Style x:Key="BodyTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource SegoeUIVariable}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource SegoeUIVariable}"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="Normal"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
     </Style>
     
     <Style x:Key="BodyStrongTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource SegoeUIVariable}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource SegoeUIVariable}"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
     </Style>
     
     <Style x:Key="CaptionTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource SegoeUIVariable}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource SegoeUIVariable}"/>
         <Setter Property="FontSize" Value="12"/>
         <Setter Property="FontWeight" Value="Normal"/>
         <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
@@ -61,7 +61,7 @@
 
     <!-- Fluent 2 Search Box Style -->
     <Style x:Key="FluentSearchBoxStyle" TargetType="TextBox">
-        <Setter Property="FontFamily" Value="{StaticResource SegoeUIVariable}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource SegoeUIVariable}"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         <Setter Property="Background" Value="{DynamicResource ControlDefaultBrush}"/>
@@ -335,7 +335,7 @@
 
     <!-- Fluent 2 Button Style -->
     <Style x:Key="FluentButtonStyle" TargetType="Button">
-        <Setter Property="FontFamily" Value="{StaticResource SegoeUIVariable}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource SegoeUIVariable}"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
@@ -443,7 +443,7 @@
 
     <!-- Fluent 2 ComboBox Style -->
     <Style x:Key="FluentComboBoxStyle" TargetType="ComboBox">
-        <Setter Property="FontFamily" Value="{StaticResource SegoeUIVariable}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource SegoeUIVariable}"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         <Setter Property="Background" Value="{DynamicResource ControlDefaultBrush}"/>
@@ -537,7 +537,7 @@
 
     <!-- Fluent 2 ComboBoxItem Style -->
     <Style x:Key="FluentComboBoxItemStyle" TargetType="ComboBoxItem">
-        <Setter Property="FontFamily" Value="{StaticResource SegoeUIVariable}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource SegoeUIVariable}"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         <Setter Property="Background" Value="Transparent"/>
