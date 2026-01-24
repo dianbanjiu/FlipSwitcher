@@ -45,25 +45,15 @@ jobs:
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
           
           # Get tag message for annotated tags
-          $tagType = git cat-file -t $tag 2>$null
-          if ($tagType -eq "tag") {
-            $tagContent = git cat-file tag $tag
-            $inMessage = $false
-            $messageLines = @()
-            foreach ($line in $tagContent) {
-              if ($inMessage) { $messageLines += $line }
-              elseif ($line -eq "") { $inMessage = $true }
-            }
-            $tagMessage = $messageLines -join "`n"
-            if ($tagMessage.Trim()) {
-              $delimiter = "EOF_$(Get-Random)"
-              echo "TAG_MESSAGE<<$delimiter" >> $env:GITHUB_OUTPUT
-              echo "$tagMessage" >> $env:GITHUB_OUTPUT
-              echo "$delimiter" >> $env:GITHUB_OUTPUT
-              return
-            }
+          $tagMessage = git tag -l --format='%(contents)' $tag 2>$null
+          if ($tagMessage -and $tagMessage.Trim()) {
+            $delimiter = "EOF_$(Get-Random)"
+            echo "TAG_MESSAGE<<$delimiter" >> $env:GITHUB_OUTPUT
+            echo $tagMessage >> $env:GITHUB_OUTPUT
+            echo "$delimiter" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "TAG_MESSAGE=" >> $env:GITHUB_OUTPUT
           }
-          echo "TAG_MESSAGE=" >> $env:GITHUB_OUTPUT
 
       - name: Setup Inno Setup
         id: inno
