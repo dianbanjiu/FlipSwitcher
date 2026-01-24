@@ -53,6 +53,7 @@ dotnet run --project FlipSwitcher
 
 - **Fast Search** - Quickly filter windows by typing
 - **Pinyin Search** - Search Chinese window titles using pinyin initials or full pinyin (optional, disabled by default)
+- **Multi-Monitor Support** - Show which monitor each window is on in multi-monitor setups (optional, disabled by default)
 - **Window Grouping** - Group windows by application
 - **Quick Close** - Close windows with Alt+W without leaving the switcher
 - **Process Control** - Terminate processes with Alt+D
