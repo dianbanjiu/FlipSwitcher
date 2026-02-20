@@ -216,6 +216,29 @@
                         Padding="16"
                         Margin="0,0,0,24">
                         <StackPanel>
+                            <!-- Follow System Theme Option -->
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{DynamicResource SettingsFollowSystemTheme}"
+                                        Style="{DynamicResource BodyStrongTextStyle}" />
+                                    <TextBlock Text="{DynamicResource SettingsFollowSystemThemeDesc}"
+                                        Style="{DynamicResource CaptionTextStyle}"
+                                        Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <CheckBox x:Name="FollowSystemThemeCheckBox"
+                                    Grid.Column="1"
+                                    IsChecked="False"
+                                    Checked="FollowSystemThemeCheckBox_Changed"
+                                    Unchecked="FollowSystemThemeCheckBox_Changed"
+                                    Style="{DynamicResource FluentCheckBoxStyle}" />
+                            </Grid>
+
                             <!-- Theme Option -->
                             <Grid Margin="0,0,0,16">
                                 <Grid.ColumnDefinitions>

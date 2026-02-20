@@ -87,7 +87,14 @@ public partial class App : Application
         LanguageService.Instance.Initialize();
 
         // Initialize theme service and apply theme
-        ThemeService.Instance.ApplyTheme((AppTheme)settings.Theme);
+        if (settings.FollowSystemTheme)
+        {
+            ThemeService.Instance.StartFollowingSystemTheme();
+        }
+        else
+        {
+            ThemeService.Instance.ApplyTheme((AppTheme)settings.Theme);
+        }
 
         // Apply font setting
         if (!string.IsNullOrWhiteSpace(settings.FontFamily))

@@ -124,5 +124,10 @@ public class AppSettings
     /// Show which monitor each window is on
     /// </summary>
     public bool ShowMonitorInfo { get; set; } = false;
+
+    /// <summary>
+    /// Follow system theme (automatically switch between light/dark based on Windows theme)
+    /// </summary>
+    public bool FollowSystemTheme { get; set; } = false;
 }
 

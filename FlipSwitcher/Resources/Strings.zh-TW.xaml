@@ -52,6 +52,8 @@
     <system:String x:Key="ThemeLatte">拿鐵</system:String>
     <system:String x:Key="ThemeMocha">摩卡</system:String>
     <system:String x:Key="ThemeSystem">跟隨系統</system:String>
+    <system:String x:Key="SettingsFollowSystemTheme">跟隨系統主題</system:String>
+    <system:String x:Key="SettingsFollowSystemThemeDesc">自動根據 Windows 主題切換深色/淺色模式</system:String>
     
     <!-- Settings - Behavior -->
     <system:String x:Key="SettingsBehavior">行為</system:String>

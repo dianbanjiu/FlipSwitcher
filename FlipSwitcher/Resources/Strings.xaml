@@ -52,6 +52,8 @@
     <system:String x:Key="ThemeLatte">Latte</system:String>
     <system:String x:Key="ThemeMocha">Mocha</system:String>
     <system:String x:Key="ThemeSystem">System</system:String>
+    <system:String x:Key="SettingsFollowSystemTheme">Follow System Theme</system:String>
+    <system:String x:Key="SettingsFollowSystemThemeDesc">Automatically switch between light/dark based on Windows theme</system:String>
 
     <!-- Settings - Behavior -->
     <system:String x:Key="SettingsBehavior">Behavior</system:String>

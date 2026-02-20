@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Windows;
 using FlipSwitcher.Core;
+using Microsoft.Win32;
 
 namespace FlipSwitcher.Services;
 
@@ -28,6 +29,14 @@ public class ThemeService
     private const int DarkModeEnabled = 1;
     private const int DarkModeDisabled = 0;
 
+    private const string RegistryKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
+    private const string RegistryValueName = "AppsUseLightTheme";
+
+    private bool _isFollowingSystemTheme = false;
+    private System.Threading.Timer? _registryWatchTimer;
+    private AppTheme _currentAppliedTheme = AppTheme.Dark;
+    private bool _isApplyingTheme = false;
+
     private ThemeService()
     {
     }
@@ -52,42 +61,144 @@ public class ThemeService
 
     private void RemoveThemeDictionaries(Collection<ResourceDictionary> dictionaries)
     {
+        // Iterate backwards for safe removal
         for (int i = dictionaries.Count - 1; i >= 0; i--)
         {
-            var sourceStr = dictionaries[i].Source?.OriginalString;
+            var dict = dictionaries[i];
+            var sourceStr = dict.Source?.OriginalString;
             if (sourceStr != null && 
                 (sourceStr.Contains(FluentColorsName) || 
                  sourceStr.Contains(FluentStylesName)))
             {
                 dictionaries.RemoveAt(i);
+                
+                // Explicitly clear ResourceDictionary to prevent memory leaks
+                dict.Clear();
             }
+        }
+        
+        // Suggest lightweight garbage collection if too many dictionaries accumulated
+        if (dictionaries.Count > 20)
+        {
+            GC.Collect(0, GCCollectionMode.Optimized);
         }
     }
 
     public void ApplyTheme(AppTheme theme)
     {
-        var app = Application.Current;
-        if (app == null) return;
+        // Avoid repeatedly applying the same theme to prevent memory leaks
+        if (_currentAppliedTheme == theme && !_isApplyingTheme)
+            return;
 
-        bool isDark = IsDarkTheme(theme);
-        var dictionaries = app.Resources.MergedDictionaries;
-
-        RemoveThemeDictionaries(dictionaries);
-
-        // 先加载颜色资源，再加载样式资源（样式依赖颜色）
-        var colorDict = new ResourceDictionary
+        _isApplyingTheme = true;
+        try
         {
-            Source = new Uri(GetThemeUri(theme), UriKind.Absolute)
-        };
-        dictionaries.Insert(0, colorDict);
+            var app = Application.Current;
+            if (app == null) return;
 
-        var stylesDict = new ResourceDictionary
+            bool isDark = IsDarkTheme(theme);
+            var dictionaries = app.Resources.MergedDictionaries;
+
+            RemoveThemeDictionaries(dictionaries);
+
+            // Load color resources first, then styles (styles depend on colors)
+            var colorDict = new ResourceDictionary
+            {
+                Source = new Uri(GetThemeUri(theme), UriKind.Absolute)
+            };
+            dictionaries.Insert(0, colorDict);
+
+            var stylesDict = new ResourceDictionary
+            {
+                Source = new Uri(FluentStyles, UriKind.Absolute)
+            };
+            dictionaries.Insert(1, stylesDict);
+
+            UpdateWindowThemes(isDark);
+            _currentAppliedTheme = theme;
+        }
+        finally
         {
-            Source = new Uri(FluentStyles, UriKind.Absolute)
-        };
-        dictionaries.Insert(1, stylesDict);
+            _isApplyingTheme = false;
+        }
+    }
 
-        UpdateWindowThemes(isDark);
+    public void StartFollowingSystemTheme()
+    {
+        if (_isFollowingSystemTheme) return;
+
+        _isFollowingSystemTheme = true;
+        ApplySystemTheme();
+        
+        // Reduced polling frequency to every 3 seconds to minimize performance overhead
+        _registryWatchTimer = new System.Threading.Timer(
+            _ => CheckSystemThemeChanged(),
+            null,
+            TimeSpan.FromSeconds(3),
+            TimeSpan.FromSeconds(3)
+        );
+    }
+
+    public void StopFollowingSystemTheme()
+    {
+        _isFollowingSystemTheme = false;
+        
+        // Ensure the timer is properly disposed
+        if (_registryWatchTimer != null)
+        {
+            _registryWatchTimer.Dispose();
+            _registryWatchTimer = null;
+        }
+        
+        _lastSystemThemeValue = null;
+    }
+
+    private int? _lastSystemThemeValue = null;
+
+    private void CheckSystemThemeChanged()
+    {
+        // Double check to ensure no execution after timer is stopped
+        if (!_isFollowingSystemTheme || _registryWatchTimer == null) return;
+
+        var currentValue = GetSystemThemeValue();
+        if (currentValue != _lastSystemThemeValue)
+        {
+            _lastSystemThemeValue = currentValue;
+            
+            // Avoid accumulating too many calls in the Dispatcher queue
+            var app = Application.Current;
+            if (app != null && !_isApplyingTheme)
+            {
+                app.Dispatcher.BeginInvoke(() => 
+                {
+                    if (_isFollowingSystemTheme) // Check state again
+                    {
+                        ApplySystemTheme();
+                    }
+                }, System.Windows.Threading.DispatcherPriority.Background);
+            }
+        }
+    }
+
+    private void ApplySystemTheme()
+    {
+        var themeValue = GetSystemThemeValue();
+        bool isLightTheme = themeValue == 1;
+        AppTheme theme = isLightTheme ? AppTheme.Light : AppTheme.Dark;
+        ApplyTheme(theme);
+    }
+
+    private int? GetSystemThemeValue()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath);
+            return key?.GetValue(RegistryValueName) as int?;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private void UpdateWindowThemes(bool isDark)
@@ -112,7 +223,7 @@ public class ThemeService
 
     public void Dispose()
     {
-        // No resources to dispose
+        StopFollowingSystemTheme();
     }
 }
 

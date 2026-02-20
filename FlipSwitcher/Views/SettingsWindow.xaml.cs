@@ -149,9 +149,11 @@ public partial class SettingsWindow : Window
         HideOnFocusLostCheckBox.IsChecked = settings.HideOnFocusLost;
         PinyinSearchCheckBox.IsChecked = settings.EnablePinyinSearch;
         ShowMonitorInfoCheckBox.IsChecked = settings.ShowMonitorInfo;
+        FollowSystemThemeCheckBox.IsChecked = settings.FollowSystemTheme;
         ThemeComboBox.SelectedIndex = settings.Theme;
         CheckForUpdatesCheckBox.IsChecked = settings.CheckForUpdates;
 
+        UpdateThemeControlsState();
         UpdateCurrentHotkeyDisplay();
     }
 
@@ -326,6 +328,35 @@ public partial class SettingsWindow : Window
             ThemeService.Instance.ApplyTheme((AppTheme)ThemeComboBox.SelectedIndex);
             UpdateAdminStatusDisplay();
         });
+    }
+
+    private void FollowSystemThemeCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        bool followSystem = FollowSystemThemeCheckBox.IsChecked == true;
+        var settings = SettingsService.Instance.Settings;
+        settings.FollowSystemTheme = followSystem;
+        SettingsService.Instance.Save();
+
+        if (followSystem)
+        {
+            ThemeService.Instance.StartFollowingSystemTheme();
+        }
+        else
+        {
+            ThemeService.Instance.StopFollowingSystemTheme();
+            ThemeService.Instance.ApplyTheme((AppTheme)ThemeComboBox.SelectedIndex);
+        }
+
+        UpdateThemeControlsState();
+        UpdateAdminStatusDisplay();
+    }
+
+    private void UpdateThemeControlsState()
+    {
+        bool followSystem = FollowSystemThemeCheckBox.IsChecked == true;
+        ThemeComboBox.IsEnabled = !followSystem;
     }
 
     private void FontFamilyComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
