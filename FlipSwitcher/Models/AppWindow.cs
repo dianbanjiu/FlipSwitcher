@@ -21,9 +21,10 @@ public class AppWindow : INotifyPropertyChanged
 {
     private bool _isSelected;
     private ImageSource? _icon;
-    private bool _iconLoaded;
+    private bool _iconLoading;
     private bool? _isElevated;
     private int? _monitorNumber;
+    private readonly System.Collections.Generic.List<IntPtr>? _monitors;
 
     public IntPtr Handle { get; }
     public string Title { get; }
@@ -62,15 +63,21 @@ public class AppWindow : INotifyPropertyChanged
         var hMonitor = NativeMethods.MonitorFromWindow(Handle, NativeMethods.MONITOR_DEFAULTTONEAREST);
         if (hMonitor == IntPtr.Zero) return 1;
 
+        if (_monitors != null)
+        {
+            int index = _monitors.IndexOf(hMonitor);
+            return index >= 0 ? index + 1 : 1;
+        }
+
+        // 兜底：独立枚举（不应走到此处）
         var monitors = new System.Collections.Generic.List<IntPtr>();
         NativeMethods.EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, (IntPtr hMon, IntPtr hdc, ref NativeMethods.RECT rect, IntPtr data) =>
         {
             monitors.Add(hMon);
             return true;
         }, IntPtr.Zero);
-
-        int index = monitors.IndexOf(hMonitor);
-        return index >= 0 ? index + 1 : 1;
+        int idx = monitors.IndexOf(hMonitor);
+        return idx >= 0 ? idx + 1 : 1;
     }
 
     private bool CheckProcessElevation()
@@ -133,10 +140,17 @@ public class AppWindow : INotifyPropertyChanged
     {
         get
         {
-            if (!_iconLoaded)
+            if (_icon == null && !_iconLoading)
             {
-                _icon = LoadIcon();
-                _iconLoaded = true;
+                _iconLoading = true;
+                // 在 UI 线程后台优先级异步执行，避免阻塞渲染但保证 WPF 对象在正确线程创建
+                Application.Current?.Dispatcher.BeginInvoke(
+                    System.Windows.Threading.DispatcherPriority.Background,
+                    new Action(() =>
+                    {
+                        _icon = LoadIcon();
+                        OnPropertyChanged(nameof(Icon));
+                    }));
             }
             return _icon;
         }
@@ -144,7 +158,7 @@ public class AppWindow : INotifyPropertyChanged
 
     public string FormattedTitle => string.IsNullOrWhiteSpace(Title) ? ProcessName : Title;
 
-    public AppWindow(IntPtr handle, string title, string className, uint processId, string processName, bool isMinimized, bool isMaximized)
+    public AppWindow(IntPtr handle, string title, string className, uint processId, string processName, bool isMinimized, bool isMaximized, System.Collections.Generic.List<IntPtr>? monitors = null)
     {
         Handle = handle;
         Title = title;
@@ -153,6 +167,7 @@ public class AppWindow : INotifyPropertyChanged
         ProcessName = processName;
         IsMinimized = isMinimized;
         IsMaximized = isMaximized;
+        _monitors = monitors;
     }
 
     private const uint IconTimeoutMs = 50;

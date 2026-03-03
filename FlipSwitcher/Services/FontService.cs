@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace FlipSwitcher.Services;
@@ -30,7 +29,7 @@ public class FontService
     }
 
     /// <summary>
-    /// 应用字体到应用程序
+    /// 应用字体到应用程序（通过应用级资源，样式继承自动传播）
     /// </summary>
     public void ApplyFont(string fontFamilyName)
     {
@@ -40,55 +39,21 @@ public class FontService
         var fontFamily = new FontFamily(
             string.IsNullOrWhiteSpace(fontFamilyName) ? DefaultFontFamily : fontFamilyName);
 
-        var resources = app.Resources;
-        if (resources.Contains(SegoeUIVariableKey))
-        {
-            resources[SegoeUIVariableKey] = fontFamily;
-        }
-        else
-        {
-            resources.Add(SegoeUIVariableKey, fontFamily);
-        }
-
         app.Dispatcher.Invoke(() =>
         {
+            var resources = app.Resources;
+            if (resources.Contains(SegoeUIVariableKey))
+                resources[SegoeUIVariableKey] = fontFamily;
+            else
+                resources.Add(SegoeUIVariableKey, fontFamily);
+
+            // 通过设置 Window.FontFamily 触发继承，无需遍历视觉树
             foreach (Window window in app.Windows)
             {
                 if (window?.IsLoaded == true)
-                {
-                    UpdateWindowFonts(window, fontFamily);
-                    window.InvalidateVisual();
-                }
+                    window.FontFamily = fontFamily;
             }
         });
-    }
-
-    /// <summary>
-    /// 递归更新窗口及其所有子控件的字体
-    /// </summary>
-    private void UpdateWindowFonts(DependencyObject element, FontFamily fontFamily)
-    {
-        if (element == null) return;
-
-        // 更新 TextBlock 的字体
-        if (element is TextBlock textBlock)
-        {
-            // 直接设置字体，覆盖样式中的设置
-            textBlock.FontFamily = fontFamily;
-        }
-        // 更新 Control 的字体（包括 TextBox, Button 等）
-        else if (element is Control control)
-        {
-            control.FontFamily = fontFamily;
-        }
-
-        // 递归处理子元素
-        int childrenCount = VisualTreeHelper.GetChildrenCount(element);
-        for (int i = 0; i < childrenCount; i++)
-        {
-            var child = VisualTreeHelper.GetChild(element, i);
-            UpdateWindowFonts(child, fontFamily);
-        }
     }
 }
 

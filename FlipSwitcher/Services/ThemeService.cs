@@ -32,10 +32,9 @@ public class ThemeService
     private const string RegistryKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
     private const string RegistryValueName = "AppsUseLightTheme";
 
-    private bool _isFollowingSystemTheme = false;
-    private System.Threading.Timer? _registryWatchTimer;
-    private AppTheme _currentAppliedTheme = AppTheme.Dark;
-    private bool _isApplyingTheme = false;
+    private volatile bool _isFollowingSystemTheme = false;
+    private AppTheme? _currentAppliedTheme = null; // null 表示尚未初始化
+    private volatile bool _isApplyingTheme = false;
 
     private ThemeService()
     {
@@ -86,7 +85,7 @@ public class ThemeService
 
     public void ApplyTheme(AppTheme theme)
     {
-        // Avoid repeatedly applying the same theme to prevent memory leaks
+        // 已应用相同主题则跳过（首次 _currentAppliedTheme 为 null，强制执行）
         if (_currentAppliedTheme == theme && !_isApplyingTheme)
             return;
 
@@ -129,55 +128,26 @@ public class ThemeService
 
         _isFollowingSystemTheme = true;
         ApplySystemTheme();
-        
-        // Reduced polling frequency to every 3 seconds to minimize performance overhead
-        _registryWatchTimer = new System.Threading.Timer(
-            _ => CheckSystemThemeChanged(),
-            null,
-            TimeSpan.FromSeconds(3),
-            TimeSpan.FromSeconds(3)
-        );
+        SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
     }
 
     public void StopFollowingSystemTheme()
     {
         _isFollowingSystemTheme = false;
-        
-        // Ensure the timer is properly disposed
-        if (_registryWatchTimer != null)
-        {
-            _registryWatchTimer.Dispose();
-            _registryWatchTimer = null;
-        }
-        
-        _lastSystemThemeValue = null;
+        SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
     }
 
-    private int? _lastSystemThemeValue = null;
-
-    private void CheckSystemThemeChanged()
+    private void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
     {
-        // Double check to ensure no execution after timer is stopped
-        if (!_isFollowingSystemTheme || _registryWatchTimer == null) return;
+        if (e.Category != UserPreferenceCategory.General) return;
+        if (!_isFollowingSystemTheme || _isApplyingTheme) return;
 
-        var currentValue = GetSystemThemeValue();
-        if (currentValue != _lastSystemThemeValue)
+        var app = Application.Current;
+        app?.Dispatcher.BeginInvoke(() =>
         {
-            _lastSystemThemeValue = currentValue;
-            
-            // Avoid accumulating too many calls in the Dispatcher queue
-            var app = Application.Current;
-            if (app != null && !_isApplyingTheme)
-            {
-                app.Dispatcher.BeginInvoke(() => 
-                {
-                    if (_isFollowingSystemTheme) // Check state again
-                    {
-                        ApplySystemTheme();
-                    }
-                }, System.Windows.Threading.DispatcherPriority.Background);
-            }
-        }
+            if (_isFollowingSystemTheme)
+                ApplySystemTheme();
+        }, System.Windows.Threading.DispatcherPriority.Background);
     }
 
     private void ApplySystemTheme()

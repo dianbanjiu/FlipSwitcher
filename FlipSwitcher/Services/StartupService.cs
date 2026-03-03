@@ -58,8 +58,9 @@ public static class StartupService
 
             const int TaskQueryTimeoutMs = 3000;
             using var process = Process.Start(startInfo);
-            process?.WaitForExit(TaskQueryTimeoutMs);
-            return process?.ExitCode == 0;
+            if (process == null) return false;
+            bool exited = process.WaitForExit(TaskQueryTimeoutMs);
+            return exited && process.ExitCode == 0;
         }
         catch
         {
@@ -76,7 +77,7 @@ public static class StartupService
     {
         try
         {
-            var exePath = GetExecutablePath();
+            var exePath = ProcessHelper.GetExecutablePath();
             if (enable && string.IsNullOrEmpty(exePath)) return false;
 
             var settings = SettingsService.Instance.Settings;
@@ -213,8 +214,9 @@ public static class StartupService
 
                     const int TaskCreateTimeoutMs = 5000;
                     using var process = Process.Start(startInfo);
-                    process?.WaitForExit(TaskCreateTimeoutMs);
-                    return process?.ExitCode == 0;
+                    if (process == null) return false;
+                    bool exited = process.WaitForExit(TaskCreateTimeoutMs);
+                    return exited && process.ExitCode == 0;
                 }
                 finally
                 {
@@ -237,7 +239,7 @@ public static class StartupService
                 const int TaskDeleteTimeoutMs = 5000;
                 using var process = Process.Start(startInfo);
                 process?.WaitForExit(TaskDeleteTimeoutMs);
-                return true;
+                return true; // 删除操作不强依赖退出码（任务不存在时也视为成功）
             }
         }
         catch
@@ -258,9 +260,5 @@ public static class StartupService
         }
     }
 
-    private static string? GetExecutablePath()
-    {
-        return ProcessHelper.GetExecutablePath();
-    }
 }
 

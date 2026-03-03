@@ -90,20 +90,14 @@ public class AppSettings
     /// </summary>
     public bool HideOnFocusLost { get; set; } = true;
 
-    /// <summary>
-    /// Theme: 0 = Dark, 1 = Light, 2 = Latte, 3 = Mocha
-    /// </summary>
-    public int Theme { get; set; } = 0;
+    public AppTheme Theme { get; set; } = AppTheme.Dark;
 
     /// <summary>
     /// Run as Administrator (requires restart)
     /// </summary>
     public bool RunAsAdmin { get; set; } = false;
 
-    /// <summary>
-    /// Language: 0 = English, 1 = Chinese, 2 = ChineseTraditional
-    /// </summary>
-    public int Language { get; set; } = 0;
+    public AppLanguage Language { get; set; } = AppLanguage.English;
 
     /// <summary>
     /// Check for updates automatically on startup

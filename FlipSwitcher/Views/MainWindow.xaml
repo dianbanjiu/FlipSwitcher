@@ -158,7 +158,7 @@
 
                                     <!-- Monitor Indicator -->
                                     <Border Grid.Column="2"
-                                        Visibility="{Binding MonitorNumber, Converter={StaticResource MonitorInfoVisibilityConverter}}"
+                                        Visibility="{Binding DataContext.ShowMonitorInfo, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibilityConverter}}"
                                         Background="{DynamicResource ControlDefaultBrush}"
                                         CornerRadius="4"
                                         Padding="8,4"

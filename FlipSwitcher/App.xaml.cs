@@ -93,7 +93,7 @@ public partial class App : Application
         }
         else
         {
-            ThemeService.Instance.ApplyTheme((AppTheme)settings.Theme);
+            ThemeService.Instance.ApplyTheme(settings.Theme);
         }
 
         // Apply font setting

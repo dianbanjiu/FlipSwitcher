@@ -39,8 +39,7 @@ public class LanguageService
     /// </summary>
     public void Initialize()
     {
-        var language = (AppLanguage)SettingsService.Instance.Settings.Language;
-        SetLanguage(language, raiseEvent: false);
+        SetLanguage(SettingsService.Instance.Settings.Language, raiseEvent: false);
     }
 
     private const string StringsResourceKey = "Strings";

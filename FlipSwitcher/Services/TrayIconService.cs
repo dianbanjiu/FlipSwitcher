@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows;
+using FlipSwitcher.Core;
 using Hardcodet.Wpf.TaskbarNotification;
 
 namespace FlipSwitcher.Services;
@@ -87,10 +88,18 @@ public class TrayIconService : IDisposable
             var iconStream = Application.GetResourceStream(iconUri);
             if (iconStream != null)
             {
-                using var bitmap = new System.Drawing.Bitmap(iconStream.Stream);
+                using var stream = iconStream.Stream;
+                using var bitmap = new System.Drawing.Bitmap(stream);
                 var hIcon = bitmap.GetHicon();
-                var icon = Icon.FromHandle(hIcon);
-                return (Icon)icon.Clone();
+                try
+                {
+                    using var icon = Icon.FromHandle(hIcon);
+                    return (Icon)icon.Clone();
+                }
+                finally
+                {
+                    NativeMethods.DestroyIcon(hIcon);
+                }
             }
         }
         catch

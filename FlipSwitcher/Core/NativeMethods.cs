@@ -122,9 +122,6 @@ internal static class NativeMethods
     public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
 
     [DllImport("user32.dll")]
-    public static extern IntPtr SetActiveWindow(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
     public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
     [DllImport("user32.dll")]
@@ -190,12 +187,6 @@ internal static class NativeMethods
 
     [DllImport("dwmapi.dll")]
     public static extern int DwmSetWindowAttribute(IntPtr hwnd, int dwAttribute, ref int pvAttribute, int cbAttribute);
-
-    [DllImport("dwmapi.dll")]
-    public static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref MARGINS pMarInset);
-
-    [DllImport("dwmapi.dll")]
-    public static extern int DwmEnableBlurBehindWindow(IntPtr hwnd, ref DWM_BLURBEHIND blurBehind);
 
     #endregion
 
@@ -271,7 +262,6 @@ internal static class NativeMethods
     public const int SW_SHOWNOACTIVATE = 4;
     public const int SW_MINIMIZE = 6;
     public const int SW_SHOWMAXIMIZED = 3;
-    public const int SW_MAXIMIZE = 3;
     public const int SW_SHOWNORMAL = 1;
 
     public const uint WM_GETICON = 0x007F;
@@ -283,7 +273,6 @@ internal static class NativeMethods
     public const uint SMTO_ABORTIFHUNG = 0x0002;
     public const int ICON_SMALL = 0;
     public const int ICON_BIG = 1;
-    public const int ICON_SMALL2 = 2;
     public const int GCL_HICON = -14;
     public const int GCL_HICONSM = -34;
 
@@ -298,32 +287,8 @@ internal static class NativeMethods
     public const uint MOD_NOREPEAT = 0x4000;
 
     public const int WM_HOTKEY = 0x0312;
-    public const uint WM_SHOWME = 0x0400 + 1; // Custom message to show window
-
     [DllImport("user32.dll")]
     public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-
-    #endregion
-
-    #region Structures
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct MARGINS
-    {
-        public int cxLeftWidth;
-        public int cxRightWidth;
-        public int cyTopHeight;
-        public int cyBottomHeight;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct DWM_BLURBEHIND
-    {
-        public uint dwFlags;
-        public bool fEnable;
-        public IntPtr hRgnBlur;
-        public bool fTransitionOnMaximized;
-    }
 
     #endregion
 
@@ -331,9 +296,6 @@ internal static class NativeMethods
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string? lpszClass, string? lpszWindow);
-
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-    public static extern IntPtr ExtractIcon(IntPtr hInst, string lpszExeFileName, int nIconIndex);
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool DestroyIcon(IntPtr hIcon);

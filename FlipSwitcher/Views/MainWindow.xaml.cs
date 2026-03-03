@@ -100,8 +100,6 @@ public partial class MainWindow : Window
         UpdateHotkeyDisplay();
     }
 
-    private const int ThemeDark = 0;
-    private const int ThemeLight = 1;
     private const int DarkModeEnabled = 1;
     private const int DarkModeDisabled = 0;
 
@@ -119,8 +117,8 @@ public partial class MainWindow : Window
         {
             bool isDark = settings.Theme switch
             {
-                ThemeDark => true,
-                ThemeLight => false,
+                Services.AppTheme.Light => false,
+                Services.AppTheme.Latte => false,
                 _ => true
             };
             int darkMode = isDark ? DarkModeEnabled : DarkModeDisabled;
@@ -293,11 +291,11 @@ public partial class MainWindow : Window
     {
         // 重置分组状态，确保显示总列表
         _viewModel.ResetGrouping();
-        
+        _viewModel.ClearSearch();
+
         // Refresh window list - in Alt+Tab mode, select the second window
         // (the first window is the current one, user wants to switch to another)
         _viewModel.RefreshWindows(selectSecondWindow: _isAltTabMode);
-        _viewModel.ClearSearch();
 
         // Position window at center of primary screen
         var workArea = SystemParameters.WorkArea;
@@ -550,8 +548,10 @@ public partial class MainWindow : Window
         }
         else
         {
-            _hotkeyService.Dispose();
+            SettingsService.Instance.SettingsChanged -= OnSettingsChanged;
+            _viewModel.Dispose();
             base.OnClosing(e);
+            _hotkeyService.Dispose();
         }
     }
 

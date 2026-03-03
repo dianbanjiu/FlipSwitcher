@@ -13,7 +13,7 @@ namespace FlipSwitcher.ViewModels;
 /// <summary>
 /// ViewModel for the main window switcher
 /// </summary>
-public class MainViewModel : ObservableObject
+public class MainViewModel : ObservableObject, IDisposable
 {
     private readonly WindowService _windowService;
     private string _searchText = string.Empty;
@@ -24,6 +24,8 @@ public class MainViewModel : ObservableObject
     private string? _groupedProcessName;
     private AppWindow? _lastSelectedWindowBeforeGrouping;
 
+    public bool ShowMonitorInfo => SettingsService.Instance.Settings.ShowMonitorInfo;
+
     public MainViewModel()
     {
         _windowService = new WindowService();
@@ -33,6 +35,15 @@ public class MainViewModel : ObservableObject
         MoveSelectionUpCommand = new RelayCommand(MoveSelectionUp);
         MoveSelectionDownCommand = new RelayCommand(MoveSelectionDown);
         ActivateSelectedCommand = new RelayCommand(ActivateSelected);
+
+        SettingsService.Instance.SettingsChanged += OnSettingsChanged;
+    }
+
+    private void OnSettingsChanged(object? sender, EventArgs e) => OnPropertyChanged(nameof(ShowMonitorInfo));
+
+    public void Dispose()
+    {
+        SettingsService.Instance.SettingsChanged -= OnSettingsChanged;
     }
 
     public string SearchText
@@ -91,6 +102,36 @@ public class MainViewModel : ObservableObject
 
     public event EventHandler? WindowActivated;
 
+    private void UpdateFilteredWindows(System.Collections.Generic.List<AppWindow> newList)
+    {
+        // 移除不在新列表中的项
+        for (int i = _filteredWindows.Count - 1; i >= 0; i--)
+        {
+            if (!newList.Contains(_filteredWindows[i]))
+                _filteredWindows.RemoveAt(i);
+        }
+        // 按顺序插入或移动到正确位置
+        for (int i = 0; i < newList.Count; i++)
+        {
+            if (i >= _filteredWindows.Count)
+            {
+                _filteredWindows.Add(newList[i]);
+            }
+            else if (_filteredWindows[i] != newList[i])
+            {
+                // 先插入新项，再移除原来位置的旧项（旧项已后移一位）
+                _filteredWindows.Insert(i, newList[i]);
+                // 若旧项已在新列表中，保留；否则移除
+                int oldIdx = i + 1;
+                if (oldIdx < _filteredWindows.Count && !newList.Contains(_filteredWindows[oldIdx]))
+                    _filteredWindows.RemoveAt(oldIdx);
+            }
+        }
+        // 移除尾部多余项
+        while (_filteredWindows.Count > newList.Count)
+            _filteredWindows.RemoveAt(_filteredWindows.Count - 1);
+    }
+
     private void NotifyWindowCountChanged()
     {
         OnPropertyChanged(nameof(WindowCount));
@@ -139,8 +180,8 @@ public class MainViewModel : ObservableObject
             var groupedWindows = _windows
                 .Where(w => w.ProcessName == _groupedProcessName)
                 .ToList();
-            
-            FilteredWindows = new ObservableCollection<AppWindow>(groupedWindows);
+
+            UpdateFilteredWindows(groupedWindows);
             NotifyWindowCountChanged();
 
             if (FilteredWindows.Count > 0)
@@ -170,13 +211,13 @@ public class MainViewModel : ObservableObject
             ? _windows.ToList()
             : _windows.Where(w => w.MatchesFilter(SearchText)).ToList();
 
-        FilteredWindows = new ObservableCollection<AppWindow>(filtered);
+        UpdateFilteredWindows(filtered);
         NotifyWindowCountChanged();
 
-        if (FilteredWindows.Count > 0)
+        if (_filteredWindows.Count > 0)
         {
-            var index = selectSecondWindow && FilteredWindows.Count > 1 ? 1 : 0;
-            SelectedWindow = FilteredWindows[index];
+            var index = selectSecondWindow && _filteredWindows.Count > 1 ? 1 : 0;
+            SelectedWindow = _filteredWindows[index];
         }
         else
         {
@@ -310,7 +351,7 @@ public class MainViewModel : ObservableObject
             .Where(w => w.ProcessName == _groupedProcessName)
             .ToList();
 
-        FilteredWindows = new ObservableCollection<AppWindow>(groupedWindows);
+        UpdateFilteredWindows(groupedWindows);
         NotifyWindowCountChanged();
 
         if (FilteredWindows.Count > 0)

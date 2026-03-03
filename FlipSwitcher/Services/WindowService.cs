@@ -127,6 +127,15 @@ public class WindowService
         var shellWindow = NativeMethods.GetShellWindow();
         var currentProcessId = (uint)Environment.ProcessId;
 
+        // 统一枚举一次显示器列表，供所有 AppWindow 共享
+        var monitors = new List<IntPtr>();
+        NativeMethods.EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero,
+            (IntPtr hMon, IntPtr hdc, ref NativeMethods.RECT rect, IntPtr data) =>
+            {
+                monitors.Add(hMon);
+                return true;
+            }, IntPtr.Zero);
+
         NativeMethods.EnumWindows((hWnd, lParam) =>
         {
             try
@@ -137,7 +146,7 @@ public class WindowService
 
                 var (isMinimized, isMaximized) = GetWindowState(hWnd);
                 var window = new AppWindow(hWnd, info.Value.Title, info.Value.ClassName,
-                    info.Value.ProcessId, info.Value.ProcessName, isMinimized, isMaximized);
+                    info.Value.ProcessId, info.Value.ProcessName, isMinimized, isMaximized, monitors);
                 windows.Add(window);
             }
             catch

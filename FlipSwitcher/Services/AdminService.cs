@@ -9,21 +9,25 @@ namespace FlipSwitcher.Services;
 /// </summary>
 public static class AdminService
 {
+    private static bool? _isAdminCache;
+
     /// <summary>
     /// Check if the current process is running with administrator privileges
     /// </summary>
     public static bool IsRunningAsAdmin()
     {
+        if (_isAdminCache.HasValue) return _isAdminCache.Value;
         try
         {
             using var identity = WindowsIdentity.GetCurrent();
             var principal = new WindowsPrincipal(identity);
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            _isAdminCache = principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
         catch
         {
-            return false;
+            _isAdminCache = false;
         }
+        return _isAdminCache.Value;
     }
 
     /// <summary>

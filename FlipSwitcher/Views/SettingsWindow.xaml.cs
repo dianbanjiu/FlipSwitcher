@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -35,10 +36,12 @@ public partial class SettingsWindow : Window
     {
         InitializeComponent();
         LoadFontFamilies();
-        LoadSettings();
+        LoadSettingsWithoutStartup();
         UpdateAdminStatusDisplay();
         UpdateVersionDisplay();
         _isInitializing = false;
+        // 异步检查开机自启状态，避免阻塞 UI
+        Loaded += async (_, _) => await SyncStartupSettingAsync();
     }
 
     public SettingsWindow(HotkeyService? hotkeyService = null) : this()
@@ -109,17 +112,15 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private void LoadSettings()
+    private void LoadSettingsWithoutStartup()
     {
         var settings = SettingsService.Instance.Settings;
         AltSpaceCheckBox.IsChecked = settings.UseAltSpace;
         AltTabCheckBox.IsChecked = settings.UseAltTab;
         RunAsAdminCheckBox.IsChecked = settings.RunAsAdmin;
 
-        // Load language setting
-        LanguageComboBox.SelectedIndex = settings.Language;
+        LanguageComboBox.SelectedIndex = (int)settings.Language;
 
-        // Load font setting
         const int DefaultFontIndex = 0;
         if (string.IsNullOrWhiteSpace(settings.FontFamily))
         {
@@ -128,33 +129,33 @@ public partial class SettingsWindow : Window
         else
         {
             var fontIndex = FontFamilyComboBox.Items.IndexOf(settings.FontFamily);
-            if (fontIndex >= 0)
-            {
-                FontFamilyComboBox.SelectedIndex = fontIndex;
-            }
-            else
-            {
-                FontFamilyComboBox.SelectedIndex = 0;
-            }
+            FontFamilyComboBox.SelectedIndex = fontIndex >= 0 ? fontIndex : 0;
         }
 
-        // Sync startup setting with actual registry/Task Scheduler state
-        bool actualStartupEnabled = StartupService.IsStartupEnabled();
-        if (settings.StartWithWindows != actualStartupEnabled)
-        {
-            settings.StartWithWindows = actualStartupEnabled;
-            SettingsService.Instance.Save();
-        }
         StartWithWindowsCheckBox.IsChecked = settings.StartWithWindows;
         HideOnFocusLostCheckBox.IsChecked = settings.HideOnFocusLost;
         PinyinSearchCheckBox.IsChecked = settings.EnablePinyinSearch;
         ShowMonitorInfoCheckBox.IsChecked = settings.ShowMonitorInfo;
         FollowSystemThemeCheckBox.IsChecked = settings.FollowSystemTheme;
-        ThemeComboBox.SelectedIndex = settings.Theme;
+        ThemeComboBox.SelectedIndex = (int)settings.Theme;
         CheckForUpdatesCheckBox.IsChecked = settings.CheckForUpdates;
 
         UpdateThemeControlsState();
         UpdateCurrentHotkeyDisplay();
+    }
+
+    private async Task SyncStartupSettingAsync()
+    {
+        var settings = SettingsService.Instance.Settings;
+        bool actualStartupEnabled = await Task.Run(StartupService.IsStartupEnabled);
+        if (settings.StartWithWindows != actualStartupEnabled)
+        {
+            settings.StartWithWindows = actualStartupEnabled;
+            SettingsService.Instance.Save();
+            _isInitializing = true;
+            StartWithWindowsCheckBox.IsChecked = actualStartupEnabled;
+            _isInitializing = false;
+        }
     }
 
     private void UpdateAdminStatusDisplay()
@@ -187,9 +188,9 @@ public partial class SettingsWindow : Window
 
     private void LanguageComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        SaveSetting((s, v) => s.Language = v, LanguageComboBox.SelectedIndex, () =>
+        SaveSetting((s, v) => s.Language = (AppLanguage)v, LanguageComboBox.SelectedIndex, () =>
         {
-            LanguageService.Instance.SetLanguage((AppLanguage)SettingsService.Instance.Settings.Language);
+            LanguageService.Instance.SetLanguage(SettingsService.Instance.Settings.Language);
             UpdateAdminStatusDisplay();
         });
     }
@@ -323,7 +324,7 @@ public partial class SettingsWindow : Window
 
     private void ThemeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        SaveSetting((s, v) => s.Theme = v, ThemeComboBox.SelectedIndex, () =>
+        SaveSetting((s, v) => s.Theme = (AppTheme)v, ThemeComboBox.SelectedIndex, () =>
         {
             ThemeService.Instance.ApplyTheme((AppTheme)ThemeComboBox.SelectedIndex);
             UpdateAdminStatusDisplay();
@@ -483,14 +484,16 @@ public partial class SettingsWindow : Window
             : LanguageService.GetString("HotkeyNone");
     }
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    private void TryClose()
     {
-        if (!_isClosing)
+        if (!_isClosing && IsLoaded)
         {
             _isClosing = true;
             Close();
         }
     }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => TryClose();
 
     private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
     {
@@ -512,50 +515,30 @@ public partial class SettingsWindow : Window
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        // Support Esc or Alt+Esc to close (even if Alt key is not released)
-        if (e.Key == Key.Escape && !_isClosing)
+        if (e.Key == Key.Escape)
         {
-            _isClosing = true;
-            Close();
+            TryClose();
             e.Handled = true;
         }
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
-        if (e.Key == Key.Escape && !_isClosing)
+        if (e.Key == Key.Escape)
         {
-            _isClosing = true;
-            Close();
+            TryClose();
             e.Handled = true;
         }
         base.OnKeyDown(e);
     }
 
-    private void HotkeyService_EscapePressed(object? sender, EventArgs e)
-    {
-        // Close settings window when Alt+Esc is pressed
-        if (!_isClosing && IsLoaded)
-        {
-            _isClosing = true;
-            Close();
-        }
-    }
+    private void HotkeyService_EscapePressed(object? sender, EventArgs e) => TryClose();
 
     private void SettingsWindow_Deactivated(object? sender, EventArgs e)
     {
-        // Close when window loses focus, but need to check if already closing or showing a dialog
         if (!_isClosing && !_isShowingDialog && IsLoaded)
         {
-            _isClosing = true;
-            // Use Dispatcher to delay closing, avoiding calls during window closing process
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                if (IsLoaded)
-                {
-                    Close();
-                }
-            }), System.Windows.Threading.DispatcherPriority.Normal);
+            Dispatcher.BeginInvoke(new Action(TryClose), System.Windows.Threading.DispatcherPriority.Normal);
         }
     }
 

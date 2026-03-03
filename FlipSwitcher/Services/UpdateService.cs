@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using FlipSwitcher.Views;
@@ -34,11 +35,11 @@ public class UpdateService : IDisposable
     private const char VersionPrefix = 'v';
 
     private readonly HttpClient _httpClient;
-    private bool _isChecking;
+    private readonly SemaphoreSlim _checkLock = new(1, 1);
 
     private UpdateService()
     {
-        _httpClient = new HttpClient();
+        _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
         _httpClient.DefaultRequestHeaders.Add("User-Agent", UserAgent);
     }
 
@@ -50,10 +51,9 @@ public class UpdateService : IDisposable
 
     public async Task<UpdateInfo?> CheckForUpdatesAsync(bool silent = false)
     {
-        if (_isChecking)
+        if (!await _checkLock.WaitAsync(0))
             return null;
 
-        _isChecking = true;
         try
         {
             var response = await _httpClient.GetStringAsync(GitHubApiUrl);
@@ -95,7 +95,7 @@ public class UpdateService : IDisposable
         }
         finally
         {
-            _isChecking = false;
+            _checkLock.Release();
         }
     }
 
@@ -178,6 +178,7 @@ public class UpdateService : IDisposable
     public void Dispose()
     {
         _httpClient?.Dispose();
+        _checkLock.Dispose();
     }
 }
 

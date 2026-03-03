@@ -42,6 +42,7 @@ public class HotkeyService : IDisposable
     
     private IntPtr _windowHandle;
     private HwndSource? _source;
+    private bool _hookInstalled;
     private bool _altSpaceRegistered;
     
     // Low-level keyboard hook for Alt+Tab
@@ -151,8 +152,12 @@ public class HotkeyService : IDisposable
         var helper = new WindowInteropHelper(window);
         _windowHandle = helper.EnsureHandle();
 
-        _source = HwndSource.FromHwnd(_windowHandle);
-        _source?.AddHook(WndProc);
+        if (!_hookInstalled)
+        {
+            _source = HwndSource.FromHwnd(_windowHandle);
+            _source?.AddHook(WndProc);
+            _hookInstalled = true;
+        }
 
         // Unregister existing hotkeys first
         UnregisterAllHotkeys();
