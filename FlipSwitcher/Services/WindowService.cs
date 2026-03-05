@@ -68,16 +68,19 @@ public class WindowService
             return null;
 
         var owner = NativeMethods.GetWindow(hWnd, NativeMethods.GW_OWNER);
-        if (owner != IntPtr.Zero)
+        if (owner != IntPtr.Zero && (exStyle & (int)NativeMethods.WS_EX_APPWINDOW) == 0)
         {
-            // Owned windows without WS_EX_APPWINDOW should not be shown (matches Alt-Tab behavior)
-            if ((exStyle & (int)NativeMethods.WS_EX_APPWINDOW) == 0)
-                return null;
-
-            var rootOwner = NativeMethods.GetAncestor(hWnd, NativeMethods.GA_ROOTOWNER);
-            var lastPopup = NativeMethods.GetLastActivePopup(rootOwner);
-            if (lastPopup != hWnd && NativeMethods.IsWindowVisible(lastPopup))
-                return null;
+            // Walk the owner chain: if any owner in the chain is visible, this window is a
+            // subordinate dialog (e.g. Environment Variables owned by System Properties) and
+            // should be hidden. If all owners are invisible (e.g. a hidden launcher window),
+            // the window itself is the "top" of the visible chain and should be shown.
+            var current = owner;
+            while (current != IntPtr.Zero)
+            {
+                if (NativeMethods.IsWindowVisible(current))
+                    return null;
+                current = NativeMethods.GetWindow(current, NativeMethods.GW_OWNER);
+            }
         }
 
         var titleLength = NativeMethods.GetWindowTextLength(hWnd);
