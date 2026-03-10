@@ -45,18 +45,24 @@ dotnet run --project FlipSwitcher
 | `Alt + S`     | Enter search mode (keep window open)                  |
 | `Alt + W`     | Close selected window                                 |
 | `Alt + ,`     | Open settings                                         |
-| `Alt + ->`    | Summary selected app                                  |
-| `Alt + <-`    | Back to windows list                                  |
-| `Alt + D`     | Stop the selected process                             |
+| `Alt + →`     | Group windows by selected app                         |
+| `Alt + ←`     | Back to full window list                              |
+| `Alt + D`     | Terminate the selected process                        |
 
 ## ✨ Features
 
 - **Fast Search** - Quickly filter windows by typing
 - **Pinyin Search** - Search Chinese window titles using pinyin initials or full pinyin (optional, disabled by default)
 - **Multi-Monitor Support** - Show which monitor each window is on in multi-monitor setups (optional, disabled by default)
-- **Window Grouping** - Group windows by application
-- **Quick Close** - Close windows with Alt+W without leaving the switcher
-- **Process Control** - Terminate processes with Alt+D
+- **Window Grouping** - Press `Alt + →` to group and browse windows of the same application
+- **Quick Close** - Close windows with `Alt + W` without leaving the switcher
+- **Process Control** - Terminate processes with `Alt + D`
+- **Theme Support** - Choose from Dark, Light, Catppuccin Latte, and Catppuccin Mocha themes; optionally follow the system theme automatically
+- **Multi-Language** - Supports English, Simplified Chinese, and Traditional Chinese
+- **Custom Font** - Configure your preferred font family in settings
+- **Auto Update** - Optionally check for updates automatically on startup
+- **Start with Windows** - Optionally launch FlipSwitcher on system startup
+- **System Tray** - Runs quietly in the background, accessible from the tray
 
 ## 🛠️ Technology Stack
 
@@ -64,6 +70,7 @@ dotnet run --project FlipSwitcher
 - **.NET 8.0** - Latest LTS framework
 - **CommunityToolkit.Mvvm** - MVVM helpers
 - **Hardcodet.NotifyIcon.Wpf** - System tray support
+- **TinyPinyin.Net** - Pinyin search support
 
 ## 🙏 Acknowledgments
 
