@@ -69,6 +69,8 @@
     <system:String x:Key="SettingsPinyinSearchDesc">使用拼音首字母或全拼搜尋視窗</system:String>
     <system:String x:Key="SettingsShowMonitorInfo">顯示顯示器資訊</system:String>
     <system:String x:Key="SettingsShowMonitorInfoDesc">顯示每個視窗所在的顯示器編號</system:String>
+    <system:String x:Key="SettingsOpenSearchOnActivation">啟動時開啟搜尋</system:String>
+    <system:String x:Key="SettingsOpenSearchOnActivationDesc">按下快速鍵時直接進入搜尋模式</system:String>
     
     <!-- Settings - Updates -->
     <system:String x:Key="SettingsUpdates">更新</system:String>

@@ -123,5 +123,10 @@ public class AppSettings
     /// Follow system theme (automatically switch between light/dark based on Windows theme)
     /// </summary>
     public bool FollowSystemTheme { get; set; } = false;
+
+    /// <summary>
+    /// Open search mode directly when activation hotkey is pressed
+    /// </summary>
+    public bool OpenSearchOnActivation { get; set; } = false;
 }
 

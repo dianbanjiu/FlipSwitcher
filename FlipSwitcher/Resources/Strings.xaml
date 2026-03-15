@@ -70,6 +70,8 @@
     <system:String x:Key="SettingsPinyinSearchDesc">Search windows by Chinese pinyin</system:String>
     <system:String x:Key="SettingsShowMonitorInfo">Show Monitor Info</system:String>
     <system:String x:Key="SettingsShowMonitorInfoDesc">Display which monitor each window is on</system:String>
+    <system:String x:Key="SettingsOpenSearchOnActivation">Open Search on Activation</system:String>
+    <system:String x:Key="SettingsOpenSearchOnActivationDesc">Go directly to search mode when the hotkey is pressed</system:String>
 
     <!-- Settings - Updates -->
     <system:String x:Key="SettingsUpdates">Updates</system:String>

@@ -293,6 +293,13 @@ public partial class MainWindow : Window
         _viewModel.ResetGrouping();
         _viewModel.ClearSearch();
 
+        var settings = SettingsService.Instance.Settings;
+        bool openSearchDirectly = settings.OpenSearchOnActivation;
+
+        // When opening search directly, don't use Alt+Tab hold mode
+        if (openSearchDirectly)
+            _isAltTabMode = false;
+
         // Refresh window list - in Alt+Tab mode, select the second window
         // (the first window is the current one, user wants to switch to another)
         _viewModel.RefreshWindows(selectSecondWindow: _isAltTabMode);
@@ -308,11 +315,18 @@ public partial class MainWindow : Window
         // Notify hotkey service that we're visible
         _hotkeyService.SetVisible(true);
 
-        // Focus the search box (but don't select all in Alt+Tab mode)
-        SearchBox.Focus();
-        if (!_isAltTabMode)
+        if (openSearchDirectly)
         {
-            SearchBox.SelectAll();
+            EnterSearchMode();
+        }
+        else
+        {
+            // Focus the search box (but don't select all in Alt+Tab mode)
+            SearchBox.Focus();
+            if (!_isAltTabMode)
+            {
+                SearchBox.SelectAll();
+            }
         }
 
         // Delay scroll execution to ensure layout is complete
