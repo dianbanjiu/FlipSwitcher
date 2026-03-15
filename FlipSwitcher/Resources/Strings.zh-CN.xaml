@@ -71,6 +71,8 @@
     <system:String x:Key="SettingsShowMonitorInfoDesc">显示每个窗口所在的显示器编号</system:String>
     <system:String x:Key="SettingsOpenSearchOnActivation">激活时打开搜索</system:String>
     <system:String x:Key="SettingsOpenSearchOnActivationDesc">按下快捷键时直接进入搜索模式</system:String>
+    <system:String x:Key="SettingsShowOnMouseScreen">在鼠标所在屏幕显示</system:String>
+    <system:String x:Key="SettingsShowOnMouseScreenDesc">在鼠标光标所在的屏幕上显示窗口</system:String>
 
     <!-- Settings - Updates -->
     <system:String x:Key="SettingsUpdates">更新</system:String>

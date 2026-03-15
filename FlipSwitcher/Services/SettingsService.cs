@@ -128,5 +128,10 @@ public class AppSettings
     /// Open search mode directly when activation hotkey is pressed
     /// </summary>
     public bool OpenSearchOnActivation { get; set; } = false;
+
+    /// <summary>
+    /// Show window on the screen where the mouse cursor is located
+    /// </summary>
+    public bool ShowOnMouseScreen { get; set; } = false;
 }
 

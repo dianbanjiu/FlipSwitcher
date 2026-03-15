@@ -71,6 +71,8 @@
     <system:String x:Key="SettingsShowMonitorInfoDesc">顯示每個視窗所在的顯示器編號</system:String>
     <system:String x:Key="SettingsOpenSearchOnActivation">啟動時開啟搜尋</system:String>
     <system:String x:Key="SettingsOpenSearchOnActivationDesc">按下快速鍵時直接進入搜尋模式</system:String>
+    <system:String x:Key="SettingsShowOnMouseScreen">在滑鼠所在螢幕顯示</system:String>
+    <system:String x:Key="SettingsShowOnMouseScreenDesc">在滑鼠游標所在的螢幕上顯示視窗</system:String>
     
     <!-- Settings - Updates -->
     <system:String x:Key="SettingsUpdates">更新</system:String>

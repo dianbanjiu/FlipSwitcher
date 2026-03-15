@@ -434,7 +434,7 @@
                             </Grid>
 
                             <!-- Open Search on Activation -->
-                            <Grid>
+                            <Grid Margin="0,0,0,16">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -453,6 +453,29 @@
                                     IsChecked="False"
                                     Checked="OpenSearchOnActivationCheckBox_Changed"
                                     Unchecked="OpenSearchOnActivationCheckBox_Changed"
+                                    Style="{DynamicResource FluentCheckBoxStyle}" />
+                            </Grid>
+
+                            <!-- Show on Mouse Screen -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{DynamicResource SettingsShowOnMouseScreen}"
+                                        Style="{DynamicResource BodyStrongTextStyle}" />
+                                    <TextBlock Text="{DynamicResource SettingsShowOnMouseScreenDesc}"
+                                        Style="{DynamicResource CaptionTextStyle}"
+                                        Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <CheckBox x:Name="ShowOnMouseScreenCheckBox"
+                                    Grid.Column="1"
+                                    IsChecked="False"
+                                    Checked="ShowOnMouseScreenCheckBox_Changed"
+                                    Unchecked="ShowOnMouseScreenCheckBox_Changed"
                                     Style="{DynamicResource FluentCheckBoxStyle}" />
                             </Grid>
                         </StackPanel>

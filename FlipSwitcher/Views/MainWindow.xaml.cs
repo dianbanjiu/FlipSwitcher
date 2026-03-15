@@ -304,10 +304,16 @@ public partial class MainWindow : Window
         // (the first window is the current one, user wants to switch to another)
         _viewModel.RefreshWindows(selectSecondWindow: _isAltTabMode);
 
-        // Position window at center of primary screen
-        var workArea = SystemParameters.WorkArea;
-        Left = (workArea.Width - Width) / 2 + workArea.Left;
-        Top = (workArea.Height - Height) / 2 + workArea.Top;
+        if (SettingsService.Instance.Settings.ShowOnMouseScreen)
+        {
+            PositionOnMouseScreen();
+        }
+        else
+        {
+            var workArea = SystemParameters.WorkArea;
+            Left = (workArea.Width - Width) / 2 + workArea.Left;
+            Top = (workArea.Height - Height) / 2 + workArea.Top;
+        }
 
         Show();
         Activate();
@@ -334,6 +340,33 @@ public partial class MainWindow : Window
         {
             ScrollToTopThenSelected();
         }));
+    }
+
+    private void PositionOnMouseScreen()
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero) return;
+
+        if (!NativeMethods.GetCursorPos(out var cursorPos)) return;
+
+        var hMonitor = NativeMethods.MonitorFromPoint(cursorPos, NativeMethods.MONITOR_DEFAULTTONEAREST);
+        var monitorInfo = new NativeMethods.MONITORINFO { cbSize = Marshal.SizeOf<NativeMethods.MONITORINFO>() };
+        if (!NativeMethods.GetMonitorInfo(hMonitor, ref monitorInfo)) return;
+
+        double targetDpiScale = 1.0;
+        if (NativeMethods.GetDpiForMonitor(hMonitor, NativeMethods.MDT_EFFECTIVE_DPI, out uint dpiX, out uint _) == 0)
+            targetDpiScale = dpiX / 96.0;
+
+        int expectedWidthPx = (int)(640 * targetDpiScale);
+        int expectedHeightPx = (int)(520 * targetDpiScale);
+
+        var rc = monitorInfo.rcWork;
+        int x = rc.Left + (rc.Right - rc.Left - expectedWidthPx) / 2;
+        int y = rc.Top + (rc.Bottom - rc.Top - expectedHeightPx) / 2;
+
+        NativeMethods.SetWindowPos(hwnd, NativeMethods.HWND_TOPMOST,
+            x, y, 0, 0,
+            NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE);
     }
 
     private void HideWindow()
