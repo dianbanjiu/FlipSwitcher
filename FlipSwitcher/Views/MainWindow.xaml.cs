@@ -74,14 +74,14 @@ public partial class MainWindow : Window
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         // Block double-click on title bar to prevent maximize
-        if (msg == NativeMethods.WM_NCLBUTTONDBLCLK)
+        if (msg == (int)NativeMethods.WM_NCLBUTTONDBLCLK)
         {
             handled = true;
             return IntPtr.Zero;
         }
 
         // Block SC_MAXIMIZE system command
-        if (msg == NativeMethods.WM_SYSCOMMAND && wParam.ToInt32() == NativeMethods.SC_MAXIMIZE)
+        if (msg == (int)NativeMethods.WM_SYSCOMMAND && (wParam.ToInt64() & 0xFFF0) == NativeMethods.SC_MAXIMIZE)
         {
             handled = true;
             return IntPtr.Zero;
@@ -289,7 +289,7 @@ public partial class MainWindow : Window
 
     private void ShowWindow()
     {
-        // 重置分组状态，确保显示总列表
+        // Reset grouping state to ensure the full list is shown
         _viewModel.ResetGrouping();
         _viewModel.ClearSearch();
 

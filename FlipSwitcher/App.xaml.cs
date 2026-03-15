@@ -119,9 +119,21 @@ public partial class App : Application
         // Set up global exception handling
         DispatcherUnhandledException += (s, args) =>
         {
-            var message = string.Format(LanguageService.GetString("MsgErrorOccurred"), args.Exception.Message);
-            FluentDialog.Show(message, LanguageService.GetString("MsgErrorTitle"),
-                FluentDialogButton.OK, FluentDialogIcon.Error);
+            // Do not swallow critical exceptions that may cause data corruption
+            if (args.Exception is OutOfMemoryException or StackOverflowException or AccessViolationException)
+                return;
+
+            try
+            {
+                var message = string.Format(LanguageService.GetString("MsgErrorOccurred"), args.Exception.Message);
+                FluentDialog.Show(message, LanguageService.GetString("MsgErrorTitle"),
+                    FluentDialogButton.OK, FluentDialogIcon.Error);
+            }
+            catch
+            {
+                // If showing the dialog itself fails, do not swallow the exception
+                return;
+            }
             args.Handled = true;
         };
     }

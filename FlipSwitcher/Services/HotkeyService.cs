@@ -48,6 +48,7 @@ public class HotkeyService : IDisposable
     // Low-level keyboard hook for Alt+Tab
     private IntPtr _keyboardHookId = IntPtr.Zero;
     private NativeMethods.LowLevelKeyboardProc? _keyboardProc;
+    private readonly object _hookLock = new();
     private bool _useAltTab;
     private bool _isVisible;
     private bool _isSearchMode;
@@ -201,34 +202,44 @@ public class HotkeyService : IDisposable
 
     private bool InstallKeyboardHook()
     {
-        if (_keyboardHookId != IntPtr.Zero)
-            return true;
-
-        _keyboardProc = KeyboardHookCallback;
-        
-        using var curProcess = Process.GetCurrentProcess();
-        using var curModule = curProcess.MainModule;
-        
-        if (curModule != null)
+        lock (_hookLock)
         {
-            _keyboardHookId = NativeMethods.SetWindowsHookEx(
-                NativeMethods.WH_KEYBOARD_LL,
-                _keyboardProc,
-                NativeMethods.GetModuleHandle(curModule.ModuleName),
-                0);
-        }
+            if (_keyboardHookId != IntPtr.Zero)
+                return true;
 
-        return _keyboardHookId != IntPtr.Zero;
+            _keyboardProc = KeyboardHookCallback;
+
+            using var curProcess = Process.GetCurrentProcess();
+            using var curModule = curProcess.MainModule;
+
+            if (curModule != null)
+            {
+                _keyboardHookId = NativeMethods.SetWindowsHookEx(
+                    NativeMethods.WH_KEYBOARD_LL,
+                    _keyboardProc,
+                    NativeMethods.GetModuleHandle(curModule.ModuleName),
+                    0);
+            }
+
+            if (_keyboardHookId == IntPtr.Zero)
+                _keyboardProc = null;
+
+            return _keyboardHookId != IntPtr.Zero;
+        }
     }
 
     private void UninstallKeyboardHook()
     {
-        if (_keyboardHookId != IntPtr.Zero)
+        lock (_hookLock)
         {
-            NativeMethods.UnhookWindowsHookEx(_keyboardHookId);
-            _keyboardHookId = IntPtr.Zero;
+            if (_keyboardHookId != IntPtr.Zero)
+            {
+                NativeMethods.UnhookWindowsHookEx(_keyboardHookId);
+                _keyboardHookId = IntPtr.Zero;
+            }
+            // Clear delegate reference only after unhook to prevent GC from collecting it during callback
+            _keyboardProc = null;
         }
-        _keyboardProc = null;
     }
 
     private bool IsAltPressed()
@@ -334,7 +345,7 @@ public class HotkeyService : IDisposable
         if (nCode >= 0 && _useAltTab)
         {
             var hookStruct = Marshal.PtrToStructure<NativeMethods.KBDLLHOOKSTRUCT>(lParam);
-            int msg = wParam.ToInt32();
+            long msg = wParam.ToInt64();
             bool isKeyDown = msg == NativeMethods.WM_KEYDOWN || msg == NativeMethods.WM_SYSKEYDOWN;
             bool isKeyUp = msg == NativeMethods.WM_KEYUP || msg == NativeMethods.WM_SYSKEYUP;
 
@@ -380,7 +391,7 @@ public class HotkeyService : IDisposable
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == NativeMethods.WM_HOTKEY && wParam.ToInt32() == HOTKEY_ID_ALT_SPACE)
+        if (msg == NativeMethods.WM_HOTKEY && wParam.ToInt64() == HOTKEY_ID_ALT_SPACE)
         {
             HotkeyPressed?.Invoke(this, EventArgs.Empty);
             handled = true;

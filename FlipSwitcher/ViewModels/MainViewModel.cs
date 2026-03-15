@@ -104,13 +104,13 @@ public class MainViewModel : ObservableObject, IDisposable
 
     private void UpdateFilteredWindows(System.Collections.Generic.List<AppWindow> newList)
     {
-        // 移除不在新列表中的项
+        // Remove items not in the new list
         for (int i = _filteredWindows.Count - 1; i >= 0; i--)
         {
             if (!newList.Contains(_filteredWindows[i]))
                 _filteredWindows.RemoveAt(i);
         }
-        // 按顺序插入或移动到正确位置
+        // Insert or move items to the correct position in order
         for (int i = 0; i < newList.Count; i++)
         {
             if (i >= _filteredWindows.Count)
@@ -119,15 +119,15 @@ public class MainViewModel : ObservableObject, IDisposable
             }
             else if (_filteredWindows[i] != newList[i])
             {
-                // 先插入新项，再移除原来位置的旧项（旧项已后移一位）
+                // Insert new item first, then remove the old item at its shifted position
                 _filteredWindows.Insert(i, newList[i]);
-                // 若旧项已在新列表中，保留；否则移除
+                // Keep old item if it exists in the new list; otherwise remove it
                 int oldIdx = i + 1;
                 if (oldIdx < _filteredWindows.Count && !newList.Contains(_filteredWindows[oldIdx]))
                     _filteredWindows.RemoveAt(oldIdx);
             }
         }
-        // 移除尾部多余项
+        // Remove excess trailing items
         while (_filteredWindows.Count > newList.Count)
             _filteredWindows.RemoveAt(_filteredWindows.Count - 1);
     }
@@ -174,7 +174,7 @@ public class MainViewModel : ObservableObject, IDisposable
         var windows = _windowService.GetWindows();
         _windows = new ObservableCollection<AppWindow>(windows);
 
-        // 如果处于分组模式，保持分组状态
+        // If in grouped mode, maintain the grouping state
         if (_isGroupedByProcess && _groupedProcessName != null)
         {
             var groupedWindows = _windows
@@ -286,7 +286,7 @@ public class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// 停止当前选中窗口所属的进程
+    /// Kill the process of the currently selected window
     /// </summary>
     public void StopSelectedProcess()
     {
@@ -302,7 +302,7 @@ public class MainViewModel : ObservableObject, IDisposable
         }
         catch
         {
-            // 无法终止进程时直接返回
+            // Return immediately if the process cannot be terminated
             return;
         }
 
@@ -334,19 +334,19 @@ public class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// 按当前选中窗口的程序分组显示（右方向键）
+    /// Group windows by the process of the currently selected window (Right arrow key)
     /// </summary>
     public void GroupByProcess()
     {
         if (SelectedWindow == null || FilteredWindows.Count == 0)
             return;
 
-        // 保存当前状态
+        // Save current state
         _lastSelectedWindowBeforeGrouping = SelectedWindow;
         _groupedProcessName = SelectedWindow.ProcessName;
         _isGroupedByProcess = true;
 
-        // 过滤出同一程序的窗口
+        // Filter windows belonging to the same process
         var groupedWindows = FilteredWindows
             .Where(w => w.ProcessName == _groupedProcessName)
             .ToList();
@@ -361,7 +361,7 @@ public class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// 返回总列表并定位到之前选中的程序（左方向键）
+    /// Return to the full list and navigate to the previously selected process (Left arrow key)
     /// </summary>
     public void UngroupFromProcess()
     {
@@ -372,13 +372,13 @@ public class MainViewModel : ObservableObject, IDisposable
         var processNameToFind = _groupedProcessName;
         _groupedProcessName = null;
 
-        // 重新过滤窗口（恢复总列表）
+        // Re-filter windows (restore full list)
         FilterWindows();
 
-        // 尝试定位到之前选中的程序
+        // Try to navigate to the previously selected process
         if (processNameToFind != null && FilteredWindows.Count > 0)
         {
-            // 查找第一个匹配该程序的窗口
+            // Find the first window matching that process
             var targetWindow = FilteredWindows.FirstOrDefault(w => w.ProcessName == processNameToFind);
             
             if (targetWindow != null)
@@ -387,7 +387,7 @@ public class MainViewModel : ObservableObject, IDisposable
             }
             else
             {
-                // 如果程序的所有窗口都已关闭，定位到第一个窗口
+                // If all windows of that process are closed, select the first window
                 SelectedWindow = FilteredWindows[0];
             }
         }
@@ -400,7 +400,7 @@ public class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// 重置分组状态（窗口激活后调用）
+    /// Reset grouping state (called after window activation)
     /// </summary>
     public void ResetGrouping()
     {

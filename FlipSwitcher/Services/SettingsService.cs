@@ -54,7 +54,11 @@ public class SettingsService
             }
 
             var json = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(SettingsPath, json);
+
+            // Atomic write: write to temp file first, then replace target to prevent data loss on crash
+            var tempPath = SettingsPath + ".tmp";
+            File.WriteAllText(tempPath, json);
+            File.Move(tempPath, SettingsPath, overwrite: true);
             
             SettingsChanged?.Invoke(this, EventArgs.Empty);
         }

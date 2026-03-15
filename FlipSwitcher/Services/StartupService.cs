@@ -239,7 +239,7 @@ public static class StartupService
                 const int TaskDeleteTimeoutMs = 5000;
                 using var process = Process.Start(startInfo);
                 process?.WaitForExit(TaskDeleteTimeoutMs);
-                return true; // 删除操作不强依赖退出码（任务不存在时也视为成功）
+                return true; // Deletion does not depend on exit code (non-existent task is also considered success)
             }
         }
         catch

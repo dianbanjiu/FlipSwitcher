@@ -60,12 +60,12 @@ public class PinyinService
 
         var lowerFilter = filter.ToLowerInvariant();
 
-        // 1. 首字母匹配
+        // 1. Initial letter matching
         var initials = GetPinyinInitials(text).ToLowerInvariant();
         if (initials.Contains(lowerFilter))
             return true;
 
-        // 2. 完整拼音匹配
+        // 2. Full pinyin matching
         var fullPinyin = GetFullPinyin(text).ToLowerInvariant();
         if (fullPinyin.Contains(lowerFilter))
             return true;

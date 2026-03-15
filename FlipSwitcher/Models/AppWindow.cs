@@ -69,7 +69,7 @@ public class AppWindow : INotifyPropertyChanged
             return index >= 0 ? index + 1 : 1;
         }
 
-        // 兜底：独立枚举（不应走到此处）
+        // Fallback: enumerate independently (should not reach here)
         var monitors = new System.Collections.Generic.List<IntPtr>();
         NativeMethods.EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, (IntPtr hMon, IntPtr hdc, ref NativeMethods.RECT rect, IntPtr data) =>
         {
@@ -143,7 +143,7 @@ public class AppWindow : INotifyPropertyChanged
             if (_icon == null && !_iconLoading)
             {
                 _iconLoading = true;
-                // 在 UI 线程后台优先级异步执行，避免阻塞渲染但保证 WPF 对象在正确线程创建
+                // Execute at background priority on the UI thread to avoid blocking rendering while ensuring WPF objects are created on the correct thread
                 Application.Current?.Dispatcher.BeginInvoke(
                     System.Windows.Threading.DispatcherPriority.Background,
                     new Action(() =>
@@ -174,7 +174,7 @@ public class AppWindow : INotifyPropertyChanged
 
     private bool IsUwpWindow => ClassName == "ApplicationFrameWindow";
 
-    // 统一的图标句柄转 ImageSource
+    // Convert icon handle to ImageSource
     private static ImageSource? IconHandleToImageSource(IntPtr iconHandle, bool destroyAfter = false)
     {
         if (iconHandle == IntPtr.Zero) return null;
@@ -188,10 +188,10 @@ public class AppWindow : INotifyPropertyChanged
         finally { if (destroyAfter) NativeMethods.DestroyIcon(iconHandle); }
     }
 
-    // 从窗口消息获取图标句柄
+    // Get icon handle via window messages
     private IntPtr GetWindowIconHandle()
     {
-        // 优先 ICON_BIG，跳过 ICON_SMALL2（较少使用）
+        // Prefer ICON_BIG, skip ICON_SMALL2 (rarely used)
         NativeMethods.SendMessageTimeout(Handle, NativeMethods.WM_GETICON, (IntPtr)NativeMethods.ICON_BIG, IntPtr.Zero,
             NativeMethods.SMTO_ABORTIFHUNG, IconTimeoutMs, out var h);
         if (h != IntPtr.Zero) return h;
@@ -204,7 +204,7 @@ public class AppWindow : INotifyPropertyChanged
         return h != IntPtr.Zero ? h : NativeMethods.GetClassLongPtr(Handle, NativeMethods.GCL_HICONSM);
     }
 
-    // 获取进程路径
+    // Get process executable path
     private string? GetProcessPath(uint processId)
     {
         var hProcess = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
@@ -218,7 +218,7 @@ public class AppWindow : INotifyPropertyChanged
         finally { NativeMethods.CloseHandle(hProcess); }
     }
 
-    // Shell API 获取图标（适用于所有应用包括 UWP）
+    // Load icon via Shell API (works for all apps including UWP)
     private ImageSource? LoadIconFromShell(string filePath)
     {
         var shinfo = new NativeMethods.SHFILEINFO();
@@ -228,7 +228,7 @@ public class AppWindow : INotifyPropertyChanged
         return result != 0 ? IconHandleToImageSource(shinfo.hIcon, destroyAfter: true) : null;
     }
 
-    // 从图片文件加载（UWP manifest 资源）
+    // Load icon from image file (UWP manifest resource)
     private ImageSource? LoadIconFromImageFile(string imagePath)
     {
         if (!File.Exists(imagePath)) return null;
@@ -238,7 +238,7 @@ public class AppWindow : INotifyPropertyChanged
             bitmap.BeginInit();
             bitmap.UriSource = new Uri(imagePath, UriKind.Absolute);
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.DecodePixelWidth = 48; // 限制解码尺寸提升性能
+            bitmap.DecodePixelWidth = 48;
             bitmap.EndInit();
             bitmap.Freeze();
             return bitmap;
@@ -246,7 +246,7 @@ public class AppWindow : INotifyPropertyChanged
         catch { return null; }
     }
 
-    // UWP: 从 AppxManifest 获取图标
+    // UWP: load icon from AppxManifest
     private ImageSource? LoadIconFromAppxManifest(string appDir)
     {
         var manifestPath = Path.Combine(appDir, "AppxManifest.xml");
@@ -257,7 +257,7 @@ public class AppWindow : INotifyPropertyChanged
             var doc = XDocument.Load(manifestPath);
             var visualElements = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "VisualElements");
             
-            // 尝试多个 logo 属性
+            // Try multiple logo attributes
             string?[] logoAttrs = [
                 visualElements?.Attribute("Square44x44Logo")?.Value,
                 visualElements?.Attribute("Square150x150Logo")?.Value,
@@ -279,7 +279,7 @@ public class AppWindow : INotifyPropertyChanged
 
             if (string.IsNullOrEmpty(logoDir)) return null;
 
-            // 尝试常用变体（优先大尺寸和 unplated）
+            // Try common variants (prefer larger sizes and unplated)
             string[] suffixes = [
                 ".targetsize-256_altform-unplated", ".targetsize-256",
                 ".targetsize-64_altform-unplated", ".targetsize-64",
@@ -297,10 +297,10 @@ public class AppWindow : INotifyPropertyChanged
         catch { return null; }
     }
 
-    // UWP 图标加载
+    // UWP icon loading
     private ImageSource? LoadUwpIcon()
     {
-        // 获取真实 UWP 进程 ID（尝试多种子窗口类型）
+        // Get the real UWP process ID (try multiple child window classes)
         uint uwpPid = ProcessId;
         string[] childClasses = ["Windows.UI.Core.CoreWindow", "Windows.UI.Composition.DesktopWindowContentBridge"];
         foreach (var cls in childClasses)
@@ -322,27 +322,27 @@ public class AppWindow : INotifyPropertyChanged
 
         var appDir = Path.GetDirectoryName(exePath);
         
-        // 优先 Manifest（更准确）
+        // Prefer manifest (more accurate)
         if (!string.IsNullOrEmpty(appDir))
         {
             var icon = LoadIconFromAppxManifest(appDir);
             if (icon != null) return icon;
         }
 
-        // 备选：Shell API
+        // Fallback: Shell API
         return LoadIconFromShell(exePath);
     }
 
     private ImageSource? LoadIcon()
     {
-        // UWP 应用走专用路径
+        // UWP apps use a dedicated path
         if (IsUwpWindow)
         {
             var uwpIcon = LoadUwpIcon();
             if (uwpIcon != null) return uwpIcon;
         }
 
-        // 1. 窗口图标句柄（最快）
+        // 1. Window icon handle (fastest)
         var iconHandle = GetWindowIconHandle();
         if (iconHandle != IntPtr.Zero)
         {
@@ -350,7 +350,7 @@ public class AppWindow : INotifyPropertyChanged
             if (icon != null) return icon;
         }
 
-        // 2. Shell API（可靠）
+        // 2. Shell API (reliable)
         var exePath = GetProcessPath(ProcessId);
         if (!string.IsNullOrEmpty(exePath))
         {
@@ -358,7 +358,7 @@ public class AppWindow : INotifyPropertyChanged
             if (icon != null) return icon;
         }
 
-        // 3. 从进程模块提取（兜底）
+        // 3. Extract from process module (last resort)
         try
         {
             using var process = Process.GetProcessById((int)ProcessId);
@@ -375,43 +375,32 @@ public class AppWindow : INotifyPropertyChanged
 
     public void Activate()
     {
-        // Get thread IDs
         var foregroundWindow = NativeMethods.GetForegroundWindow();
-        var foregroundThreadId = NativeMethods.GetWindowThreadProcessId(foregroundWindow, out uint foregroundProcessId);
+        uint foregroundThreadId = foregroundWindow != IntPtr.Zero
+            ? NativeMethods.GetWindowThreadProcessId(foregroundWindow, out _)
+            : 0;
         var currentThreadId = NativeMethods.GetCurrentThreadId();
-        var targetThreadId = NativeMethods.GetWindowThreadProcessId(Handle, out uint targetProcessId);
+        var targetThreadId = NativeMethods.GetWindowThreadProcessId(Handle, out _);
 
-        // Method 1: Temporarily disable foreground lock timeout
-        uint oldTimeout = 0;
-        bool timeoutModified = NativeMethods.SystemParametersInfo(NativeMethods.SPI_GETFOREGROUNDLOCKTIMEOUT, 0, ref oldTimeout, 0);
-        if (timeoutModified)
-        {
-            NativeMethods.SystemParametersInfo(NativeMethods.SPI_SETFOREGROUNDLOCKTIMEOUT, 0, IntPtr.Zero, NativeMethods.SPIF_SENDCHANGE);
-        }
-
-        // Method 2: Allow any process to set foreground window
+        // Avoid modifying global SPI_SETFOREGROUNDLOCKTIMEOUT to prevent permanently altering system behavior on crash
         NativeMethods.AllowSetForegroundWindow(NativeMethods.ASFW_ANY);
-        
-        // Method 3: Unlock foreground window setting
         NativeMethods.LockSetForegroundWindow(NativeMethods.LSFW_UNLOCK);
 
-        // Method 4: Attach to both foreground and target threads
         bool attachedToForeground = false;
         bool attachedToTarget = false;
 
         try
         {
-            if (foregroundThreadId != currentThreadId && foregroundThreadId != 0)
+            if (foregroundThreadId != 0 && foregroundThreadId != currentThreadId)
             {
                 attachedToForeground = NativeMethods.AttachThreadInput(currentThreadId, foregroundThreadId, true);
             }
 
-            if (targetThreadId != currentThreadId && targetThreadId != foregroundThreadId && targetThreadId != 0)
+            if (targetThreadId != 0 && targetThreadId != currentThreadId && targetThreadId != foregroundThreadId)
             {
                 attachedToTarget = NativeMethods.AttachThreadInput(currentThreadId, targetThreadId, true);
             }
 
-            // Check current window state using GetWindowPlacement for accuracy
             var placement = new NativeMethods.WINDOWPLACEMENT();
             placement.length = System.Runtime.InteropServices.Marshal.SizeOf(placement);
             NativeMethods.GetWindowPlacement(Handle, ref placement);
@@ -423,34 +412,22 @@ public class AppWindow : INotifyPropertyChanged
                                 NativeMethods.IsIconic(Handle) || 
                                 IsMinimized;
 
-            // Restore/show window appropriately
             if (wasMinimized)
             {
-                // If it was minimized, restore to previous state (maximized or normal)
-                if (wasMaximized)
-                {
-                    NativeMethods.ShowWindow(Handle, NativeMethods.SW_SHOWMAXIMIZED);
-                }
-                else
-                {
-                    NativeMethods.ShowWindow(Handle, NativeMethods.SW_RESTORE);
-                }
+                NativeMethods.ShowWindow(Handle, wasMaximized
+                    ? NativeMethods.SW_SHOWMAXIMIZED
+                    : NativeMethods.SW_RESTORE);
             }
             else if (wasMaximized)
             {
-                // Already maximized, just show it
                 NativeMethods.ShowWindow(Handle, NativeMethods.SW_SHOWMAXIMIZED);
             }
-            // For normal windows, don't call ShowWindow at all to preserve state
 
-            // Try multiple activation methods
             NativeMethods.BringWindowToTop(Handle);
             NativeMethods.SetForegroundWindow(Handle);
 
-            // If still not foreground, try more aggressive methods
             if (NativeMethods.GetForegroundWindow() != Handle)
             {
-                // Simulate Alt key press to allow SetForegroundWindow
                 NativeMethods.keybd_event(NativeMethods.VK_ALT, 0, NativeMethods.KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
                 NativeMethods.keybd_event(NativeMethods.VK_ALT, 0, NativeMethods.KEYEVENTF_EXTENDEDKEY | NativeMethods.KEYEVENTF_KEYUP, UIntPtr.Zero);
 
@@ -458,13 +435,11 @@ public class AppWindow : INotifyPropertyChanged
                 NativeMethods.BringWindowToTop(Handle);
             }
 
-            // Last resort: SwitchToThisWindow
             if (NativeMethods.GetForegroundWindow() != Handle)
             {
                 NativeMethods.SwitchToThisWindow(Handle, true);
             }
 
-            // Final attempt: SetWindowPos to bring to top
             if (NativeMethods.GetForegroundWindow() != Handle)
             {
                 NativeMethods.SetWindowPos(Handle, NativeMethods.HWND_TOPMOST, 0, 0, 0, 0,
@@ -475,7 +450,6 @@ public class AppWindow : INotifyPropertyChanged
         }
         catch
         {
-            // Activation failed, try fallback
             try
             {
                 if (NativeMethods.IsIconic(Handle))
@@ -491,7 +465,6 @@ public class AppWindow : INotifyPropertyChanged
         }
         finally
         {
-            // Always detach threads if attached
             if (attachedToForeground)
             {
                 NativeMethods.AttachThreadInput(currentThreadId, foregroundThreadId, false);
@@ -499,12 +472,6 @@ public class AppWindow : INotifyPropertyChanged
             if (attachedToTarget)
             {
                 NativeMethods.AttachThreadInput(currentThreadId, targetThreadId, false);
-            }
-
-            // Always restore foreground lock timeout if we modified it
-            if (timeoutModified)
-            {
-                NativeMethods.SystemParametersInfo(NativeMethods.SPI_SETFOREGROUNDLOCKTIMEOUT, 0, ref oldTimeout, NativeMethods.SPIF_SENDCHANGE);
             }
         }
     }

@@ -40,7 +40,7 @@ public partial class SettingsWindow : Window
         UpdateAdminStatusDisplay();
         UpdateVersionDisplay();
         _isInitializing = false;
-        // 异步检查开机自启状态，避免阻塞 UI
+        // Check startup status asynchronously to avoid blocking the UI
         Loaded += async (_, _) => await SyncStartupSettingAsync();
     }
 

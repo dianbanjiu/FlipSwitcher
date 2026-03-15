@@ -33,7 +33,7 @@ public class ThemeService
     private const string RegistryValueName = "AppsUseLightTheme";
 
     private volatile bool _isFollowingSystemTheme = false;
-    private AppTheme? _currentAppliedTheme = null; // null 表示尚未初始化
+    private AppTheme? _currentAppliedTheme = null; // null means not yet initialized
     private volatile bool _isApplyingTheme = false;
 
     private ThemeService()
@@ -85,7 +85,7 @@ public class ThemeService
 
     public void ApplyTheme(AppTheme theme)
     {
-        // 已应用相同主题则跳过（首次 _currentAppliedTheme 为 null，强制执行）
+        // Skip if the same theme is already applied (first time _currentAppliedTheme is null, forcing execution)
         if (_currentAppliedTheme == theme && !_isApplyingTheme)
             return;
 

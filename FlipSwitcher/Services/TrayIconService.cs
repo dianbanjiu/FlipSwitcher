@@ -151,9 +151,9 @@ public class TrayIconService : IDisposable
                 UseShellExecute = true
             };
 
+            App.ReleaseMutexForRestart();
             Process.Start(startInfo);
             
-            // Close current application
             _trayIcon?.Dispose();
             System.Windows.Application.Current.Shutdown();
         }

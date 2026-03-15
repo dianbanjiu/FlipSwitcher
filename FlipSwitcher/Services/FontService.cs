@@ -18,7 +18,7 @@ public class FontService
     }
 
     /// <summary>
-    /// 获取系统已安装的字体列表
+    /// Get the list of installed system fonts
     /// </summary>
     public List<string> GetInstalledFonts()
     {
@@ -29,7 +29,7 @@ public class FontService
     }
 
     /// <summary>
-    /// 应用字体到应用程序（通过应用级资源，样式继承自动传播）
+    /// Apply font to the application via app-level resources with automatic style inheritance
     /// </summary>
     public void ApplyFont(string fontFamilyName)
     {
@@ -47,7 +47,7 @@ public class FontService
             else
                 resources.Add(SegoeUIVariableKey, fontFamily);
 
-            // 通过设置 Window.FontFamily 触发继承，无需遍历视觉树
+            // Set Window.FontFamily to trigger inheritance without traversing the visual tree
             foreach (Window window in app.Windows)
             {
                 if (window?.IsLoaded == true)

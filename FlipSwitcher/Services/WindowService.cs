@@ -49,14 +49,14 @@ public class WindowService
         if (IsCloaked(hWnd))
             return null;
 
-        var exStyle = NativeMethods.GetWindowLong(hWnd, NativeMethods.GWL_EXSTYLE);
-        if ((exStyle & (int)NativeMethods.WS_EX_TOOLWINDOW) != 0 &&
-            (exStyle & (int)NativeMethods.WS_EX_APPWINDOW) == 0)
+        var exStyle = (long)NativeMethods.GetWindowLongPtr(hWnd, NativeMethods.GWL_EXSTYLE);
+        if ((exStyle & NativeMethods.WS_EX_TOOLWINDOW) != 0 &&
+            (exStyle & NativeMethods.WS_EX_APPWINDOW) == 0)
             return null;
 
         // Filter windows with WS_EX_NOACTIVATE (non-activatable windows should not appear in task switcher)
-        if ((exStyle & (int)NativeMethods.WS_EX_NOACTIVATE) != 0 &&
-            (exStyle & (int)NativeMethods.WS_EX_APPWINDOW) == 0)
+        if ((exStyle & NativeMethods.WS_EX_NOACTIVATE) != 0 &&
+            (exStyle & NativeMethods.WS_EX_APPWINDOW) == 0)
             return null;
 
         // Filter windows that are too small (skip check for minimized windows)
@@ -68,7 +68,7 @@ public class WindowService
             return null;
 
         var owner = NativeMethods.GetWindow(hWnd, NativeMethods.GW_OWNER);
-        if (owner != IntPtr.Zero && (exStyle & (int)NativeMethods.WS_EX_APPWINDOW) == 0)
+        if (owner != IntPtr.Zero && (exStyle & NativeMethods.WS_EX_APPWINDOW) == 0)
         {
             // Walk the owner chain: if any owner in the chain is visible, this window is a
             // subordinate dialog (e.g. Environment Variables owned by System Properties) and
@@ -130,7 +130,7 @@ public class WindowService
         var shellWindow = NativeMethods.GetShellWindow();
         var currentProcessId = (uint)Environment.ProcessId;
 
-        // 统一枚举一次显示器列表，供所有 AppWindow 共享
+        // Enumerate monitors once and share across all AppWindow instances
         var monitors = new List<IntPtr>();
         NativeMethods.EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero,
             (IntPtr hMon, IntPtr hdc, ref NativeMethods.RECT rect, IntPtr data) =>

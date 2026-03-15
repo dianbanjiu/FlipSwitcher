@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Reflection;
@@ -104,7 +105,7 @@ public class UpdateService : IDisposable
         if (!release.TryGetProperty(AssetsProperty, out var assets) || assets.GetArrayLength() == 0)
             return null;
 
-        // 优先查找带版本号的安装包
+        // Prefer versioned installer
         var versionedFileName = $"FlipSwitcher-{version}-windows-x64-Setup.exe";
         foreach (var asset in assets.EnumerateArray())
         {
@@ -118,7 +119,7 @@ public class UpdateService : IDisposable
             }
         }
 
-        // 回退到通用安装包
+        // Fall back to generic installer
         foreach (var asset in assets.EnumerateArray())
         {
             if (asset.TryGetProperty(BrowserDownloadUrlProperty, out var url))
@@ -165,14 +166,27 @@ public class UpdateService : IDisposable
         });
     }
 
+    private static readonly HashSet<string> AllowedHosts = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "github.com",
+        "objects.githubusercontent.com"
+    };
+
     public void OpenDownloadPage(string? url = null)
     {
         var targetUrl = url ?? GitHubReleasesUrl;
-        Process.Start(new ProcessStartInfo
+
+        // Validate URL is HTTPS and belongs to trusted domains to prevent opening malicious links from tampered API responses
+        if (Uri.TryCreate(targetUrl, UriKind.Absolute, out var uri) &&
+            uri.Scheme == Uri.UriSchemeHttps &&
+            AllowedHosts.Contains(uri.Host))
         {
-            FileName = targetUrl,
-            UseShellExecute = true
-        });
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = targetUrl,
+                UseShellExecute = true
+            });
+        }
     }
 
     public void Dispose()
