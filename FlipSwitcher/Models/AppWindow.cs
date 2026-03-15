@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -25,6 +26,11 @@ public class AppWindow : INotifyPropertyChanged
     private bool? _isElevated;
     private int? _monitorNumber;
     private readonly System.Collections.Generic.List<IntPtr>? _monitors;
+    private readonly System.Collections.Generic.Dictionary<uint, bool>? _elevationCache;
+    private string? _titlePinyinInitials;
+    private string? _titleFullPinyin;
+    private string? _processNamePinyinInitials;
+    private string? _processNameFullPinyin;
 
     public IntPtr Handle { get; }
     public string Title { get; }
@@ -41,7 +47,16 @@ public class AppWindow : INotifyPropertyChanged
     {
         get
         {
-            _isElevated ??= CheckProcessElevation();
+            if (_isElevated == null)
+            {
+                if (_elevationCache != null && _elevationCache.TryGetValue(ProcessId, out var cached))
+                    _isElevated = cached;
+                else
+                {
+                    _isElevated = CheckProcessElevation();
+                    _elevationCache?.TryAdd(ProcessId, _isElevated.Value);
+                }
+            }
             return _isElevated.Value;
         }
     }
@@ -143,22 +158,34 @@ public class AppWindow : INotifyPropertyChanged
             if (_icon == null && !_iconLoading)
             {
                 _iconLoading = true;
-                // Execute at background priority on the UI thread to avoid blocking rendering while ensuring WPF objects are created on the correct thread
-                Application.Current?.Dispatcher.BeginInvoke(
-                    System.Windows.Threading.DispatcherPriority.Background,
-                    new Action(() =>
-                    {
-                        _icon = LoadIcon();
-                        OnPropertyChanged(nameof(Icon));
-                    }));
+                _ = LoadIconAsync();
             }
             return _icon;
         }
     }
 
+    private async Task LoadIconAsync()
+    {
+        var icon = await Task.Run(() =>
+        {
+            var result = LoadIcon();
+            if (result is { IsFrozen: false, CanFreeze: true })
+                result.Freeze();
+            return result;
+        });
+
+        if (icon != null)
+        {
+            _icon = icon;
+            Application.Current?.Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.Background,
+                new Action(() => OnPropertyChanged(nameof(Icon))));
+        }
+    }
+
     public string FormattedTitle => string.IsNullOrWhiteSpace(Title) ? ProcessName : Title;
 
-    public AppWindow(IntPtr handle, string title, string className, uint processId, string processName, bool isMinimized, bool isMaximized, System.Collections.Generic.List<IntPtr>? monitors = null)
+    public AppWindow(IntPtr handle, string title, string className, uint processId, string processName, bool isMinimized, bool isMaximized, System.Collections.Generic.List<IntPtr>? monitors = null, System.Collections.Generic.Dictionary<uint, bool>? elevationCache = null)
     {
         Handle = handle;
         Title = title;
@@ -168,6 +195,7 @@ public class AppWindow : INotifyPropertyChanged
         IsMinimized = isMinimized;
         IsMaximized = isMaximized;
         _monitors = monitors;
+        _elevationCache = elevationCache;
     }
 
     private const uint IconTimeoutMs = 50;
@@ -182,7 +210,10 @@ public class AppWindow : INotifyPropertyChanged
         {
             using var icon = System.Drawing.Icon.FromHandle(iconHandle);
             using var cloned = (System.Drawing.Icon)icon.Clone();
-            return Imaging.CreateBitmapSourceFromHIcon(cloned.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            var source = Imaging.CreateBitmapSourceFromHIcon(cloned.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            if (source is { IsFrozen: false, CanFreeze: true })
+                source.Freeze();
+            return source;
         }
         catch { return null; }
         finally { if (destroyAfter) NativeMethods.DestroyIcon(iconHandle); }
@@ -361,10 +392,9 @@ public class AppWindow : INotifyPropertyChanged
         // 3. Extract from process module (last resort)
         try
         {
-            using var process = Process.GetProcessById((int)ProcessId);
-            if (process.MainModule?.FileName != null)
+            if (!string.IsNullOrEmpty(exePath))
             {
-                using var ico = System.Drawing.Icon.ExtractAssociatedIcon(process.MainModule.FileName);
+                using var ico = System.Drawing.Icon.ExtractAssociatedIcon(exePath);
                 if (ico != null) return IconHandleToImageSource(ico.Handle);
             }
         }
@@ -487,8 +517,22 @@ public class AppWindow : INotifyPropertyChanged
 
         if (Services.SettingsService.Instance.Settings.EnablePinyinSearch)
         {
-            if (Services.PinyinService.Instance.MatchesPinyin(Title, filter) ||
-                Services.PinyinService.Instance.MatchesPinyin(ProcessName, filter))
+            var lowerFilter = filter.ToLowerInvariant();
+
+            _titlePinyinInitials ??= Services.PinyinService.Instance.GetPinyinInitials(Title).ToLowerInvariant();
+            if (_titlePinyinInitials.Contains(lowerFilter))
+                return true;
+
+            _titleFullPinyin ??= Services.PinyinService.Instance.GetFullPinyin(Title).ToLowerInvariant();
+            if (_titleFullPinyin.Contains(lowerFilter))
+                return true;
+
+            _processNamePinyinInitials ??= Services.PinyinService.Instance.GetPinyinInitials(ProcessName).ToLowerInvariant();
+            if (_processNamePinyinInitials.Contains(lowerFilter))
+                return true;
+
+            _processNameFullPinyin ??= Services.PinyinService.Instance.GetFullPinyin(ProcessName).ToLowerInvariant();
+            if (_processNameFullPinyin.Contains(lowerFilter))
                 return true;
         }
 

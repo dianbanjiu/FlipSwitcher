@@ -41,7 +41,7 @@ public class WindowService
 
     private record struct WindowInfo(string Title, string ClassName, uint ProcessId, string ProcessName);
 
-    private static WindowInfo? TryGetWindowInfo(IntPtr hWnd, IntPtr shellWindow, uint currentProcessId)
+    private static WindowInfo? TryGetWindowInfo(IntPtr hWnd, IntPtr shellWindow, uint currentProcessId, Dictionary<uint, string> processNameCache)
     {
         if (hWnd == shellWindow || !NativeMethods.IsWindowVisible(hWnd))
             return null;
@@ -99,7 +99,11 @@ public class WindowService
         if (ExcludedClassNames.Contains(className))
             return null;
 
-        var processName = GetProcessName(processId);
+        if (!processNameCache.TryGetValue(processId, out var processName))
+        {
+            processName = GetProcessName(processId);
+            processNameCache[processId] = processName;
+        }
         if (ExcludedProcessNames.Contains(processName))
             return null;
 
@@ -129,8 +133,9 @@ public class WindowService
         var windows = new List<AppWindow>();
         var shellWindow = NativeMethods.GetShellWindow();
         var currentProcessId = (uint)Environment.ProcessId;
+        var processNameCache = new Dictionary<uint, string>();
+        var elevationCache = new Dictionary<uint, bool>();
 
-        // Enumerate monitors once and share across all AppWindow instances
         var monitors = new List<IntPtr>();
         NativeMethods.EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero,
             (IntPtr hMon, IntPtr hdc, ref NativeMethods.RECT rect, IntPtr data) =>
@@ -143,13 +148,13 @@ public class WindowService
         {
             try
             {
-                var info = TryGetWindowInfo(hWnd, shellWindow, currentProcessId);
+                var info = TryGetWindowInfo(hWnd, shellWindow, currentProcessId, processNameCache);
                 if (info is null)
                     return true;
 
                 var (isMinimized, isMaximized) = GetWindowState(hWnd);
                 var window = new AppWindow(hWnd, info.Value.Title, info.Value.ClassName,
-                    info.Value.ProcessId, info.Value.ProcessName, isMinimized, isMaximized, monitors);
+                    info.Value.ProcessId, info.Value.ProcessName, isMinimized, isMaximized, monitors, elevationCache);
                 windows.Add(window);
             }
             catch
@@ -200,14 +205,20 @@ public class WindowService
 
     private static string GetProcessName(uint processId)
     {
+        var hProcess = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
+        if (hProcess == IntPtr.Zero)
+            return "Unknown";
         try
         {
-            using var process = Process.GetProcessById((int)processId);
-            return process.ProcessName;
-        }
-        catch
-        {
+            var buffer = new StringBuilder(260);
+            int size = buffer.Capacity;
+            if (NativeMethods.QueryFullProcessImageName(hProcess, 0, buffer, ref size))
+                return System.IO.Path.GetFileNameWithoutExtension(buffer.ToString());
             return "Unknown";
+        }
+        finally
+        {
+            NativeMethods.CloseHandle(hProcess);
         }
     }
 }

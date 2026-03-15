@@ -104,13 +104,13 @@ public class MainViewModel : ObservableObject, IDisposable
 
     private void UpdateFilteredWindows(System.Collections.Generic.List<AppWindow> newList)
     {
-        // Remove items not in the new list
+        var newSet = new System.Collections.Generic.HashSet<AppWindow>(newList);
+
         for (int i = _filteredWindows.Count - 1; i >= 0; i--)
         {
-            if (!newList.Contains(_filteredWindows[i]))
+            if (!newSet.Contains(_filteredWindows[i]))
                 _filteredWindows.RemoveAt(i);
         }
-        // Insert or move items to the correct position in order
         for (int i = 0; i < newList.Count; i++)
         {
             if (i >= _filteredWindows.Count)
@@ -119,15 +119,12 @@ public class MainViewModel : ObservableObject, IDisposable
             }
             else if (_filteredWindows[i] != newList[i])
             {
-                // Insert new item first, then remove the old item at its shifted position
                 _filteredWindows.Insert(i, newList[i]);
-                // Keep old item if it exists in the new list; otherwise remove it
                 int oldIdx = i + 1;
-                if (oldIdx < _filteredWindows.Count && !newList.Contains(_filteredWindows[oldIdx]))
+                if (oldIdx < _filteredWindows.Count && !newSet.Contains(_filteredWindows[oldIdx]))
                     _filteredWindows.RemoveAt(oldIdx);
             }
         }
-        // Remove excess trailing items
         while (_filteredWindows.Count > newList.Count)
             _filteredWindows.RemoveAt(_filteredWindows.Count - 1);
     }

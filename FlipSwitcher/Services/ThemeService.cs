@@ -60,7 +60,6 @@ public class ThemeService
 
     private void RemoveThemeDictionaries(Collection<ResourceDictionary> dictionaries)
     {
-        // Iterate backwards for safe removal
         for (int i = dictionaries.Count - 1; i >= 0; i--)
         {
             var dict = dictionaries[i];
@@ -70,16 +69,8 @@ public class ThemeService
                  sourceStr.Contains(FluentStylesName)))
             {
                 dictionaries.RemoveAt(i);
-                
-                // Explicitly clear ResourceDictionary to prevent memory leaks
                 dict.Clear();
             }
-        }
-        
-        // Suggest lightweight garbage collection if too many dictionaries accumulated
-        if (dictionaries.Count > 20)
-        {
-            GC.Collect(0, GCCollectionMode.Optimized);
         }
     }
 
