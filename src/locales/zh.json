@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "home": "首页",
+    "features": "特性",
+    "docs": "使用文档 (开发中)",
+    "github": "GitHub"
+  },
+  "hero": {
+    "title": "FlipSwitcher",
+    "subtitle": "一个基于 Fluent 2 Design 构建的现代化、美观的 Windows Alt-Tab 替代工具。",
+    "download": "下载 Windows 版",
+    "download_sub": "支持 Windows 10 (1903+) 或 Windows 11",
+    "view_source": "查看源码"
+  },
+  "features": {
+    "title": "核心特性",
+    "items": {
+      "search": {
+        "title": "快速搜索",
+        "desc": "输入关键字即可快速筛选出你需要的窗口。"
+      },
+      "pinyin": {
+        "title": "拼音搜索",
+        "desc": "支持使用拼音首字母或全拼搜索中文窗口标题，高效便捷。"
+      },
+      "grouping": {
+        "title": "窗口分组",
+        "desc": "按下快捷键即可将同一应用的所有窗口进行分组浏览。"
+      },
+      "quick_close": {
+        "title": "快速管理",
+        "desc": "无需离开切换器，即可快速关闭窗口或直接终止进程。"
+      },
+      "themes": {
+        "title": "精美主题",
+        "desc": "内置深色、浅色以及 Catppuccin 配色，支持自动跟随系统主题。"
+      },
+      "monitors": {
+        "title": "多显示器支持",
+        "desc": "在多显示器环境下，直观展示每个窗口所在的屏幕位置。"
+      }
+    }
+  },
+  "footer": {
+    "made_with": "为 Windows 高级用户精心打造 ❤️",
+    "license": "基于 MIT 协议开源"
+  }
+}

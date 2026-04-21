@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "home": "Home",
+    "features": "Features",
+    "docs": "Documentation (Coming Soon)",
+    "github": "GitHub"
+  },
+  "hero": {
+    "title": "FlipSwitcher",
+    "subtitle": "A modern, beautiful Alt-Tab replacement for Windows, built with Fluent 2 Design System.",
+    "download": "Download for Windows",
+    "download_sub": "Windows 10 (1903+) or Windows 11",
+    "view_source": "View Source"
+  },
+  "features": {
+    "title": "Why FlipSwitcher?",
+    "items": {
+      "search": {
+        "title": "Fast Search",
+        "desc": "Quickly filter windows by typing their title or application name."
+      },
+      "pinyin": {
+        "title": "Pinyin Search",
+        "desc": "Search Chinese window titles using pinyin initials or full pinyin effortlessly."
+      },
+      "grouping": {
+        "title": "Window Grouping",
+        "desc": "Group and browse windows of the same application with a single shortcut."
+      },
+      "quick_close": {
+        "title": "Quick Management",
+        "desc": "Close windows or terminate processes instantly without leaving the switcher."
+      },
+      "themes": {
+        "title": "Beautiful Themes",
+        "desc": "Dark, Light, and Catppuccin themes. Optionally follow your system theme."
+      },
+      "monitors": {
+        "title": "Multi-Monitor Ready",
+        "desc": "Easily identify which monitor each window is located on."
+      }
+    }
+  },
+  "footer": {
+    "made_with": "Made with ❤️ for Windows power users",
+    "license": "Released under the MIT License."
+  }
+}
