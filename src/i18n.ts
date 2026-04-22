@@ -11,7 +11,7 @@ i18n
       en: { translation: enTranslation },
       zh: { translation: zhTranslation }
     },
-    lng: navigator.language.startsWith('zh') ? 'zh' : 'en',
+    lng: 'en',
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false

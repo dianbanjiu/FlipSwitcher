@@ -17,6 +17,7 @@ const GithubIcon = ({ className }: { className?: string }) => (
 
 function App() {
   const { t, i18n } = useTranslation();
+  const showDocs = false;
 
   const toggleLanguage = () => {
     i18n.changeLanguage(i18n.language.startsWith('zh') ? 'en' : 'zh');
@@ -56,12 +57,14 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg">
-                F
-              </div>
+              <img
+                src="/flipswitcher.ico"
+                alt="FlipSwitcher Icon"
+                className="w-8 h-8 rounded-lg shadow-lg object-cover"
+              />
               <span className="font-bold text-xl tracking-tight">FlipSwitcher</span>
             </div>
-            
+
             <div className="hidden md:flex space-x-8">
               <a href="#home" className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">
                 {t('nav.home')}
@@ -69,9 +72,11 @@ function App() {
               <a href="#features" className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">
                 {t('nav.features')}
               </a>
-              <a href="#docs" className="text-slate-400 dark:text-slate-500 cursor-not-allowed font-medium" title="Coming soon">
-                {t('nav.docs')}
-              </a>
+              {showDocs && (
+                <a href="#docs" className="text-slate-400 dark:text-slate-500 cursor-not-allowed font-medium" title="Coming soon">
+                  {t('nav.docs')}
+                </a>
+              )}
             </div>
 
             <div className="flex items-center gap-4">
@@ -104,7 +109,7 @@ function App() {
         <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-3xl mb-10 leading-relaxed">
           {t('hero.subtitle')}
         </p>
-        
+
         <div className="flex flex-col sm:flex-row gap-4 mb-16">
           <a
             href="https://github.com/dianbanjiu/FlipSwitcher/releases/latest"
@@ -128,8 +133,8 @@ function App() {
         {/* Screenshot Placeholder */}
         <div className="relative w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 aspect-[16/9] sm:aspect-[2/1] flex items-center justify-center">
           {/* We use the raw github image from main branch since it's not in the pages branch */}
-          <img 
-            src="https://raw.githubusercontent.com/dianbanjiu/FlipSwitcher/main/docs/screenshot.png" 
+          <img
+            src="https://raw.githubusercontent.com/dianbanjiu/FlipSwitcher/main/docs/screenshot.png"
             alt="FlipSwitcher Screenshot"
             className="object-cover w-full h-full"
             onError={(e) => {
@@ -150,10 +155,10 @@ function App() {
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
             {t('features.title')}
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature) => (
-              <div 
+              <div
                 key={feature.id}
                 className="p-8 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:shadow-lg transition-all"
               >
@@ -171,17 +176,19 @@ function App() {
       </section>
 
       {/* Extensible Docs Placeholder Section */}
-      <section id="docs" className="py-24 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <BookOpen className="w-12 h-12 mx-auto text-slate-400 mb-6" />
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            {t('nav.docs')}
-          </h2>
-          <p className="text-slate-600 dark:text-slate-400">
-            We are working on detailed documentation to help you get the most out of FlipSwitcher. Check back soon!
-          </p>
-        </div>
-      </section>
+      {showDocs && (
+        <section id="docs" className="py-24 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <BookOpen className="w-12 h-12 mx-auto text-slate-400 mb-6" />
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">
+              {t('nav.docs')}
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400">
+              We are working on detailed documentation to help you get the most out of FlipSwitcher. Check back soon!
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* Footer */}
       <footer className="py-12 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-900 text-center">
