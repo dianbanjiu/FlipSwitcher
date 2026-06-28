@@ -1,0 +1,36 @@
+[package]
+name = "flipswitcher"
+version = "0.0.0-preview"
+edition = "2021"
+authors = ["DjangoZane"]
+description = "A modern Alt-Tab replacement with Fluent 2 Design"
+license = "MIT"
+
+[lib]
+name = "flipswitcher"
+path = "src/lib.rs"
+
+[[bin]]
+name = "flipswitcher"
+path = "src/main.rs"
+
+[dependencies]
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_HiDpi",
+    "Win32_UI_Shell",
+    "Win32_System_Threading",
+    "Win32_System_Com",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_LibraryLoader",
+    "Win32_Graphics_Gdi",
+    "Win32_Graphics_Dwm",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+[dev-dependencies]
