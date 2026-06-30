@@ -7,7 +7,10 @@
 //! (low-level keyboard hook + state machine), `core/activation.rs` (focus-stealing
 //! fallback chain) + `core/window_control.rs` (WM_CLOSE retarget + process-tree kill).
 //! Pure logic + Win32 interop, unit-testable. No Slint / UI wiring yet.
+//! Step 7a (`app_bridge.rs::SwitcherState`) is the pure state-machine layer for
+//! the Slint bridge — still no Slint dependency, still unit-testable.
 
+pub mod app_bridge;
 pub mod core;
 pub mod startup;
 
