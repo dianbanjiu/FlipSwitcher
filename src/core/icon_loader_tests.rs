@@ -4,6 +4,7 @@
 #![allow(clippy::needless_borrow)]
 
 use super::*;
+use crate::core::win32::OwnedProcessHandle;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -181,6 +182,35 @@ impl Win32Api for MockApi {
         let g = self.state.lock().unwrap();
         g.window_icons.get(&hicon).cloned().unwrap_or(None)
     }
+
+    // —— Step 4–5 additions (not exercised by icon tests; defaults). ——
+    fn get_foreground_window(&self) -> Option<Hwnd> { None }
+    fn get_current_thread_id(&self) -> u32 { 0 }
+    fn attach_thread_input(&self, _a: u32, _b: u32, _attach: bool) -> bool { false }
+    fn allow_set_foreground_window_any(&self) -> bool { false }
+    fn lock_set_foreground_window_unlock(&self) -> bool { false }
+    fn show_window(&self, _hwnd: Hwnd, _cmd: i32) -> bool { false }
+    fn bring_window_to_top(&self, _hwnd: Hwnd) -> bool { false }
+    fn set_foreground_window(&self, _hwnd: Hwnd) -> bool { false }
+    fn switch_to_this_window(&self, _hwnd: Hwnd, _alt_tab: bool) {}
+    fn set_window_pos(
+        &self,
+        _hwnd: Hwnd,
+        _after: isize,
+        _x: i32,
+        _y: i32,
+        _cx: i32,
+        _cy: i32,
+        _flags: u32,
+    ) -> bool {
+        false
+    }
+    fn keybd_event(&self, _vk: u8, _flags: u32) {}
+    fn get_last_active_popup(&self, hwnd: Hwnd) -> Option<Hwnd> { Some(hwnd) }
+    fn open_process_terminate(&self, _pid: u32) -> Option<OwnedProcessHandle> { None }
+    fn terminate_process(&self, _handle: &OwnedProcessHandle, _exit_code: u32) -> bool { false }
+    fn enumerate_process_tree(&self, _root_pid: u32) -> Vec<u32> { Vec::new() }
+    fn is_key_down_async(&self, _vk: u32) -> bool { false }
 }
 
 struct FsProbe {
@@ -253,7 +283,7 @@ fn exe_cache_hit_calls_shell_once_for_three_windows() {
         }
         // Per-window handle returns None (icon call stub returns None) → fall through.
         // We plug the fall-through by NOT setting window_icons; shell path returns the same image.
-        for id in 1..=3u64 {
+        for _ in 1..=3u64 {
             g.window_icons.insert(0, None); // hicon 0 returns nothing
         }
         g.process_paths.insert(42, Some(exe.to_string()));

@@ -151,6 +151,121 @@ impl From<RECT> for Rect {
 }
 
 // ============================================================================
+// Activation / window-control constants (Step 4–5)
+// ============================================================================
+// Sourced from `legacy/Core/NativeMethods.cs`. Kept here as the single binding
+// point so `activation`/`window_control`/`hotkey` reference values, not magic
+// numbers.
+
+/// `SW_SHOWMINIMIZED` — `WINDOWPLACEMENT.showCmd == 2` means minimized.
+pub const SW_SHOWMINIMIZED: i32 = 2;
+/// `SW_SHOWMAXIMIZED` — `WINDOWPLACEMENT.showCmd == 3` means maximized; also the
+/// `nCmdShow` value passed to `ShowWindow` to (re)maximize.
+pub const SW_SHOWMAXIMIZED: i32 = 3;
+/// `SW_SHOWNORMAL` — the "normal" `showCmd` fallback when placement read fails.
+pub const SW_SHOWNORMAL: i32 = 1;
+/// `SW_RESTORE` — `ShowWindow` cmd to restore a minimized window.
+pub const SW_RESTORE: i32 = 9;
+
+/// `AllowSetForegroundWindow(ASFW_ANY)` — let any process set foreground.
+pub const ASFW_ANY: i32 = -1;
+/// `LockSetForegroundWindow(LSFW_UNLOCK)` — unlock foreground timeout lock.
+pub const LSFW_UNLOCK: u32 = 2;
+
+/// `SetWindowPos` `hWndInsertAfter = HWND_TOPMOST`.
+pub const HWND_TOPMOST: isize = -1;
+/// `SetWindowPos` `hWndInsertAfter = HWND_NOTOPMOST`.
+pub const HWND_NOTOPMOST: isize = -2;
+/// `SWP_NOMOVE` — ignore x/y.
+pub const SWP_NOMOVE: u32 = 0x0002;
+/// `SWP_NOSIZE` — ignore cx/cy.
+pub const SWP_NOSIZE: u32 = 0x0001;
+/// `SWP_SHOWWINDOW` — show the window.
+pub const SWP_SHOWWINDOW: u32 = 0x0040;
+
+/// `VK_MENU` (Alt).
+pub const VK_MENU: u32 = 0x12;
+/// `VK_LMENU` (left Alt).
+pub const VK_LMENU: u32 = 0xA4;
+/// `VK_RMENU` (right Alt).
+pub const VK_RMENU: u32 = 0xA5;
+/// `VK_SHIFT`.
+pub const VK_SHIFT: u32 = 0x10;
+/// `VK_ALT` alias used by `keybd_event` in the legacy code (same as `VK_MENU`).
+pub const VK_ALT: u8 = 0x12;
+/// `KEYEVENTF_EXTENDEDKEY`.
+pub const KEYEVENTF_EXTENDEDKEY: u32 = 0x0001;
+/// `KEYEVENTF_KEYUP`.
+pub const KEYEVENTF_KEYUP: u32 = 0x0002;
+
+/// `WM_KEYDOWN`.
+pub const WM_KEYDOWN: u32 = 0x0100;
+/// `WM_KEYUP`.
+pub const WM_KEYUP: u32 = 0x0101;
+/// `WM_SYSKEYDOWN`.
+pub const WM_SYSKEYDOWN: u32 = 0x0104;
+/// `WM_SYSKEYUP`.
+pub const WM_SYSKEYUP: u32 = 0x0105;
+/// `WH_KEYBOARD_LL` — low-level keyboard hook id.
+pub const WH_KEYBOARD_LL: i32 = 13;
+/// `WM_HOTKEY`.
+pub const WM_HOTKEY: u32 = 0x0312;
+/// `MOD_ALT`.
+pub const MOD_ALT: u32 = 0x0001;
+/// `MOD_CONTROL`.
+pub const MOD_CONTROL: u32 = 0x0002;
+/// `MOD_NOREPEAT`.
+pub const MOD_NOREPEAT: u32 = 0x4000;
+/// `VK_SPACE`.
+pub const VK_SPACE: u32 = 0x20;
+
+// ============================================================================
+// HotkeyState — cross-thread flags shared between the UI thread (writer) and
+// the keyboard-hook thread (reader). Mirrors `HotkeyService`'s private bools.
+// ============================================================================
+
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// Shared hotkey state. The UI thread writes; the hook thread reads. Lock-free.
+///
+/// `set_visible(false)` also clears `is_search_mode`, matching the C#
+/// `HotkeyService.SetVisible`.
+#[derive(Default)]
+pub struct HotkeyState {
+    pub use_alt_tab: AtomicBool,
+    pub is_visible: AtomicBool,
+    pub is_search_mode: AtomicBool,
+    pub is_settings_open: AtomicBool,
+    pub ignore_alt_release: AtomicBool,
+}
+
+impl HotkeyState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn set_use_alt_tab(&self, v: bool) {
+        self.use_alt_tab.store(v, Ordering::Relaxed);
+    }
+    pub fn set_visible(&self, v: bool) {
+        self.is_visible.store(v, Ordering::Relaxed);
+        if !v {
+            // Mirrors `HotkeyService.SetVisible`: leaving visibility clears
+            // search mode so arrow keys don't stay "search-routed" after hide.
+            self.is_search_mode.store(false, Ordering::Relaxed);
+        }
+    }
+    pub fn set_search_mode(&self, v: bool) {
+        self.is_search_mode.store(v, Ordering::Relaxed);
+    }
+    pub fn set_settings_open(&self, v: bool) {
+        self.is_settings_open.store(v, Ordering::Relaxed);
+    }
+    pub fn set_ignore_alt_release(&self, v: bool) {
+        self.ignore_alt_release.store(v, Ordering::Relaxed);
+    }
+}
+
+// ============================================================================
 // Win32Api trait
 // ============================================================================
 
@@ -200,6 +315,58 @@ pub trait Win32Api: Send + Sync {
     fn get_window_icon_handle(&self, hwnd: Hwnd) -> Option<isize>;
     /// `PostMessage(WM_CLOSE)` to the window (used by window_control).
     fn post_close(&self, hwnd: Hwnd);
+
+    // —— activation (Step 5) ——
+    /// Current foreground window (`GetForegroundWindow`).
+    fn get_foreground_window(&self) -> Option<Hwnd>;
+    /// Calling thread id (`GetCurrentThreadId`).
+    fn get_current_thread_id(&self) -> u32;
+    /// `AttachThreadInput`. `true` on success.
+    fn attach_thread_input(&self, id_attach: u32, id_attach_to: u32, attach: bool) -> bool;
+    /// `AllowSetForegroundWindow(ASFW_ANY = -1)`.
+    fn allow_set_foreground_window_any(&self) -> bool;
+    /// `LockSetForegroundWindow(LSFW_UNLOCK = 2)`.
+    fn lock_set_foreground_window_unlock(&self) -> bool;
+    /// `ShowWindow(hwnd, cmd)`. `cmd` is one of the `SW_*` constants below.
+    fn show_window(&self, hwnd: Hwnd, cmd: i32) -> bool;
+    /// `BringWindowToTop`.
+    fn bring_window_to_top(&self, hwnd: Hwnd) -> bool;
+    /// `SetForegroundWindow`.
+    fn set_foreground_window(&self, hwnd: Hwnd) -> bool;
+    /// `SwitchToThisWindow(hwnd, fAltTab)`.
+    fn switch_to_this_window(&self, hwnd: Hwnd, alt_tab: bool);
+    /// `SetWindowPos(hwnd, hwnd_insert_after, x, y, cx, cy, flags)`.
+    /// `hwnd_insert_after` is the raw `isize` of `HWND_TOPMOST`/`HWND_NOTOPMOST`.
+    #[allow(clippy::too_many_arguments)]
+    fn set_window_pos(
+        &self,
+        hwnd: Hwnd,
+        hwnd_insert_after: isize,
+        x: i32,
+        y: i32,
+        cx: i32,
+        cy: i32,
+        flags: u32,
+    ) -> bool;
+    /// `keybd_event(vk, 0, flags, 0)` — synthetic keystroke (used to fake an Alt
+    /// tap so `SetForegroundWindow` is permitted).
+    fn keybd_event(&self, vk: u8, flags: u32);
+    /// `GetLastActivePopup(hwnd)` — the most recently active popup owned by
+    /// `hwnd`, or `hwnd` itself when there is none.
+    fn get_last_active_popup(&self, hwnd: Hwnd) -> Option<Hwnd>;
+
+    // —— process termination (Step 5 window_control) ——
+    /// Open the process with `PROCESS_TERMINATE`.
+    fn open_process_terminate(&self, pid: u32) -> Option<OwnedProcessHandle>;
+    /// `TerminateProcess(handle, exit_code)`.
+    fn terminate_process(&self, handle: &OwnedProcessHandle, exit_code: u32) -> bool;
+    /// All pids in the process tree rooted at `root_pid`, **children before
+    /// root** (post-order). Uses `CreateToolhelp32Snapshot` + `Process32First/Next`.
+    fn enumerate_process_tree(&self, root_pid: u32) -> Vec<u32>;
+
+    // —— async key state (Step 4 hotkey) ——
+    /// `GetAsyncKeyState(vk) & 0x8000 != 0` — is `vk` currently held.
+    fn is_key_down_async(&self, vk: u32) -> bool;
 
     // —— UWP child probe ——
     /// `FindWindowEx(parent, None, class, None)`; returns the child HWND + its
@@ -593,6 +760,177 @@ impl Win32Api for WindowsApi {
     fn post_close(&self, hwnd: Hwnd) {
         unsafe {
             let _ = PostMessageW(Some(raw_hwnd(hwnd)), WM_CLOSE, WPARAM(0), LPARAM(0));
+        }
+    }
+
+    fn get_foreground_window(&self) -> Option<Hwnd> {
+        unsafe { into_hwnd(GetForegroundWindow()) }
+    }
+    fn get_current_thread_id(&self) -> u32 {
+        unsafe { windows::Win32::System::Threading::GetCurrentThreadId() }
+    }
+    fn attach_thread_input(&self, id_attach: u32, id_attach_to: u32, attach: bool) -> bool {
+        unsafe {
+            windows::Win32::System::Threading::AttachThreadInput(id_attach, id_attach_to, attach)
+                .as_bool()
+        }
+    }
+    fn allow_set_foreground_window_any(&self) -> bool {
+        // `ASFW_ANY = -1` is passed as `u32::MAX` (the API takes a process id, and
+        // `ASFW_ANY` is documented as `(DWORD)-1`).
+        unsafe {
+            windows::Win32::UI::WindowsAndMessaging::AllowSetForegroundWindow(ASFW_ANY as u32)
+                .is_ok()
+        }
+    }
+    fn lock_set_foreground_window_unlock(&self) -> bool {
+        unsafe {
+            windows::Win32::UI::WindowsAndMessaging::LockSetForegroundWindow(
+                windows::Win32::UI::WindowsAndMessaging::FOREGROUND_WINDOW_LOCK_CODE(LSFW_UNLOCK),
+            )
+            .is_ok()
+        }
+    }
+    fn show_window(&self, hwnd: Hwnd, cmd: i32) -> bool {
+        unsafe {
+            windows::Win32::UI::WindowsAndMessaging::ShowWindow(
+                raw_hwnd(hwnd),
+                windows::Win32::UI::WindowsAndMessaging::SHOW_WINDOW_CMD(cmd),
+            )
+            .as_bool()
+        }
+    }
+    fn bring_window_to_top(&self, hwnd: Hwnd) -> bool {
+        unsafe {
+            windows::Win32::UI::WindowsAndMessaging::BringWindowToTop(raw_hwnd(hwnd)).is_ok()
+        }
+    }
+    fn set_foreground_window(&self, hwnd: Hwnd) -> bool {
+        unsafe { SetForegroundWindow(raw_hwnd(hwnd)).as_bool() }
+    }
+    fn switch_to_this_window(&self, hwnd: Hwnd, alt_tab: bool) {
+        unsafe {
+            windows::Win32::UI::WindowsAndMessaging::SwitchToThisWindow(raw_hwnd(hwnd), alt_tab);
+        }
+    }
+    // 1:1 with `SetWindowPos`; the arg count is the Win32 signature's.
+    #[allow(clippy::too_many_arguments)]
+    fn set_window_pos(
+        &self,
+        hwnd: Hwnd,
+        hwnd_insert_after: isize,
+        x: i32,
+        y: i32,
+        cx: i32,
+        cy: i32,
+        flags: u32,
+    ) -> bool {
+        unsafe {
+            let after = HWND(hwnd_insert_after as *mut _);
+            windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
+                raw_hwnd(hwnd),
+                Some(after),
+                x,
+                y,
+                cx,
+                cy,
+                windows::Win32::UI::WindowsAndMessaging::SET_WINDOW_POS_FLAGS(flags),
+            )
+            .is_ok()
+        }
+    }
+    fn keybd_event(&self, vk: u8, flags: u32) {
+        unsafe {
+            windows::Win32::UI::Input::KeyboardAndMouse::keybd_event(
+                vk,
+                0,
+                windows::Win32::UI::Input::KeyboardAndMouse::KEYBD_EVENT_FLAGS(flags),
+                0,
+            );
+        }
+    }
+    fn get_last_active_popup(&self, hwnd: Hwnd) -> Option<Hwnd> {
+        unsafe {
+            let r = windows::Win32::UI::WindowsAndMessaging::GetLastActivePopup(raw_hwnd(hwnd));
+            into_hwnd(r)
+        }
+    }
+
+    fn open_process_terminate(&self, pid: u32) -> Option<OwnedProcessHandle> {
+        use windows::Win32::System::Threading::{OpenProcess, PROCESS_TERMINATE};
+        unsafe {
+            let h = OpenProcess(PROCESS_TERMINATE, false, pid).ok()?;
+            Some(OwnedProcessHandle(h))
+        }
+    }
+    fn terminate_process(&self, handle: &OwnedProcessHandle, exit_code: u32) -> bool {
+        unsafe {
+            windows::Win32::System::Threading::TerminateProcess(handle.raw(), exit_code).is_ok()
+        }
+    }
+    fn enumerate_process_tree(&self, root_pid: u32) -> Vec<u32> {
+        // Equivalent of .NET's `Process.Kill(entireProcessTree: true)`: snapshot
+        // every process, build parent→children adjacency, then post-order DFS
+        // from `root_pid` so children are killed before their parent.
+        use std::collections::{HashMap, HashSet};
+        use windows::Win32::System::Diagnostics::ToolHelp::{
+            CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W,
+            TH32CS_SNAPPROCESS,
+        };
+
+        let mut parent_to_children: HashMap<u32, Vec<u32>> = HashMap::new();
+        unsafe {
+            let snap = match CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) {
+                Ok(s) => s,
+                Err(_) => return Vec::new(),
+            };
+            let mut entry = PROCESSENTRY32W {
+                dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32,
+                ..Default::default()
+            };
+            if Process32FirstW(snap, &mut entry).is_err() {
+                let _ = windows::Win32::Foundation::CloseHandle(snap);
+                return Vec::new();
+            }
+            loop {
+                let pid = entry.th32ProcessID;
+                let parent = entry.th32ParentProcessID;
+                parent_to_children.entry(parent).or_default().push(pid);
+                if Process32NextW(snap, &mut entry).is_err() {
+                    break;
+                }
+            }
+            let _ = windows::Win32::Foundation::CloseHandle(snap);
+        }
+
+        // Post-order: children first, then self. Guard against cycles / repeated
+        // parents with a `seen` set.
+        fn walk(
+            pid: u32,
+            adj: &HashMap<u32, Vec<u32>>,
+            seen: &mut HashSet<u32>,
+            out: &mut Vec<u32>,
+        ) {
+            if !seen.insert(pid) {
+                return;
+            }
+            if let Some(children) = adj.get(&pid) {
+                for &c in children {
+                    walk(c, adj, seen, out);
+                }
+            }
+            out.push(pid);
+        }
+        let mut out = Vec::new();
+        let mut seen = HashSet::new();
+        walk(root_pid, &parent_to_children, &mut seen, &mut out);
+        out
+    }
+
+    fn is_key_down_async(&self, vk: u32) -> bool {
+        unsafe {
+            (windows::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState(vk as i32) as u16
+                & 0x8000) != 0
         }
     }
 
