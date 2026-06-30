@@ -302,6 +302,37 @@ pub trait Win32Api: Send + Sync {
     fn enum_display_monitors(&self) -> Vec<(Hmonitor, Rect)>;
     fn monitor_from_window(&self, hwnd: Hwnd, flag: MonitorFlag) -> Option<Hmonitor>;
 
+    // —— monitors: Step 6 ——
+    /// `GetMonitorInfoW(hmon)` → `(rcWork, rcMonitor, is_primary)`. `None` on
+    /// `GetMonitorInfo` failure. The work rect excludes the taskbar — that is
+    /// what window placement centres against.
+    fn get_monitor_info(
+        &self,
+        hmon: Hmonitor,
+    ) -> Option<(Rect /*work*/, Rect /*monitor*/, bool /*primary*/)> {
+        // Default: derive from the enumerated rect, assume primary. Mocks that
+        // exercise `monitors` override this; mocks for other modules never call
+        // it, so the default is a safe no-op.
+        let _ = hmon;
+        None
+    }
+    /// `GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &x, &y)` → `x` (== `y` for
+    /// effective DPI). Falls back to `96` on failure (matches the C#
+    /// `targetDpiScale = 1.0` default).
+    fn get_dpi_for_monitor(&self, hmon: Hmonitor) -> u32 {
+        let _ = hmon;
+        96
+    }
+    /// `GetCursorPos` → `(x, y)` in screen coords. `None` on failure.
+    fn get_cursor_pos(&self) -> Option<(i32, i32)> {
+        None
+    }
+    /// `MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST)`.
+    fn monitor_from_point_nearest(&self, x: i32, y: i32) -> Option<Hmonitor> {
+        let _ = (x, y);
+        None
+    }
+
     // —— process info ——
     fn query_full_process_image_name(&self, pid: u32) -> Option<String>;
     fn open_process_query_limited(&self, pid: u32) -> Option<OwnedProcessHandle>;
@@ -673,6 +704,68 @@ impl Win32Api for WindowsApi {
         };
         unsafe {
             let h = MonitorFromWindow(raw_hwnd(hwnd), f);
+            (h.0 as isize != 0).then_some(Hmonitor(h.0 as isize))
+        }
+    }
+
+    fn get_monitor_info(
+        &self,
+        hmon: Hmonitor,
+    ) -> Option<(Rect, Rect, bool)> {
+        unsafe {
+            use windows::Win32::Graphics::Gdi::GetMonitorInfoW;
+            let mut mi = MONITORINFO {
+                cbSize: std::mem::size_of::<MONITORINFO>() as u32,
+                ..Default::default()
+            };
+            if !GetMonitorInfoW(HMONITOR(hmon.0 as *mut _), &mut mi).as_bool() {
+                return None;
+            }
+            let work = Rect::from(mi.rcWork);
+            let monitor = Rect::from(mi.rcMonitor);
+            // MONITORINFOF_PRIMARY = 0x1 (MONITORINFO.dwFlags). windows-rs
+            // doesn't always expose the named constant across feature sets,
+            // so we test the bit directly.
+            let is_primary = (mi.dwFlags & 1) == 1;
+            Some((work, monitor, is_primary))
+        }
+    }
+
+    fn get_dpi_for_monitor(&self, hmon: Hmonitor) -> u32 {
+        // Default to 96 (scale 1.0) — matches the C# `targetDpiScale = 1.0`
+        // fallback when `GetDpiForMonitor` returns non-zero.
+        unsafe {
+            use windows::Win32::UI::HiDpi::GetDpiForMonitor;
+            let mut dpi_x: u32 = 96;
+            let mut dpi_y: u32 = 96;
+            let r = GetDpiForMonitor(
+                HMONITOR(hmon.0 as *mut _),
+                windows::Win32::UI::HiDpi::MONITOR_DPI_TYPE(0), // MDT_EFFECTIVE_DPI
+                &mut dpi_x,
+                &mut dpi_y,
+            );
+            if r.is_err() {
+                96
+            } else {
+                dpi_x
+            }
+        }
+    }
+
+    fn get_cursor_pos(&self) -> Option<(i32, i32)> {
+        unsafe {
+            use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
+            let mut pt = windows::Win32::Foundation::POINT { x: 0, y: 0 };
+            GetCursorPos(&mut pt).ok()?;
+            Some((pt.x, pt.y))
+        }
+    }
+
+    fn monitor_from_point_nearest(&self, x: i32, y: i32) -> Option<Hmonitor> {
+        unsafe {
+            use windows::Win32::Graphics::Gdi::{MonitorFromPoint, MONITOR_DEFAULTTONEAREST};
+            let pt = windows::Win32::Foundation::POINT { x, y };
+            let h = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
             (h.0 as isize != 0).then_some(Hmonitor(h.0 as isize))
         }
     }

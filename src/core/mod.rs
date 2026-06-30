@@ -4,6 +4,7 @@ pub mod app_window;
 pub mod enumeration;
 pub mod hotkey;
 pub mod icon_loader;
+pub mod monitors;
 pub mod settings;
 pub mod win32;
 pub mod window_control;
