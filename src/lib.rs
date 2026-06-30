@@ -18,6 +18,7 @@ pub use core::enumeration;
 pub use core::hotkey;
 pub use core::icon_loader;
 pub use core::monitors;
+pub use core::pinyin;
 pub use core::settings;
 pub use core::win32;
 pub use core::window_control;
