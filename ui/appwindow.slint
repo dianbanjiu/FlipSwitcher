@@ -1,0 +1,374 @@
+// FlipSwitcher main switcher window (Step 7b).
+//
+// Faithful structural port of legacy/Views/MainWindow.xaml, minus the Fluent
+// acrylic/mica styling (that lands in theme.slint — Step 8). This file declares
+// ONLY the data contract + layout; it never touches any Windows API. The bridge
+// (src/app_bridge.rs, Step 7c) drives these properties / callbacks.
+//
+// Property contract (set by the Rust bridge):
+//   in <[WindowRowData]> windows          — the filtered list (rows)
+//   in int          selected-index        — selected row in `windows`
+//   in-out string   search-text           — search box value
+//   in EmptyState   empty-state           — NoMatches / NoWindowsAtAll / None
+//   in int          window-count          — header badge count
+//   in string       hotkey-label          — footer reminder ("Alt + Tab"…)
+//   in bool         show-monitor-info     — whether the monitor chip shows
+//   in bool         is-search-active      — empty-state caption selector
+//
+// Callbacks (handled by the bridge):
+//   activated(int row), search-changed(string), move-selection(bool prev),
+//   close-selected(), stop-selected(), group-requested(), ungroup-requested(),
+//   escape(), settings-requested()
+
+import { LineEdit, ListView } from "std-widgets.slint";
+
+// One list row. `icon` is a Slint image — Step 7c fills it from IconImage; for
+// now the bridge may pass a 1×1 transparent placeholder.
+struct WindowRowData {
+    title: string,
+    process-name: string,
+    monitor: int,
+    is-elevated: bool,
+    is-minimized: bool,
+    icon: image,
+}
+
+// Empty-state caption selector. `none` → list is shown, no empty panel.
+enum EmptyState {
+    none,
+    no-matches,
+    no-windows-at-all,
+}
+
+// A footer keyboard-hint chip: a key cap + label. Declared before AppWindow so
+// the exported component can use it (Slint resolves elements top-down).
+component Hint inherits Rectangle {
+    in property <string> key;
+    in property <string> label;
+    HorizontalLayout {
+        alignment: start;
+        spacing: 4px;
+        Rectangle {
+            height: 20px;
+            border-radius: 4px;
+            background: SwitcherTheme.control;
+            HorizontalLayout {
+                padding-left: 6px; padding-right: 6px;
+                padding-top: 3px; padding-bottom: 3px;
+                Text {
+                    text: root.key;
+                    color: SwitcherTheme.text-secondary;
+                    font-size: 11px;
+                    vertical-alignment: center;
+                }
+            }
+        }
+        Text {
+            text: root.label;
+            color: SwitcherTheme.text-secondary;
+            font-size: 11px;
+            vertical-alignment: center;
+        }
+    }
+}
+
+export global SwitcherTheme {
+    // Minimal palette — Step 8 (theme.rs) drives the variant swap.
+    out property <color> background: #1f1f1f;
+    out property <color> surface: #2a2a2a;
+    out property <color> surface-secondary: #252525;
+    out property <color> stroke: #3a3a3a;
+    out property <color> text-primary: #ffffff;
+    out property <color> text-secondary: #b0b0b0;
+    out property <color> text-tertiary: #808080;
+    out property <color> accent: #60cdff;
+    out property <color> accent-text: #000000;
+    out property <color> control: #333333;
+    out property <color> caution-bg: #4a3a1a;
+    out property <color> caution-fg: #ffcc66;
+    out property <length> radius: 12px;
+}
+
+export component AppWindow inherits Window {
+    title: "FlipSwitcher";
+    // The attributes hook (bridge) tunes these at creation: no decorations,
+    // topmost, not shown in taskbar, initially hidden.
+    preferred-width: 640px;
+    preferred-height: 520px;
+    background: transparent;
+    // `visible` on the root Window is inert — the winit attributes hook (bridge,
+    // Step 7c) starts the window hidden and shows it after placement.
+
+    // —— data contract ——
+    in property <[WindowRowData]> windows;
+    in property <int> selected-index;
+    in-out property <string> search-text;
+    in property <EmptyState> empty-state: EmptyState.none;
+    in property <int> window-count;
+    in property <string> hotkey-label: "Alt + Tab";
+    in property <bool> show-monitor-info: false;
+    in property <bool> is-search-active: false;
+
+    // —— commands back to Rust ——
+    callback activated(int);
+    callback search-changed(string);
+    callback move-selection(bool);
+    callback close-selected();
+    callback stop-selected();
+    callback group-requested();
+    callback ungroup-requested();
+    callback escape();
+    callback settings-requested();
+
+    // Outer rounded border (acrylic stand-in).
+    Rectangle {
+        x: 0px; y: 0px; width: 100%; height: 100%;
+        border-radius: SwitcherTheme.radius;
+        background: SwitcherTheme.background;
+        border-width: 1px;
+        border-color: SwitcherTheme.stroke;
+        clip: true;
+
+        VerticalLayout {
+            spacing: 0px;
+
+            // Header: app icon + title + window-count badge.
+            Rectangle {
+                background: SwitcherTheme.surface-secondary;
+                height: 64px;
+                HorizontalLayout {
+                    padding-left: 20px; padding-right: 20px;
+                    padding-top: 16px; padding-bottom: 16px;
+                    spacing: 12px;
+
+                    // App icon tile.
+                    Rectangle {
+                        width: 32px; height: 32px;
+                        border-radius: 8px;
+                        background: SwitcherTheme.accent;
+                        Text {
+                            text: "⧉";
+                            color: SwitcherTheme.accent-text;
+                            font-size: 16px;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                    Text {
+                        text: "FlipSwitcher";
+                        color: SwitcherTheme.text-primary;
+                        font-size: 16px;
+                        font-weight: 600;
+                        vertical-alignment: center;
+                    }
+                    Rectangle {
+                        // spacer pushes the badge to the right
+                        horizontal-stretch: 1;
+                    }
+                    // Window-count badge.
+                    Rectangle {
+                        height: 24px;
+                        border-radius: 12px;
+                        background: SwitcherTheme.accent;
+                        horizontal-stretch: 0;
+                        HorizontalLayout {
+                            padding-left: 12px; padding-right: 12px;
+                            padding-top: 4px; padding-bottom: 4px;
+                            Text {
+                                text: root.window-count + " windows";
+                                color: SwitcherTheme.accent-text;
+                                font-size: 12px;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Search box.
+            Rectangle {
+                background: SwitcherTheme.surface;
+                height: 56px;
+                LineEdit {
+                    y: 12px; x: 16px; width: parent.width - 32px; height: 32px;
+                    placeholder-text: "Search windows…";
+                    text <=> root.search-text;
+                    edited => { root.search-changed(self.text); }
+                    accepted => { root.search-changed(self.text); }
+                }
+            }
+
+            // Window list / empty state.
+            Rectangle {
+                background: SwitcherTheme.surface;
+                vertical-stretch: 1;
+
+                if root.empty-state == EmptyState.none : ListView {
+                    x: 8px; y: 4px;
+                    width: parent.width - 16px; height: parent.height - 8px;
+                    // ListView is a ScrollView; the rows are its (scrollable)
+                    // children. Selection is driven by `root.selected-index` and
+                    // a click TouchArea per row → `activated(i)`.
+                    for row[i] in root.windows : Rectangle {
+                        height: 56px;
+                        background: i == root.selected-index ? SwitcherTheme.control : transparent;
+                        border-radius: 6px;
+                        TouchArea {
+                            clicked => { root.activated(i); }
+                        }
+                        HorizontalLayout {
+                            padding-left: 8px; padding-right: 8px;
+                            padding-top: 8px; padding-bottom: 8px;
+                            spacing: 12px;
+
+                            // Icon tile.
+                            Rectangle {
+                                width: 40px; height: 40px;
+                                border-radius: 8px;
+                                background: SwitcherTheme.control;
+                                Image {
+                                    x: 4px; y: 4px;
+                                    width: 32px; height: 32px;
+                                    image-fit: contain;
+                                    source: row.icon;
+                                }
+                            }
+                            // Title + process name.
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                spacing: 2px;
+                                Text {
+                                    text: row.title;
+                                    color: SwitcherTheme.text-primary;
+                                    font-size: 14px;
+                                    font-weight: 600;
+                                    overflow: elide;
+                                    vertical-alignment: center;
+                                }
+                                Text {
+                                    text: row.process-name;
+                                    color: SwitcherTheme.text-secondary;
+                                    font-size: 12px;
+                                    vertical-alignment: center;
+                                }
+                            }
+                            // Monitor chip (optional).
+                            if root.show-monitor-info && row.monitor > 0 : Rectangle {
+                                height: 24px;
+                                border-radius: 4px;
+                                background: SwitcherTheme.control;
+                                HorizontalLayout {
+                                    padding-left: 8px; padding-right: 8px;
+                                    padding-top: 4px; padding-bottom: 4px;
+                                    Text {
+                                        text: "🖥 " + row.monitor;
+                                        color: SwitcherTheme.text-tertiary;
+                                        font-size: 12px;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
+                            // Elevated (admin) caution chip.
+                            if row.is-elevated : Rectangle {
+                                height: 24px;
+                                border-radius: 4px;
+                                background: SwitcherTheme.caution-bg;
+                                HorizontalLayout {
+                                    padding-left: 8px; padding-right: 8px;
+                                    padding-top: 4px; padding-bottom: 4px;
+                                    Text {
+                                        text: "Admin";
+                                        color: SwitcherTheme.caution-fg;
+                                        font-size: 12px;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
+                            // Minimized chip.
+                            if row.is-minimized : Rectangle {
+                                height: 24px;
+                                border-radius: 4px;
+                                background: SwitcherTheme.control;
+                                HorizontalLayout {
+                                    padding-left: 8px; padding-right: 8px;
+                                    padding-top: 4px; padding-bottom: 4px;
+                                    Text {
+                                        text: "—";
+                                        color: SwitcherTheme.text-tertiary;
+                                        font-size: 12px;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if root.empty-state != EmptyState.none : Rectangle {
+                    background: transparent;
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 16px;
+                        Text {
+                            text: root.is-search-active ? "No windows found" : "No switchable windows";
+                            color: SwitcherTheme.text-secondary;
+                            font-size: 18px;
+                            horizontal-alignment: center;
+                        }
+                        Text {
+                            text: root.is-search-active ? "Try a different search" : "Waiting for windows…";
+                            color: SwitcherTheme.text-tertiary;
+                            font-size: 12px;
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // Footer: keyboard hints + hotkey reminder.
+            Rectangle {
+                background: SwitcherTheme.surface-secondary;
+                height: 40px;
+                HorizontalLayout {
+                    padding-left: 16px; padding-right: 16px;
+                    padding-top: 10px; padding-bottom: 10px;
+                    spacing: 12px;
+
+                    Hint {
+                        key: "Alt+S";
+                        label: "Search";
+                    }
+                    Hint {
+                        key: "Alt+W";
+                        label: "Close";
+                    }
+                    Hint {
+                        key: "Alt+,";
+                        label: "Settings";
+                    }
+                    Hint {
+                        key: "Alt+D";
+                        label: "Exit";
+                    }
+
+                    Rectangle { horizontal-stretch: 1; }
+                    Rectangle {
+                        height: 24px;
+                        border-radius: 4px;
+                        background: SwitcherTheme.accent;
+                        HorizontalLayout {
+                            padding-left: 8px; padding-right: 8px;
+                            padding-top: 4px; padding-bottom: 4px;
+                            Text {
+                                text: root.hotkey-label;
+                                color: SwitcherTheme.accent-text;
+                                font-size: 12px;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

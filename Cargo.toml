@@ -35,4 +35,22 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 
+# UI (Step 7b). Slint via winit backend so we can hook window attributes
+# (borderless / topmost / no-taskbar) and run as a daemon (hide ≠ quit).
+# Renderer choice: skia needs LLVM/clang-cl or a binary download that this env
+# blocks; femtovg 1.17 isn't mirrored by the USTC registry yet. The software
+# renderer is dependency-free and compiles cleanly — sufficient to validate the
+# .slint toolchain and the 7c smoke test. §A.3 leaves a GPU renderer swap as a
+# later task once the registry mirrors catch up / LLVM is provisioned.
+slint = { version = "1.17", default-features = false, features = [
+    "std",
+    "compat-1-2",
+    "backend-winit",
+    "renderer-software",
+    "unstable-winit-030",
+] }
+
+[build-dependencies]
+slint-build = "1.17"
+
 [dev-dependencies]

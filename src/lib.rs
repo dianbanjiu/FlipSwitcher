@@ -13,6 +13,7 @@
 pub mod app_bridge;
 pub mod core;
 pub mod startup;
+pub mod ui;
 
 pub use core::activation;
 pub use core::admin;
