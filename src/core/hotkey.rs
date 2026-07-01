@@ -113,8 +113,14 @@ pub fn decode_hook_event(
     if is_keydown && vk == ESCAPE {
         let settings_alt = state.is_settings_open.load(Ordering::Relaxed) && is_alt;
         let visible = state.is_visible.load(Ordering::Relaxed);
+        let search_mode = state.is_search_mode.load(Ordering::Relaxed);
         if settings_alt || visible {
-            return Some((HotkeyEvent::EscapePressed, true));
+            // In search mode the LineEdit holds keyboard focus; let the key
+            // through (don't swallow) so the .slint search box can also handle
+            // Escape via its `key-pressed` → `escape` callback. Otherwise (list
+            // mode) swallow it — the list has no key handler of its own. The
+            // channel always gets `EscapePressed` so the bridge hides either way.
+            return Some((HotkeyEvent::EscapePressed, !search_mode));
         }
         return None;
     }

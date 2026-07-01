@@ -130,22 +130,21 @@ export component AppWindow inherits Window {
     // Scroll the window list so the selected row stays visible. Slint's bare
     // `ListView` doesn't auto-scroll on selection change (unlike WPF ListBox),
     // so the bridge calls this after navigation. Row height is the 56px the
-    // list rows are sized to.
+    // list rows are sized to. Algorithm mirrors `StandardListView.bring-into-view`:
+    // `viewport-y` is negative (content scrolls up), so the row's position
+    // relative to the viewport top is `viewport-y + index * row-h`.
     public function scroll-to-selected() {
         if root.windows.length == 0 || root.selected-index < 0 {
             return;
         }
         let row-h = 56px;
-        let sel-top = root.selected-index * row-h;
-        let sel-bot = sel-top + row-h;
-        let vp-y = window-list.viewport-y;
-        let vis-h = window-list.visible-height;
-        if sel-top < vp-y {
-            // Row scrolled off the top → bring it to the top edge.
-            window-list.viewport-y = sel-top;
-        } else if sel-bot > vp-y + vis-h {
-            // Row scrolled off the bottom → push it to the bottom edge.
-            window-list.viewport-y = sel-bot - vis-h;
+        let sel-y = window-list.viewport-y + root.selected-index * row-h;
+        if sel-y < 0 {
+            // Above the visible top — pull up so the row sits at the top edge.
+            window-list.viewport-y = window-list.viewport-y - sel-y;
+        } else if sel-y + row-h > window-list.visible-height {
+            // Below the visible bottom — push down so the row sits at the bottom.
+            window-list.viewport-y = window-list.viewport-y - (sel-y + row-h - window-list.visible-height);
         }
     }
 
@@ -224,6 +223,16 @@ export component AppWindow inherits Window {
                     text <=> root.search-text;
                     edited => { root.search-changed(self.text); }
                     accepted => { root.search-changed(self.text); }
+                    // Escape in the search box closes the switcher. The low-level
+                    // hook lets Escape through in search mode so this fires.
+                    key-pressed(e) => {
+                        if e.text == Key.Escape {
+                            root.escape();
+                            accept
+                        } else {
+                            reject
+                        }
+                    }
                 }
             }
 

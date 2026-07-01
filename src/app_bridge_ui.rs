@@ -71,6 +71,10 @@ pub struct CoreState {
     /// Sender fed into the icon worker; send `()` to ask it to re-enumerate and
     /// push `(row_id, image)` pairs back on [`CoreState::icon_rx`].
     pub icon_trigger: Sender<()>,
+    /// Last `selected_index` we pushed to the UI. `scroll-to-selected` is only
+    /// invoked when this changes — otherwise every idle tick would yank the
+    /// viewport back to the selected row and fight the user's manual scroll.
+    pub last_selected: std::cell::Cell<Option<usize>>,
 }
 
 /// Production [`crate::app_bridge::SwitcherHost`]: threads effects through the
@@ -213,6 +217,7 @@ pub fn build() -> Result<(UiAppWindow, Arc<Mutex<CoreState>>), String> {
         icons: std::collections::HashMap::new(),
         icon_rx,
         icon_trigger: icon_trigger_tx,
+        last_selected: std::cell::Cell::new(None),
     };
     sync_ui(&ui, &core);
 
@@ -636,9 +641,14 @@ fn update_empty_state(ui: &UiAppWindow, state: &SwitcherState) {
 /// to the UI. Called after every state mutation that the user-visible changes.
 fn sync_ui(ui: &UiAppWindow, core: &CoreState) {
     push_rows(ui, core.state.filtered(), &core.icons);
-    ui.set_selected_index(core.state.selected_index().map(|i| i as i32).unwrap_or(0));
+    let sel = core.state.selected_index();
+    ui.set_selected_index(sel.map(|i| i as i32).unwrap_or(0));
     ui.set_window_count(core.state.filtered().len() as i32);
     update_empty_state(ui, &core.state);
-    // Slint's ListView doesn't auto-scroll on selection change; ask it to.
-    ui.invoke_scroll_to_selected();
+    // Only scroll when the selection actually moved — otherwise idle ticks would
+    // override the user's manual scroll (Slint's ListView has no auto-scroll).
+    if core.last_selected.get() != sel {
+        core.last_selected.set(sel);
+        ui.invoke_scroll_to_selected();
+    }
 }
