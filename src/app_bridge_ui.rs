@@ -59,6 +59,15 @@ pub struct CoreState {
     /// Snapshot of `settings.hide_on_focus_lost`; re-read on settings change
     /// later. When false, focus loss does not auto-hide (legacy `HideOnFocusLost`).
     pub hide_on_focus_lost: bool,
+    /// Icons resolved off-thread, keyed by `WindowRow.id` (the HWND as `isize`).
+    /// Populated by the channel-drain timer; consulted by `push_rows` so a row
+    /// shows its real icon once the worker has decoded it.
+    pub icons: std::collections::HashMap<isize, Image>,
+    /// Receives icon results from the background extraction thread.
+    pub icon_rx: Receiver<(isize, Option<crate::core::win32::IconImage>)>,
+    /// Sender fed into the icon worker; send `()` to ask it to re-enumerate and
+    /// push `(row_id, image)` pairs back on [`CoreState::icon_rx`].
+    pub icon_trigger: Sender<()>,
 }
 
 /// Production [`crate::app_bridge::SwitcherHost`]: threads effects through the
@@ -177,6 +186,16 @@ pub fn build() -> Result<(UiAppWindow, Arc<Mutex<CoreState>>), String> {
     let rows = host.enumerate();
     state.apply_rows(rows, false);
 
+    // Icon pipeline: a long-lived worker owns its own `WindowService` +
+    // `IconCache`, decodes HICONs off the UI thread, and ships `(row_id, image)`
+    // pairs back. UI tells it to run when the switcher opens.
+    let (icon_tx, icon_rx) = mpsc::channel::<(isize, Option<crate::core::win32::IconImage>)>();
+    let (icon_trigger_tx, icon_trigger_rx) = mpsc::channel::<()>();
+    std::thread::Builder::new()
+        .name("flipswitcher-icons".into())
+        .spawn(move || icon_worker(icon_trigger_rx, icon_tx))
+        .map_err(|e| format!("icon worker spawn: {e}"))?;
+
     let core = CoreState {
         ui: ui.as_weak(),
         state,
@@ -187,8 +206,11 @@ pub fn build() -> Result<(UiAppWindow, Arc<Mutex<CoreState>>), String> {
         debounce: Timer::default(),
         hotkey_state,
         hide_on_focus_lost: settings.hide_on_focus_lost,
+        icons: std::collections::HashMap::new(),
+        icon_rx,
+        icon_trigger: icon_trigger_tx,
     };
-    sync_ui(&ui, &core.state);
+    sync_ui(&ui, &core);
 
     let core = Arc::new(Mutex::new(core));
 
@@ -214,8 +236,21 @@ pub fn run(ui: UiAppWindow, core: Arc<Mutex<CoreState>>) -> Result<(), String> {
         while let Ok(ev) = b.rx.try_recv() {
             handle_hotkey(&mut b, ev);
         }
+        // Drain icon results from the worker; batch into the map and re-sync once
+        // (a flood of arrivals collapses to a single `sync_ui`).
+        let mut got_icons = false;
+        while let Ok((row_id, img)) = b.icon_rx.try_recv() {
+            if let Some(slint_img) = img.as_ref().and_then(icon_to_slint) {
+                b.icons.insert(row_id, slint_img);
+                got_icons = true;
+            } else if img.is_none() {
+                // Marker for "no icon" — don't keep retrying; leave the placeholder.
+                b.icons.remove(&row_id);
+            }
+        }
         if let Some(ui) = b.ui.upgrade() {
-            sync_ui(&ui, &b.state);
+            sync_ui(&ui, &b);
+            let _ = got_icons; // sync_ui always rebuilds, so no extra action.
         }
     });
     std::mem::forget(timer);
@@ -231,6 +266,8 @@ fn show_switcher(ui: &UiAppWindow, b: &mut CoreState) {
     place(ui, b);
     let _ = ui.show();
     b.hotkey_state.set_visible(true);
+    // Kick the icon worker: re-enumerate + decode icons off the UI thread.
+    let _ = b.icon_trigger.send(());
 }
 
 /// Hide the switcher and clear the hotkey visibility + search-mode flags so
@@ -319,7 +356,7 @@ fn wire_callbacks(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
                 }
             }
             if let Some(ui) = b.ui.upgrade() {
-                sync_ui(&ui, &b.state);
+                sync_ui(&ui, &b);
             }
         }
     });
@@ -337,7 +374,7 @@ fn wire_callbacks(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
                     let mut b = core_for_debounce.lock().unwrap();
                     b.state.flush_filter(false);
                     if let Some(ui) = b.ui.upgrade() {
-                        sync_ui(&ui, &b.state);
+                        sync_ui(&ui, &b);
                     }
                 });
         }
@@ -350,7 +387,7 @@ fn wire_callbacks(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
             let mut b = core.lock().unwrap();
             b.state.move_selection(prev);
             if let Some(ui) = b.ui.upgrade() {
-                sync_ui(&ui, &b.state);
+                sync_ui(&ui, &b);
             }
         }
     });
@@ -363,7 +400,7 @@ fn wire_callbacks(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
                 state.close_selected(host);
             }
             if let Some(ui) = b.ui.upgrade() {
-                sync_ui(&ui, &b.state);
+                sync_ui(&ui, &b);
             }
         }
     });
@@ -376,7 +413,7 @@ fn wire_callbacks(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
                 state.stop_selected(host);
             }
             if let Some(ui) = b.ui.upgrade() {
-                sync_ui(&ui, &b.state);
+                sync_ui(&ui, &b);
             }
         }
     });
@@ -386,7 +423,7 @@ fn wire_callbacks(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
             let mut b = core.lock().unwrap();
             b.state.group_by_process();
             if let Some(ui) = b.ui.upgrade() {
-                sync_ui(&ui, &b.state);
+                sync_ui(&ui, &b);
             }
         }
     });
@@ -396,7 +433,7 @@ fn wire_callbacks(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
             let mut b = core.lock().unwrap();
             b.state.ungroup_from_process();
             if let Some(ui) = b.ui.upgrade() {
-                sync_ui(&ui, &b.state);
+                sync_ui(&ui, &b);
             }
         }
     });
@@ -408,7 +445,7 @@ fn wire_callbacks(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
                 hide_switcher(&ui, &mut b);
             }
             if let Some(ui) = b.ui.upgrade() {
-                sync_ui(&ui, &b.state);
+                sync_ui(&ui, &b);
             }
         }
     });
@@ -445,8 +482,12 @@ fn register_focus_hook(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
     });
 }
 
-/// Convert [`WindowRow`]s to Slint's generated model and push to the UI.
-fn push_rows(ui: &UiAppWindow, rows: &[WindowRow]) {
+/// Convert [`WindowRow`]s to Slint's generated model and push to the UI. Icons
+/// are looked up in `icons` by `WindowRow.id`; rows without a resolved icon use
+/// the placeholder. The model is rebuilt wholesale each sync — Slint's
+/// `VecModel` doesn't expose in-place row updates, and icon arrival during a
+/// stable window list is rare enough that rebuilding ~40 rows is cheap.
+fn push_rows(ui: &UiAppWindow, rows: &[WindowRow], icons: &std::collections::HashMap<isize, Image>) {
     let model: Vec<WindowRowData> = rows
         .iter()
         .map(|r| WindowRowData {
@@ -455,7 +496,7 @@ fn push_rows(ui: &UiAppWindow, rows: &[WindowRow]) {
             monitor: r.monitor as i32,
             is_elevated: r.is_elevated,
             is_minimized: false,
-            icon: placeholder_image(),
+            icon: icons.get(&r.id).cloned().unwrap_or_else(placeholder_image),
         })
         .collect();
     ui.set_windows(ModelRc::new(VecModel::from(model)));
@@ -464,6 +505,23 @@ fn push_rows(ui: &UiAppWindow, rows: &[WindowRow]) {
 /// 1×1 transparent placeholder until IconCache → Image lands (later step).
 fn placeholder_image() -> Image {
     Image::from_rgba8(SharedPixelBuffer::<Rgba8Pixel>::new(1, 1))
+}
+
+/// Convert a core [`IconImage`] to a Slint [`Image`]. The `IconImage` pixels
+/// are BGRA→RGBA byte-swapped (see `win32.rs::hicon_to_image`); they're plain
+/// RGBA8, so `Image::from_rgba8` matches. Used by the async pipeline once a
+/// worker has decoded an HICON off the UI thread.
+fn icon_to_slint(img: &crate::core::win32::IconImage) -> Option<Image> {
+    if img.width == 0 || img.height == 0 || img.pixels.is_empty() {
+        return None;
+    }
+    let expected = (img.width as usize) * (img.height as usize) * 4;
+    if img.pixels.len() != expected {
+        return None;
+    }
+    let mut buf = SharedPixelBuffer::<Rgba8Pixel>::new(img.width, img.height);
+    buf.make_mut_bytes().copy_from_slice(&img.pixels);
+    Some(Image::from_rgba8(buf))
 }
 
 /// Place the window centred on the primary work area (default path; the
@@ -489,6 +547,50 @@ fn place(ui: &UiAppWindow, core: &CoreState) {
     )));
 }
 
+/// Background icon-extraction worker. Owns its own `WindowService` +
+/// `IconCache` so all Win32/DWM icon work happens off the UI thread. Blocks on
+/// `trigger` (sent when the switcher opens), then enumerates windows and ships
+/// `(row_id, Option<IconImage>)` pairs back. `None` marks "no icon" so the UI
+/// stops waiting. Exits when the trigger channel disconnects (process exit).
+/// See `docs/rust-rewrite-design.md` §3.4 — the per-hwnd vs per-exe cache split
+/// lives inside `IconCache`; we just consume `load_window_icon`.
+fn icon_worker(
+    trigger: Receiver<()>,
+    out: Sender<(isize, Option<crate::core::win32::IconImage>)>,
+) {
+    use crate::core::icon_loader::{IconCache, StdIconFs};
+    let mut svc = WindowService::new(WindowsApi);
+    let mut cache = IconCache::new(WindowsApi, StdIconFs);
+
+    fn run_round(
+        svc: &mut WindowService<WindowsApi>,
+        cache: &mut IconCache<WindowsApi, StdIconFs>,
+        out: &Sender<(isize, Option<crate::core::win32::IconImage>)>,
+    ) -> bool {
+        let apps = svc.get_windows();
+        for app in &apps {
+            let id = app.handle.raw();
+            let img = cache.load_window_icon(app);
+            if out.send((id, img)).is_err() {
+                return false; // UI gone
+            }
+        }
+        true
+    }
+
+    // Run once at startup so the primed list has icons before the first open.
+    if !run_round(&mut svc, &mut cache, &out) {
+        return;
+    }
+    // Then wait for open-triggered rounds, coalescing bursts into one round.
+    while trigger.recv().is_ok() {
+        while trigger.try_recv().is_ok() {}
+        if !run_round(&mut svc, &mut cache, &out) {
+            return;
+        }
+    }
+}
+
 fn update_empty_state(ui: &UiAppWindow, state: &SwitcherState) {
     let es = match state.empty_state() {
         None => UiEmptyState::r#None,
@@ -499,9 +601,11 @@ fn update_empty_state(ui: &UiAppWindow, state: &SwitcherState) {
     ui.set_is_search_active(!state.search_text().trim().is_empty());
 }
 
-fn sync_ui(ui: &UiAppWindow, state: &SwitcherState) {
-    push_rows(ui, state.filtered());
-    ui.set_selected_index(state.selected_index().map(|i| i as i32).unwrap_or(0));
-    ui.set_window_count(state.filtered().len() as i32);
-    update_empty_state(ui, state);
+/// Push the state's filtered rows (with resolved icons) + selection/empty state
+/// to the UI. Called after every state mutation that the user-visible changes.
+fn sync_ui(ui: &UiAppWindow, core: &CoreState) {
+    push_rows(ui, core.state.filtered(), &core.icons);
+    ui.set_selected_index(core.state.selected_index().map(|i| i as i32).unwrap_or(0));
+    ui.set_window_count(core.state.filtered().len() as i32);
+    update_empty_state(ui, &core.state);
 }
