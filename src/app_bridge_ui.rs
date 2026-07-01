@@ -274,12 +274,59 @@ pub fn run(ui: UiAppWindow, core: Arc<Mutex<CoreState>>) -> Result<(), String> {
 fn show_switcher(ui: &UiAppWindow, b: &mut CoreState) {
     place(ui, b);
     let _ = ui.show();
+    strip_window_chrome(ui);
     b.hotkey_state.set_visible(true);
     // Fresh open: clear the ignore flag so Alt-release confirms selection again
     // (it may have been set by a prior `enter_search_mode`).
     b.hotkey_state.set_ignore_alt_release(false);
     // Kick the icon worker: re-enumerate + decode icons off the UI thread.
     let _ = b.icon_trigger.send(());
+}
+
+/// Strip the system window chrome (title bar + min/max/close buttons + thick
+/// frame) and mark the window as a tool window (no taskbar entry). winit's
+/// `with_decorations(false)` should already do most of this, but some
+/// winit/renderer combinations leave `WS_SYSMENU` (and thus the close button)
+/// on, so we force the styles directly via the HWND. Idempotent.
+fn strip_window_chrome(ui: &UiAppWindow) {
+    use raw_window_handle::HasWindowHandle;
+    use slint::winit_030::WinitWindowAccessor;
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetWindowLongW, SetWindowLongW, SetWindowPos, GWL_EXSTYLE, GWL_STYLE, HWND_TOP,
+        SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOOWNERZORDER, SWP_NOSIZE,
+        SWP_NOZORDER, WS_CAPTION, WS_EX_TOOLWINDOW, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_SYSMENU,
+        WS_THICKFRAME,
+    };
+    let hwnd_opt: Option<windows::Win32::Foundation::HWND> =
+        ui.window().with_winit_window(|w| {
+            let handle = w.window_handle().ok()?;
+            match handle.as_raw() {
+                raw_window_handle::RawWindowHandle::Win32(h) => {
+                    Some(windows::Win32::Foundation::HWND(h.hwnd.get() as *mut _))
+                }
+                _ => None,
+            }
+        }).flatten();
+    let Some(hwnd) = hwnd_opt else { return };
+    unsafe {
+        let style = GetWindowLongW(hwnd, GWL_STYLE) as u32;
+        let new_style = (style
+            & !(WS_CAPTION.0 | WS_SYSMENU.0 | WS_THICKFRAME.0 | WS_MINIMIZEBOX.0
+                | WS_MAXIMIZEBOX.0)) as i32;
+        let _ = SetWindowLongW(hwnd, GWL_STYLE, new_style);
+        let ex = GetWindowLongW(hwnd, GWL_EXSTYLE) as u32;
+        let new_ex = (ex | WS_EX_TOOLWINDOW.0) as i32;
+        let _ = SetWindowLongW(hwnd, GWL_EXSTYLE, new_ex);
+        // SWP_FRAMECHANGED forces a non-client redraw so the style change takes
+        // effect visually; the NO* flags keep position/size/zorder/activation.
+        let flags = SWP_NOMOVE
+            | SWP_NOSIZE
+            | SWP_NOZORDER
+            | SWP_NOOWNERZORDER
+            | SWP_FRAMECHANGED
+            | SWP_NOACTIVATE;
+        let _ = SetWindowPos(hwnd, Some(HWND_TOP), 0, 0, 0, 0, flags);
+    }
 }
 
 /// Hide the switcher and clear the hotkey visibility + search-mode flags so

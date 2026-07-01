@@ -34,6 +34,11 @@ windows = { version = "0.61", features = [
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
+# raw-window-handle 0.6 — to grab the Slint/winit window's HWND at runtime and
+# strip its system chrome (caption + min/max/close buttons) directly via
+# SetWindowLongW. winit's `with_decorations(false)` should already do this, but
+# we belt-and-braces it because some winit+renderer combos leave WS_SYSMENU on.
+raw-window-handle = "0.6"
 
 # UI (Step 7b). Slint via winit backend so we can hook window attributes
 # (borderless / topmost / no-taskbar) and run as a daemon (hide ≠ quit).

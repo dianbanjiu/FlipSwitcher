@@ -1191,6 +1191,7 @@ dependencies = [
 name = "flipswitcher"
 version = "0.0.0-preview"
 dependencies = [
+ "raw-window-handle",
  "serde",
  "serde_json",
  "slint",
