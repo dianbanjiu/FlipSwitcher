@@ -126,6 +126,18 @@ impl SwitcherState {
         self.selected
     }
 
+    /// Force the selection to `index`, clamped to the filtered list. Used by the
+    /// click handler (a row press both selects and activates). Mirrors the
+    /// legacy `SelectedWindow = FilteredWindows[i]` setter minus the activate.
+    pub fn set_selected(&mut self, index: i32) {
+        let n = self.filtered.len();
+        if n == 0 || index < 0 {
+            self.selected = None;
+        } else {
+            self.selected = Some((index as usize).min(n - 1));
+        }
+    }
+
     pub fn search_text(&self) -> &str {
         &self.search_text
     }
@@ -755,5 +767,38 @@ mod tests {
         s.set_search_text("jsb");
         s.flush_filter(false);
         assert!(s.filtered().is_empty());
+    }
+
+    // ---- set_selected ----
+
+    #[test]
+    fn set_selected_clamps_into_filtered() {
+        let rows = vec![row(1, "A", "a"), row(2, "B", "b"), row(3, "C", "c")];
+        let (mut h, _log) = MockHost::new(rows);
+        let mut s = SwitcherState::new();
+        s.refresh(&mut h, false);
+        s.set_selected(5);
+        assert_eq!(s.selected_index(), Some(2)); // clamped to last
+        s.set_selected(1);
+        assert_eq!(s.selected_index(), Some(1));
+    }
+
+    #[test]
+    fn set_selected_negative_clears() {
+        let rows = vec![row(1, "A", "a")];
+        let (mut h, _log) = MockHost::new(rows);
+        let mut s = SwitcherState::new();
+        s.refresh(&mut h, false);
+        s.set_selected(-1);
+        assert_eq!(s.selected_index(), None);
+    }
+
+    #[test]
+    fn set_selected_empty_list_is_none() {
+        let (mut h, _log) = MockHost::new(vec![]);
+        let mut s = SwitcherState::new();
+        s.refresh(&mut h, false);
+        s.set_selected(0);
+        assert_eq!(s.selected_index(), None);
     }
 }

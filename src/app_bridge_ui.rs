@@ -1,15 +1,19 @@
 //! Runtime glue between Slint, [`SwitcherState`], and the Win32 core.
 //!
-//! Step 7c thin layer: owns the Slint [`UiAppWindow`] component, the
-//! [`SwitcherState`], a [`WindowService`] + [`Monitors`] for the production
-//! [`SwitcherHost`], and a channel drain that turns [`HotkeyEvent`]s into state
-//! transitions + Slint property writes. Not unit-tested (all FFI / event-loop
-//! wiring); correctness lives in [`crate::app_bridge::SwitcherState`] and the
+//! Owns the Slint component handle + a [`CoreState`] (state machine, Win32
+//! host, monitors, hotkey channel) shared between the Slint callbacks and the
+//! channel-drain timer. The component handle is **not** `Send` — Slint is
+//! single-threaded — so we capture a [`slint::Weak`] handle in the closures and
+//! the `Send`-able [`CoreState`] behind an `Arc<Mutex<>>`. Both run on the UI
+//! thread; the split is purely to satisfy the `Send` bounds on closures. All
+//! wiring is FFI / event-loop; correctness lives in [`crate::app_bridge`] and the
 //! core modules. See `docs/rust-rewrite-design-step7.md` §C.
-//!
-//! Minimal closed loop wired here (milestone: `cargo run` shows the switcher):
-//!   Alt+Tab (hidden) → place + show → enumerate off-thread → fill list →
-//!   arrow/Tab navigate → Alt-release activates selected → Esc / focus-lost hide.
+
+// `CoreState` holds `slint::Weak<UiAppWindow>` + `slint::Timer`, which are
+// `!Send + !Sync` (Slint is single-threaded). We wrap it in `Arc<Mutex<>>`
+// solely for shared access between Slint closures + the channel timer — all on
+// the UI thread, never cross threads. Suppress the `Arc`-non-`Send` lint.
+#![allow(clippy::arc_with_non_send_sync)]
 
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
@@ -32,11 +36,30 @@ use crate::core::win32::{Hwnd, WindowsApi};
 use crate::core::window_control::{self, CloseResult};
 use crate::ui::{AppWindow as UiAppWindow, EmptyState as UiEmptyState, WindowRowData};
 
+/// Debounce window for the search box (matches `MainViewModel.SearchDebounceMs`).
+const SEARCH_DEBOUNCE: Duration = Duration::from_millis(30);
+
+/// The `Send`-able half of the bridge: everything that doesn't depend on Slint.
+/// Held behind `Arc<Mutex<>>`, shared by the callbacks + the channel timer.
+/// Public only so `build`/`run`'s signatures don't leak private types.
+pub struct CoreState {
+    pub ui: slint::Weak<UiAppWindow>,
+    pub state: SwitcherState,
+    pub host: ProductionHost,
+    pub monitors: Monitors<WindowsApi>,
+    #[allow(dead_code)]
+    pub pinyin: PinyinService,
+    pub rx: Receiver<HotkeyEvent>,
+    /// Search-box debounce timer — restarted on each keystroke, fires once after
+    /// `SEARCH_DEBOUNCE` of quiet to run the filter (mirrors `DispatcherTimer`).
+    pub debounce: Timer,
+}
+
 /// Production [`crate::app_bridge::SwitcherHost`]: threads effects through the
 /// real Win32 core. `WindowService` holds `&mut` scratch, so it lives behind a
-/// `Mutex` here (called from the UI-thread timer; enumeration could move to a
-/// worker later without changing the trait surface).
-struct ProductionHost {
+/// `Mutex` (called from the UI thread; enumeration could move to a worker later
+/// without changing the trait surface).
+pub struct ProductionHost {
     svc: Mutex<WindowService<WindowsApi>>,
     api: WindowsApi,
 }
@@ -67,9 +90,9 @@ impl crate::app_bridge::SwitcherHost for ProductionHost {
     }
 }
 
-/// Minimal `AppWindow` snapshot for activation / close — the legacy paths only
-/// read `handle` + process identity + min/max flags. Min/max default false;
-/// activation re-checks live state via `IsIconic`/`IsZoomed` internally.
+/// Minimal `AppWindow` snapshot for activation / close. The legacy paths only
+/// read `handle` + process identity + min/max flags; activation re-checks the
+/// live state via `IsIconic`/`IsZoomed` internally, so min/max default false.
 fn snapshot(row: &WindowRow) -> CoreAppWindow {
     CoreAppWindow {
         handle: Hwnd(row.id),
@@ -84,8 +107,8 @@ fn snapshot(row: &WindowRow) -> CoreAppWindow {
     }
 }
 
-/// Map a core [`CoreAppWindow`] + service-resolved metadata into a Slint row.
-/// `&mut` because `is_elevated`/`monitor_number` consult mutable caches.
+/// Map a core window + service-resolved metadata into a Slint row. `&mut`
+/// because `is_elevated`/`monitor_number` consult mutable caches.
 fn to_row(svc: &mut WindowService<WindowsApi>, w: CoreAppWindow) -> WindowRow {
     let id = w.handle.raw();
     let monitor = svc.monitor_number(w.handle);
@@ -105,165 +128,268 @@ fn to_row(svc: &mut WindowService<WindowsApi>, w: CoreAppWindow) -> WindowRow {
     }
 }
 
-/// The runtime bridge. Owns the Slint handle, state, host, and the hotkey
-/// channel. Created in `main`, driven by a polling [`Timer`].
-pub struct AppBridge {
-    ui: UiAppWindow,
-    state: SwitcherState,
-    host: ProductionHost,
-    monitors: Monitors<WindowsApi>,
-    #[allow(dead_code)]
-    pinyin: PinyinService,
-    rx: Receiver<HotkeyEvent>,
+/// Build the backend + UI + hotkey hook, wire callbacks, prime the list. Returns
+/// the Arc to the shared core state; call [`run`] next.
+pub fn build() -> Result<(UiAppWindow, Arc<Mutex<CoreState>>), String> {
+    // Backend + per-window attributes hook: borderless, topmost, starts hidden,
+    // transparent (so the rounded-corner fill shows).
+    slint::BackendSelector::new()
+        .backend_name("winit".into())
+        .with_winit_window_attributes_hook(|attrs| {
+            use slint::winit_030::winit::window::WindowLevel;
+            attrs
+                .with_decorations(false)
+                .with_resizable(false)
+                .with_transparent(true)
+                .with_visible(false)
+                .with_window_level(WindowLevel::AlwaysOnTop)
+        })
+        .select()
+        .map_err(|e| format!("backend select: {e}"))?;
+
+    let ui = UiAppWindow::new().map_err(|e| format!("UI new: {e}"))?;
+
+    let settings = SettingsService::global().settings().clone();
+    let hotkey_state = Arc::new(crate::core::win32::HotkeyState::new());
+    hotkey_state.set_use_alt_tab(settings.use_alt_tab);
+
+    let (tx, rx): (Sender<HotkeyEvent>, Receiver<HotkeyEvent>) = mpsc::channel();
+    let hook = crate::core::hotkey::HotkeyHook::install(
+        hotkey_state,
+        tx,
+        settings.use_alt_space,
+    )
+    .map_err(|e| format!("hotkey install: {e}"))?;
+    ui.set_hotkey_label(SharedString::from(hook.current_hotkey_label().to_string()));
+    ui.set_show_monitor_info(settings.show_monitor_info);
+
+    let mut state = SwitcherState::new();
+    state.set_pinyin_on(settings.enable_pinyin_search);
+
+    let mut host = ProductionHost::new();
+    // Prime the list so the first open isn't blank (瞬显先用上一帧占位).
+    let rows = host.enumerate();
+    state.apply_rows(rows, false);
+
+    let core = CoreState {
+        ui: ui.as_weak(),
+        state,
+        host,
+        monitors: Monitors::new(WindowsApi),
+        pinyin: PinyinService::new(),
+        rx,
+        debounce: Timer::default(),
+    };
+    sync_ui(&ui, &core.state);
+
+    let core = Arc::new(Mutex::new(core));
+
+    wire_callbacks(&ui, core.clone());
+
+    // The hotkey hook uninstalls in its own Drop; for a single-instance daemon
+    // that never exits cleanly we leak it (matching the C# hook-for-process-life).
+    std::mem::forget(hook);
+
+    Ok((ui, core))
 }
 
-impl AppBridge {
-    /// Build everything: select the winit backend with the overlay-window
-    /// attributes hook, instantiate the Slint component, install the hotkey
-    /// hook, wire callbacks, prime the list. Returns the bridge; call `run`.
-    pub fn build() -> Result<Self, String> {
-        // Backend + per-window attributes hook: borderless, topmost, starts
-        // hidden, transparent (so the rounded-corner fill shows).
-        slint::BackendSelector::new()
-            .backend_name("winit".into())
-            .with_winit_window_attributes_hook(|attrs| {
-                use slint::winit_030::winit::window::WindowLevel;
-                attrs
-                    .with_decorations(false)
-                    .with_resizable(false)
-                    .with_transparent(true)
-                    .with_visible(false)
-                    .with_window_level(WindowLevel::AlwaysOnTop)
-            })
-            .select()
-            .map_err(|e| format!("backend select: {e}"))?;
+/// Drive the bridge: poll the hotkey channel on a timer, then enter the Slint
+/// event loop (daemon mode — stays alive with the window hidden). The caller
+/// must keep `ui` alive for the duration of the loop (it owns the strong
+/// component handle that the `Weak` inside `CoreState` resolves to).
+pub fn run(ui: UiAppWindow, core: Arc<Mutex<CoreState>>) -> Result<(), String> {
+    let core_for_timer = core.clone();
+    let timer = Timer::default();
+    timer.start(TimerMode::Repeated, Duration::from_millis(16), move || {
+        let mut b = core_for_timer.lock().unwrap();
+        while let Ok(ev) = b.rx.try_recv() {
+            handle_hotkey(&mut b, ev);
+        }
+        if let Some(ui) = b.ui.upgrade() {
+            sync_ui(&ui, &b.state);
+        }
+    });
+    std::mem::forget(timer);
 
-        let ui = UiAppWindow::new().map_err(|e| format!("UI new: {e}"))?;
+    place(&ui, &core.lock().unwrap());
+    slint::run_event_loop_until_quit().map_err(|e| format!("event loop: {e}"))
+}
 
-        let settings = SettingsService::global().settings().clone();
-        let hotkey_state = Arc::new(crate::core::win32::HotkeyState::new());
-        hotkey_state.set_use_alt_tab(settings.use_alt_tab);
-
-        let (tx, rx): (Sender<HotkeyEvent>, Receiver<HotkeyEvent>) = mpsc::channel();
-        let hook = crate::core::hotkey::HotkeyHook::install(
-            hotkey_state.clone(),
-            tx,
-            settings.use_alt_space,
-        )
-        .map_err(|e| format!("hotkey install: {e}"))?;
-        ui.set_hotkey_label(SharedString::from(hook.current_hotkey_label().to_string()));
-        ui.set_show_monitor_info(settings.show_monitor_info);
-
-        let mut state = SwitcherState::new();
-        state.set_pinyin_on(settings.enable_pinyin_search);
-
-        let mut host = ProductionHost::new();
-        // Prime the list so the first open isn't blank (瞬显先用上一帧占位).
-        let rows = host.enumerate();
-        state.apply_rows(rows, false);
-
-        let monitors = Monitors::new(WindowsApi);
-
-        let bridge = AppBridge {
-            ui: ui.clone_strong(),
-            state,
-            host,
-            monitors,
-            pinyin: PinyinService::new(),
-            rx,
-        };
-        sync_ui(&bridge.ui, &bridge.state);
-
-        // Keep the hotkey state handle for the callbacks; the hook itself is
-        // leaked to live for the process (it uninstalls in its own Drop, which
-        // never runs — fine for a single-instance daemon).
-        wire_callbacks(&ui, hotkey_state);
-        std::mem::forget(hook);
-
-        Ok(bridge)
-    }
-
-    /// Drive the bridge: poll the hotkey channel on a timer, then enter the
-    /// Slint event loop (daemon mode — stays alive with the window hidden).
-    pub fn run(self) -> Result<(), String> {
-        let ui = self.ui.clone_strong();
-        let bridge = Arc::new(Mutex::new(self));
-
-        // Channel drain timer — every ~16ms, apply pending hotkey events then
-        // re-sync the UI. Cheap; Slint properties no-op when unchanged.
-        let ui_for_timer = ui.clone_strong();
-        let bridge_for_timer = bridge.clone();
-        let timer = Timer::default();
-        timer.start(TimerMode::Repeated, Duration::from_millis(16), move || {
-            let mut b = bridge_for_timer.lock().unwrap();
-            while let Ok(ev) = b.rx.try_recv() {
-                b.handle_hotkey(ev);
+/// Dispatch one hotkey event → state transition. `ui` is reached via the weak
+/// handle stored on the [`CoreState`]; this never crosses threads.
+fn handle_hotkey(b: &mut CoreState, ev: HotkeyEvent) {
+    let ui = match b.ui.upgrade() {
+        Some(u) => u,
+        None => return,
+    };
+    match ev {
+        HotkeyEvent::HotkeyPressed => {
+            b.state.reset_grouping();
+            b.state.clear_search();
+            refresh_list(b, true);
+            let _ = ui.show();
+            place(&ui, b);
+        }
+        HotkeyEvent::AltReleased => {
+            let activated = {
+                let CoreState { state, host, .. } = &mut *b;
+                state.activate_selected(host).is_some()
+            };
+            if activated {
+                let _ = ui.hide();
             }
-            sync_ui(&ui_for_timer, &b.state);
-        });
-        std::mem::forget(timer);
-
-        // Place on the primary work area at first paint, then run.
-        place(&ui, &bridge.lock().unwrap());
-        slint::run_event_loop_until_quit().map_err(|e| format!("event loop: {e}"))
-    }
-
-    /// Dispatch one hotkey event → state transition.
-    fn handle_hotkey(&mut self, ev: HotkeyEvent) {
-        match ev {
-            HotkeyEvent::HotkeyPressed => {
-                self.state.reset_grouping();
-                self.state.clear_search();
-                self.refresh_list(true);
-                let _ = self.ui.show();
-                place(&self.ui, self);
-            }
-            HotkeyEvent::AltReleased => {
-                if self.state.activate_selected(&mut self.host).is_some() {
-                    let _ = self.ui.hide();
-                }
-            }
-            HotkeyEvent::NavigationRequested(dir) => {
-                self.state.move_selection(matches!(dir, NavDirection::Previous));
-            }
-            HotkeyEvent::CloseWindowRequested => {
-                self.state.close_selected(&mut self.host);
-            }
-            HotkeyEvent::StopProcessRequested => {
-                self.state.stop_selected(&mut self.host);
-            }
-            HotkeyEvent::EscapePressed => {
-                let _ = self.ui.hide();
-            }
-            // Long-tail wiring after the smoke loop is verified:
-            HotkeyEvent::SearchModeRequested
-            | HotkeyEvent::SettingsRequested
-            | HotkeyEvent::GroupByProcessRequested
-            | HotkeyEvent::UngroupFromProcessRequested => {}
+        }
+        HotkeyEvent::NavigationRequested(dir) => {
+            b.state.move_selection(matches!(dir, NavDirection::Previous));
+        }
+        HotkeyEvent::CloseWindowRequested => {
+            let CoreState { state, host, .. } = &mut *b;
+            state.close_selected(host);
+        }
+        HotkeyEvent::StopProcessRequested => {
+            let CoreState { state, host, .. } = &mut *b;
+            state.stop_selected(host);
+        }
+        HotkeyEvent::EscapePressed => {
+            let _ = ui.hide();
+        }
+        HotkeyEvent::GroupByProcessRequested => {
+            b.state.group_by_process();
+        }
+        HotkeyEvent::UngroupFromProcessRequested => {
+            b.state.ungroup_from_process();
+        }
+        HotkeyEvent::SearchModeRequested => {
+            // Focusing the search box needs Win32 foreground (§5-A); the
+            // dedicated path lands with icon/theme wiring. No-op for now.
+        }
+        HotkeyEvent::SettingsRequested => {
+            // Settings window is a separate Slint component (Step 8).
         }
     }
-
-    fn refresh_list(&mut self, select_second: bool) {
-        let rows = self.host.enumerate();
-        self.state.apply_rows(rows, select_second);
-    }
 }
 
-/// Wire the Slint `on_*` callbacks. Search typing is the user-facing input that
-/// doesn't come through the hotkey hook; it writes back into the shared state
-/// via the same `Arc<Mutex<AppBridge>>` the timer holds. For the 7c milestone
-/// only the no-op stubs are wired (host reachability from a closure needs the
-/// shared slot, added next).
-fn wire_callbacks(ui: &UiAppWindow, _state: Arc<crate::core::win32::HotkeyState>) {
-    ui.on_activated(|_row_index| {});
-    ui.on_search_changed(|_text| {});
-    ui.on_move_selection(|_prev| {});
-    ui.on_close_selected(|| {});
-    ui.on_stop_selected(|| {});
-    ui.on_group_requested(|| {});
-    ui.on_ungroup_requested(|| {});
-    ui.on_escape(|| {});
-    ui.on_settings_requested(|| {});
+fn refresh_list(b: &mut CoreState, select_second: bool) {
+    let rows = b.host.enumerate();
+    b.state.apply_rows(rows, select_second);
+}
+
+/// Wire the Slint `on_*` callbacks. Each captures a `Weak<UiAppWindow>` (cheaply
+/// cloneable, `Send`) and an `Arc<Mutex<CoreState>>`. After mutating the state
+/// we re-sync the UI visible through the upgraded handle.
+fn wire_callbacks(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
+    // Click a row → select + activate (matches legacy click-activates).
+    ui.on_activated({
+        let core = core.clone();
+        move |row_index| {
+            let mut b = core.lock().unwrap();
+            b.state.set_selected(row_index);
+            let activated = {
+                let CoreState { state, host, .. } = &mut *b;
+                state.activate_selected(host).is_some()
+            };
+            if activated {
+                if let Some(ui) = b.ui.upgrade() {
+                    let _ = ui.hide();
+                }
+            }
+            if let Some(ui) = b.ui.upgrade() {
+                sync_ui(&ui, &b.state);
+            }
+        }
+    });
+
+    // Search text — debounce 30ms then run the filter.
+    ui.on_search_changed({
+        let core = core.clone();
+        move |text| {
+            let text = text.to_string();
+            let mut b = core.lock().unwrap();
+            b.state.set_search_text(&text);
+            let core_for_debounce = core.clone();
+            b.debounce
+                .start(TimerMode::SingleShot, SEARCH_DEBOUNCE, move || {
+                    let mut b = core_for_debounce.lock().unwrap();
+                    b.state.flush_filter(false);
+                    if let Some(ui) = b.ui.upgrade() {
+                        sync_ui(&ui, &b.state);
+                    }
+                });
+        }
+    });
+
+    // Symmetric wiring for the footer/keyboard requests.
+    ui.on_move_selection({
+        let core = core.clone();
+        move |prev| {
+            let mut b = core.lock().unwrap();
+            b.state.move_selection(prev);
+            if let Some(ui) = b.ui.upgrade() {
+                sync_ui(&ui, &b.state);
+            }
+        }
+    });
+    ui.on_close_selected({
+        let core = core.clone();
+        move || {
+            let mut b = core.lock().unwrap();
+            {
+                let CoreState { state, host, .. } = &mut *b;
+                state.close_selected(host);
+            }
+            if let Some(ui) = b.ui.upgrade() {
+                sync_ui(&ui, &b.state);
+            }
+        }
+    });
+    ui.on_stop_selected({
+        let core = core.clone();
+        move || {
+            let mut b = core.lock().unwrap();
+            {
+                let CoreState { state, host, .. } = &mut *b;
+                state.stop_selected(host);
+            }
+            if let Some(ui) = b.ui.upgrade() {
+                sync_ui(&ui, &b.state);
+            }
+        }
+    });
+    ui.on_group_requested({
+        let core = core.clone();
+        move || {
+            let mut b = core.lock().unwrap();
+            b.state.group_by_process();
+            if let Some(ui) = b.ui.upgrade() {
+                sync_ui(&ui, &b.state);
+            }
+        }
+    });
+    ui.on_ungroup_requested({
+        let core = core.clone();
+        move || {
+            let mut b = core.lock().unwrap();
+            b.state.ungroup_from_process();
+            if let Some(ui) = b.ui.upgrade() {
+                sync_ui(&ui, &b.state);
+            }
+        }
+    });
+    ui.on_escape({
+        let core = core.clone();
+        move || {
+            let b = core.lock().unwrap();
+            if let Some(ui) = b.ui.upgrade() {
+                let _ = ui.hide();
+            }
+            if let Some(ui) = b.ui.upgrade() {
+                sync_ui(&ui, &b.state);
+            }
+        }
+    });
+    ui.on_settings_requested(|| {
+        // Settings window (Step 8); no-op here.
+    });
 }
 
 /// Convert [`WindowRow`]s to Slint's generated model and push to the UI.
@@ -282,30 +408,29 @@ fn push_rows(ui: &UiAppWindow, rows: &[WindowRow]) {
     ui.set_windows(ModelRc::new(VecModel::from(model)));
 }
 
-/// 1×1 transparent placeholder until IconCache → Image lands (Step 7c+).
+/// 1×1 transparent placeholder until IconCache → Image lands (later step).
 fn placeholder_image() -> Image {
     Image::from_rgba8(SharedPixelBuffer::<Rgba8Pixel>::new(1, 1))
 }
 
-/// Place the window centred on the primary work area (Step 7c default path;
+/// Place the window centred on the primary work area (default path; the
 /// mouse-screen path wires with `settings.show_on_mouse_screen` later).
 /// `compute_placement` returns physical pixels, so we pass `Physical` variants.
-fn place(ui: &UiAppWindow, bridge: &AppBridge) {
-    let snap = bridge.monitors.snapshot();
+fn place(ui: &UiAppWindow, core: &CoreState) {
+    let snap = core.monitors.snapshot();
     let placement = if let Some(p) = snap.iter().find(|m| m.is_primary).or_else(|| snap.first()) {
         monitors::compute_placement(PlacementMode::PrimaryCenter {
             primary_work: &p.work,
             primary_dpi: p.dpi_scale,
         })
     } else {
-        // No monitors: leave the default 640×520 at (0,0).
-        return;
+        return; // No monitors: leave the default 640×520 at (0,0).
     };
-    let _ = ui.window().set_position(WindowPosition::Physical(PhysicalPosition::new(
+    ui.window().set_position(WindowPosition::Physical(PhysicalPosition::new(
         placement.x,
         placement.y,
     )));
-    let _ = ui.window().set_size(WindowSize::Physical(PhysicalSize::new(
+    ui.window().set_size(WindowSize::Physical(PhysicalSize::new(
         placement.width as u32,
         placement.height as u32,
     )));
