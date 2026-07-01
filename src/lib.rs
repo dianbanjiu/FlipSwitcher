@@ -11,6 +11,7 @@
 //! the Slint bridge — still no Slint dependency, still unit-testable.
 
 pub mod app_bridge;
+pub mod app_bridge_ui;
 pub mod core;
 pub mod startup;
 pub mod ui;
