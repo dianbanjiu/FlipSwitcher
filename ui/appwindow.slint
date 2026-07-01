@@ -127,6 +127,28 @@ export component AppWindow inherits Window {
         search-box.focus();
     }
 
+    // Scroll the window list so the selected row stays visible. Slint's bare
+    // `ListView` doesn't auto-scroll on selection change (unlike WPF ListBox),
+    // so the bridge calls this after navigation. Row height is the 56px the
+    // list rows are sized to.
+    public function scroll-to-selected() {
+        if root.windows.length == 0 || root.selected-index < 0 {
+            return;
+        }
+        let row-h = 56px;
+        let sel-top = root.selected-index * row-h;
+        let sel-bot = sel-top + row-h;
+        let vp-y = window-list.viewport-y;
+        let vis-h = window-list.visible-height;
+        if sel-top < vp-y {
+            // Row scrolled off the top → bring it to the top edge.
+            window-list.viewport-y = sel-top;
+        } else if sel-bot > vp-y + vis-h {
+            // Row scrolled off the bottom → push it to the bottom edge.
+            window-list.viewport-y = sel-bot - vis-h;
+        }
+    }
+
     // Outer rounded border (acrylic stand-in).
     Rectangle {
         x: 0px; y: 0px; width: 100%; height: 100%;
@@ -210,7 +232,11 @@ export component AppWindow inherits Window {
                 background: SwitcherTheme.surface;
                 vertical-stretch: 1;
 
-                if root.empty-state == EmptyState.none : ListView {
+                // The list is always present (so its `id` is reachable from
+                // `scroll-to-selected`); it's just hidden when the empty state
+                // shows, and the empty panel overlays it.
+                window-list := ListView {
+                    visible: root.empty-state == EmptyState.none;
                     x: 8px; y: 4px;
                     width: parent.width - 16px; height: parent.height - 8px;
                     // ListView is a ScrollView; the rows are its (scrollable)

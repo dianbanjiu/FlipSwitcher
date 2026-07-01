@@ -270,6 +270,9 @@ fn show_switcher(ui: &UiAppWindow, b: &mut CoreState) {
     place(ui, b);
     let _ = ui.show();
     b.hotkey_state.set_visible(true);
+    // Fresh open: clear the ignore flag so Alt-release confirms selection again
+    // (it may have been set by a prior `enter_search_mode`).
+    b.hotkey_state.set_ignore_alt_release(false);
     // Kick the icon worker: re-enumerate + decode icons off the UI thread.
     let _ = b.icon_trigger.send(());
 }
@@ -289,6 +292,11 @@ fn hide_switcher(ui: &UiAppWindow, b: &mut CoreState) {
 fn enter_search_mode(ui: &UiAppWindow, b: &mut CoreState) {
     use slint::winit_030::WinitWindowAccessor;
     b.hotkey_state.set_search_mode(true);
+    // winit's `focus_window` synthesizes an Alt key down/up (the `force_window_active`
+    // trick) to win the foreground lock. That synthetic Alt-up would otherwise trip
+    // our `AltReleased` decode → hide the switcher. Ignore the next Alt release so
+    // the search box stays put. (Cleared again on the next show.)
+    b.hotkey_state.set_ignore_alt_release(true);
     // Foreground the overlay first — Slint's in-window focus only takes once the
     // OS foreground is ours (§4.2).
     ui.window().with_winit_window(|w| w.focus_window());
@@ -631,4 +639,6 @@ fn sync_ui(ui: &UiAppWindow, core: &CoreState) {
     ui.set_selected_index(core.state.selected_index().map(|i| i as i32).unwrap_or(0));
     ui.set_window_count(core.state.filtered().len() as i32);
     update_empty_state(ui, &core.state);
+    // Slint's ListView doesn't auto-scroll on selection change; ask it to.
+    ui.invoke_scroll_to_selected();
 }
