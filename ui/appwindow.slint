@@ -120,6 +120,13 @@ export component AppWindow inherits Window {
     callback escape();
     callback settings-requested();
 
+    // Focus the search box. Called from Rust (generates `invoke_focus_search`)
+    // when entering search mode, after the bridge has forced the window to the
+    // foreground (§4.2 — Slint focus needs a Win32 foreground first).
+    public function focus-search() {
+        search-box.focus();
+    }
+
     // Outer rounded border (acrylic stand-in).
     Rectangle {
         x: 0px; y: 0px; width: 100%; height: 100%;
@@ -189,7 +196,7 @@ export component AppWindow inherits Window {
             Rectangle {
                 background: SwitcherTheme.surface;
                 height: 56px;
-                LineEdit {
+                search-box := LineEdit {
                     y: 12px; x: 16px; width: parent.width - 32px; height: 32px;
                     placeholder-text: "Search windows…";
                     text <=> root.search-text;

@@ -59,6 +59,9 @@ pub struct CoreState {
     /// Snapshot of `settings.hide_on_focus_lost`; re-read on settings change
     /// later. When false, focus loss does not auto-hide (legacy `HideOnFocusLost`).
     pub hide_on_focus_lost: bool,
+    /// Snapshot of `settings.open_search_on_activation`: when true, Alt+Tab opens
+    /// straight into search mode instead of hold-to-cycle (legacy `openSearchDirectly`).
+    pub open_search_on_activation: bool,
     /// Icons resolved off-thread, keyed by `WindowRow.id` (the HWND as `isize`).
     /// Populated by the channel-drain timer; consulted by `push_rows` so a row
     /// shows its real icon once the worker has decoded it.
@@ -206,6 +209,7 @@ pub fn build() -> Result<(UiAppWindow, Arc<Mutex<CoreState>>), String> {
         debounce: Timer::default(),
         hotkey_state,
         hide_on_focus_lost: settings.hide_on_focus_lost,
+        open_search_on_activation: settings.open_search_on_activation,
         icons: std::collections::HashMap::new(),
         icon_rx,
         icon_trigger: icon_trigger_tx,
@@ -278,6 +282,19 @@ fn hide_switcher(ui: &UiAppWindow, b: &mut CoreState) {
     b.hotkey_state.set_visible(false);
 }
 
+/// Enter search mode: force the switcher window to the foreground (winit's
+/// `focus_window` does the Win32 foreground dance), flip the hotkey state so
+/// arrow keys route to the list (not search-swallowed), then focus the Slint
+/// search box. Mirrors `MainWindow.EnterSearchMode` + `ForceActivateWindow`.
+fn enter_search_mode(ui: &UiAppWindow, b: &mut CoreState) {
+    use slint::winit_030::WinitWindowAccessor;
+    b.hotkey_state.set_search_mode(true);
+    // Foreground the overlay first — Slint's in-window focus only takes once the
+    // OS foreground is ours (§4.2).
+    ui.window().with_winit_window(|w| w.focus_window());
+    ui.invoke_focus_search();
+}
+
 /// Dispatch one hotkey event → state transition. `ui` is reached via the weak
 /// handle stored on the [`CoreState`]; this never crosses threads.
 fn handle_hotkey(b: &mut CoreState, ev: HotkeyEvent) {
@@ -289,8 +306,15 @@ fn handle_hotkey(b: &mut CoreState, ev: HotkeyEvent) {
         HotkeyEvent::HotkeyPressed => {
             b.state.reset_grouping();
             b.state.clear_search();
-            refresh_list(b, true);
+            // Legacy `openSearchDirectly`: skip Alt+Tab hold-mode (select 2nd),
+            // jump straight into search. Otherwise enumerate + select the 2nd
+            // window (the foreground one is row 0).
+            let select_second = !b.open_search_on_activation;
+            refresh_list(b, select_second);
             show_switcher(&ui, b);
+            if b.open_search_on_activation {
+                enter_search_mode(&ui, b);
+            }
         }
         HotkeyEvent::AltReleased => {
             let activated = {
@@ -322,8 +346,7 @@ fn handle_hotkey(b: &mut CoreState, ev: HotkeyEvent) {
             b.state.ungroup_from_process();
         }
         HotkeyEvent::SearchModeRequested => {
-            // Focusing the search box needs Win32 foreground (§5-A); the
-            // dedicated path lands with icon/theme wiring. No-op for now.
+            enter_search_mode(&ui, b);
         }
         HotkeyEvent::SettingsRequested => {
             // Settings window is a separate Slint component (Step 8).
