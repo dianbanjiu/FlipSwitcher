@@ -32,7 +32,7 @@ use crate::core::hotkey::{HotkeyEvent, NavDirection};
 use crate::core::monitors::{self, Monitors, PlacementMode};
 use crate::core::pinyin::PinyinService;
 use crate::core::settings::SettingsService;
-use crate::core::win32::{Hwnd, WindowsApi};
+use crate::core::win32::{Hwnd, Win32Api, WindowsApi};
 use crate::core::window_control::{self, CloseResult};
 use crate::ui::{AppWindow as UiAppWindow, EmptyState as UiEmptyState, WindowRowData};
 
@@ -53,6 +53,12 @@ pub struct CoreState {
     /// Search-box debounce timer — restarted on each keystroke, fires once after
     /// `SEARCH_DEBOUNCE` of quiet to run the filter (mirrors `DispatcherTimer`).
     pub debounce: Timer,
+    /// Shared hotkey state — `is_visible`/`is_search_mode` are toggled here on
+    /// show/hide so the keyboard-hook decode (Tab =唤起 vs 导航) stays correct.
+    pub hotkey_state: Arc<crate::core::win32::HotkeyState>,
+    /// Snapshot of `settings.hide_on_focus_lost`; re-read on settings change
+    /// later. When false, focus loss does not auto-hide (legacy `HideOnFocusLost`).
+    pub hide_on_focus_lost: bool,
 }
 
 /// Production [`crate::app_bridge::SwitcherHost`]: threads effects through the
@@ -155,7 +161,7 @@ pub fn build() -> Result<(UiAppWindow, Arc<Mutex<CoreState>>), String> {
 
     let (tx, rx): (Sender<HotkeyEvent>, Receiver<HotkeyEvent>) = mpsc::channel();
     let hook = crate::core::hotkey::HotkeyHook::install(
-        hotkey_state,
+        hotkey_state.clone(),
         tx,
         settings.use_alt_space,
     )
@@ -179,12 +185,15 @@ pub fn build() -> Result<(UiAppWindow, Arc<Mutex<CoreState>>), String> {
         pinyin: PinyinService::new(),
         rx,
         debounce: Timer::default(),
+        hotkey_state,
+        hide_on_focus_lost: settings.hide_on_focus_lost,
     };
     sync_ui(&ui, &core.state);
 
     let core = Arc::new(Mutex::new(core));
 
     wire_callbacks(&ui, core.clone());
+    register_focus_hook(&ui, core.clone());
 
     // The hotkey hook uninstalls in its own Drop; for a single-instance daemon
     // that never exits cleanly we leak it (matching the C# hook-for-process-life).
@@ -215,6 +224,23 @@ pub fn run(ui: UiAppWindow, core: Arc<Mutex<CoreState>>) -> Result<(), String> {
     slint::run_event_loop_until_quit().map_err(|e| format!("event loop: {e}"))
 }
 
+/// Show the switcher: reveal + position, and flip `hotkey_state.is_visible`
+/// so the keyboard-hook decode (`Tab` = 唤起 vs 导航) stays correct. Mirrors
+/// `HotkeyService.SetVisible(true)`.
+fn show_switcher(ui: &UiAppWindow, b: &mut CoreState) {
+    place(ui, b);
+    let _ = ui.show();
+    b.hotkey_state.set_visible(true);
+}
+
+/// Hide the switcher and clear the hotkey visibility + search-mode flags so
+/// subsequent keystrokes route through the hidden-window decode path. Mirrors
+/// `HotkeyService.SetVisible(false)`.
+fn hide_switcher(ui: &UiAppWindow, b: &mut CoreState) {
+    let _ = ui.hide();
+    b.hotkey_state.set_visible(false);
+}
+
 /// Dispatch one hotkey event → state transition. `ui` is reached via the weak
 /// handle stored on the [`CoreState`]; this never crosses threads.
 fn handle_hotkey(b: &mut CoreState, ev: HotkeyEvent) {
@@ -227,8 +253,7 @@ fn handle_hotkey(b: &mut CoreState, ev: HotkeyEvent) {
             b.state.reset_grouping();
             b.state.clear_search();
             refresh_list(b, true);
-            let _ = ui.show();
-            place(&ui, b);
+            show_switcher(&ui, b);
         }
         HotkeyEvent::AltReleased => {
             let activated = {
@@ -236,7 +261,7 @@ fn handle_hotkey(b: &mut CoreState, ev: HotkeyEvent) {
                 state.activate_selected(host).is_some()
             };
             if activated {
-                let _ = ui.hide();
+                hide_switcher(&ui, b);
             }
         }
         HotkeyEvent::NavigationRequested(dir) => {
@@ -251,7 +276,7 @@ fn handle_hotkey(b: &mut CoreState, ev: HotkeyEvent) {
             state.stop_selected(host);
         }
         HotkeyEvent::EscapePressed => {
-            let _ = ui.hide();
+            hide_switcher(&ui, b);
         }
         HotkeyEvent::GroupByProcessRequested => {
             b.state.group_by_process();
@@ -290,7 +315,7 @@ fn wire_callbacks(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
             };
             if activated {
                 if let Some(ui) = b.ui.upgrade() {
-                    let _ = ui.hide();
+                    hide_switcher(&ui, &mut b);
                 }
             }
             if let Some(ui) = b.ui.upgrade() {
@@ -378,9 +403,9 @@ fn wire_callbacks(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
     ui.on_escape({
         let core = core.clone();
         move || {
-            let b = core.lock().unwrap();
+            let mut b = core.lock().unwrap();
             if let Some(ui) = b.ui.upgrade() {
-                let _ = ui.hide();
+                hide_switcher(&ui, &mut b);
             }
             if let Some(ui) = b.ui.upgrade() {
                 sync_ui(&ui, &b.state);
@@ -389,6 +414,34 @@ fn wire_callbacks(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
     });
     ui.on_settings_requested(|| {
         // Settings window (Step 8); no-op here.
+    });
+}
+
+/// Register the focus-lost handler on the winit window event stream. Mirrors
+/// `MainWindow.Window_Deactivated` + the §3.6 rules:
+///
+/// - Alt still held (Alt+Tab hold mode) → don't hide; the user is still cycling.
+/// - Otherwise, when `hide_on_focus_lost` is on → hide.
+///
+/// Returns `EventResult::Propagate` so Slint still processes the focus change.
+fn register_focus_hook(ui: &UiAppWindow, core: Arc<Mutex<CoreState>>) {
+    use slint::winit_030::winit::event::WindowEvent;
+    use slint::winit_030::{EventResult, WinitWindowAccessor};
+    ui.window().on_winit_window_event(move |_slint_win, event| {
+        if let WindowEvent::Focused(false) = event {
+            let mut b = core.lock().unwrap();
+            // Alt+Tab hold: keep the switcher open while Alt is still down.
+            let api = WindowsApi;
+            let alt_held = api.is_key_down_async(crate::core::win32::VK_MENU)
+                || api.is_key_down_async(crate::core::win32::VK_LMENU)
+                || api.is_key_down_async(crate::core::win32::VK_RMENU);
+            if !alt_held && b.hide_on_focus_lost {
+                if let Some(ui) = b.ui.upgrade() {
+                    hide_switcher(&ui, &mut b);
+                }
+            }
+        }
+        EventResult::Propagate
     });
 }
 
