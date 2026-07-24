@@ -291,6 +291,21 @@
                             </TextBlock.Style>
                         </TextBlock>
                     </StackPanel>
+
+                    <Border x:Name="ActivationStatusBanner"
+                        Visibility="Collapsed"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Bottom"
+                        Margin="16"
+                        Padding="12,7"
+                        CornerRadius="6"
+                        Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                        BorderBrush="{DynamicResource SystemFillColorCautionBrush}"
+                        BorderThickness="1">
+                        <TextBlock x:Name="ActivationStatusText"
+                            Style="{DynamicResource CaptionTextStyle}"
+                            Foreground="{DynamicResource TextPrimaryBrush}" />
+                    </Border>
                 </Grid>
             </Border>
 

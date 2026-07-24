@@ -19,15 +19,27 @@ public partial class MainWindow : Window
     private bool _isClosing;
     private bool _isAltTabMode; // Track if we're in Alt+Tab hold mode
     private bool _isSearchMode; // Track if we're in search mode
+    private bool _activationInProgress;
+    private readonly System.Windows.Threading.DispatcherTimer _activationStatusTimer;
 
     public HotkeyService HotkeyService => _hotkeyService;
 
     public MainWindow()
     {
         InitializeComponent();
-        
+
+        _activationStatusTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(2)
+        };
+        _activationStatusTimer.Tick += (_, _) =>
+        {
+            _activationStatusTimer.Stop();
+            ActivationStatusBanner.Visibility = Visibility.Collapsed;
+        };
+
         _viewModel = (MainViewModel)DataContext;
-        _viewModel.WindowActivated += ViewModel_WindowActivated;
+        _viewModel.WindowActivationCompleted += ViewModel_WindowActivationCompleted;
 
         _hotkeyService = new HotkeyService();
         _hotkeyService.HotkeyPressed += HotkeyService_HotkeyPressed;
@@ -56,7 +68,7 @@ public partial class MainWindow : Window
         // Register global hotkeys based on settings
         var settings = SettingsService.Instance.Settings;
         _hotkeyService.RegisterHotkeys(this, settings.UseAltSpace, settings.UseAltTab);
-        
+
         // Update hotkey display
         UpdateHotkeyDisplay();
 
@@ -95,7 +107,7 @@ public partial class MainWindow : Window
         // Re-register hotkeys when settings change
         var settings = SettingsService.Instance.Settings;
         _hotkeyService.RegisterHotkeys(this, settings.UseAltSpace, settings.UseAltTab);
-        
+
         // Update hotkey display
         UpdateHotkeyDisplay();
     }
@@ -152,7 +164,7 @@ public partial class MainWindow : Window
             _viewModel.MoveSelectionDown();
         else
             _viewModel.MoveSelectionUp();
-        
+
         ScrollSelectedIntoView();
     }
 
@@ -169,6 +181,9 @@ public partial class MainWindow : Window
 
     private void ActivateSelectedWindow()
     {
+        if (_activationInProgress)
+            return;
+
         var selectedWindow = _viewModel.SelectedWindow;
         if (selectedWindow == null)
         {
@@ -183,9 +198,15 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Ignore simulated Alt release events during window activation
-        _hotkeyService.SetIgnoreAltRelease(true);
-        _viewModel.ActivateSelected();
+        _activationInProgress = true;
+        try
+        {
+            _viewModel.ActivateSelected();
+        }
+        finally
+        {
+            _activationInProgress = false;
+        }
     }
 
     private void HotkeyService_CloseWindowRequested(object? sender, EventArgs e)
@@ -228,9 +249,9 @@ public partial class MainWindow : Window
         _isAltTabMode = false;
         _isSearchMode = true;
         _hotkeyService.SetSearchMode(true);
-        
+
         ForceActivateWindow();
-        
+
         Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
         {
             ForceActivateWindow();
@@ -242,16 +263,16 @@ public partial class MainWindow : Window
 
     private void ForceActivateWindow()
     {
-        // Use the same techniques as AppWindow.Activate to force focus
+        // This path targets FlipSwitcher's own responsive HWND, never an external window.
         var hwnd = new WindowInteropHelper(this).Handle;
-        
+
         // Simulate Alt key to allow SetForegroundWindow
         NativeMethods.keybd_event(NativeMethods.VK_ALT, 0, NativeMethods.KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
         NativeMethods.keybd_event(NativeMethods.VK_ALT, 0, NativeMethods.KEYEVENTF_EXTENDEDKEY | NativeMethods.KEYEVENTF_KEYUP, UIntPtr.Zero);
-        
+
         NativeMethods.SetForegroundWindow(hwnd);
         NativeMethods.BringWindowToTop(hwnd);
-        
+
         Activate();
         Focus();
     }
@@ -289,6 +310,9 @@ public partial class MainWindow : Window
 
     private async void ShowWindow()
     {
+        _activationStatusTimer.Stop();
+        ActivationStatusBanner.Visibility = Visibility.Collapsed;
+
         // Reset grouping state to ensure the full list is shown
         _viewModel.ResetGrouping();
         _viewModel.ClearSearch();
@@ -383,7 +407,7 @@ public partial class MainWindow : Window
             _viewModel.ClearSearch();
             _isAltTabMode = false;
             _isSearchMode = false;
-            
+
             // Notify hotkey service that we're hidden
             _hotkeyService.SetVisible(false);
             _hotkeyService.SetSearchMode(false);
@@ -403,7 +427,7 @@ public partial class MainWindow : Window
             // Alt is no longer pressed, exit Alt+Tab mode
             _isAltTabMode = false;
         }
-        
+
         // Check if HideOnFocusLost setting is enabled
         if (!SettingsService.Instance.Settings.HideOnFocusLost)
         {
@@ -422,7 +446,7 @@ public partial class MainWindow : Window
             }
             return;
         }
-        
+
         HideWindow();
     }
 
@@ -541,7 +565,7 @@ public partial class MainWindow : Window
     private void ScrollToTopThenSelected()
     {
         if (_viewModel.FilteredWindows.Count == 0) return;
-        
+
         // Get the internal ScrollViewer and force scroll to top
         var scrollViewer = GetScrollViewer(WindowList);
         if (scrollViewer != null)
@@ -582,13 +606,35 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ViewModel_WindowActivated(object? sender, EventArgs e)
+    private void ViewModel_WindowActivationCompleted(
+        object? sender,
+        WindowActivationCompletedEventArgs e)
     {
-        // Reset grouping state for next time
-        _viewModel.ResetGrouping();
-        HideWindow();
-        // Reset the ignore flag after window is hidden
-        _hotkeyService.SetIgnoreAltRelease(false);
+        switch (e.Result.Outcome)
+        {
+            case WindowActivationOutcome.Requested:
+                // Reset grouping state for next time only after Windows accepted the request.
+                _viewModel.ResetGrouping();
+                HideWindow();
+                break;
+            case WindowActivationOutcome.TargetClosed:
+                ShowActivationStatus("MsgActivationTargetClosed");
+                break;
+            case WindowActivationOutcome.ForegroundDenied:
+                ShowActivationStatus("MsgActivationDenied");
+                break;
+            case WindowActivationOutcome.NativeFailure:
+                ShowActivationStatus("MsgActivationFailed");
+                break;
+        }
+    }
+
+    private void ShowActivationStatus(string resourceKey)
+    {
+        ActivationStatusText.Text = LanguageService.GetString(resourceKey);
+        ActivationStatusBanner.Visibility = Visibility.Visible;
+        _activationStatusTimer.Stop();
+        _activationStatusTimer.Start();
     }
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
@@ -602,6 +648,7 @@ public partial class MainWindow : Window
         else
         {
             SettingsService.Instance.SettingsChanged -= OnSettingsChanged;
+            _activationStatusTimer.Stop();
             _viewModel.Dispose();
             base.OnClosing(e);
             _hotkeyService.Dispose();
