@@ -33,7 +33,6 @@ namespace FlipSwitcher.ViewModels;
 public class MainViewModel : ObservableObject, IDisposable
 {
     private readonly WindowService _windowService;
-    private readonly IWindowActivationService _windowActivationService;
     private string _searchText = string.Empty;
     private AppWindow? _selectedWindow;
     private List<AppWindow> _windows = new();
@@ -51,20 +50,14 @@ public class MainViewModel : ObservableObject, IDisposable
     public bool ShowMonitorInfo => SettingsService.Instance.Settings.ShowMonitorInfo;
 
     public MainViewModel()
-        : this(new WindowActivationService())
-    {
-    }
-
-    internal MainViewModel(IWindowActivationService windowActivationService)
     {
         _windowService = new WindowService();
-        _windowActivationService = windowActivationService;
 
-        SwitchToWindowCommand = new RelayCommand<AppWindow>(window => SwitchToWindow(window));
+        SwitchToWindowCommand = new RelayCommand<AppWindow>(SwitchToWindow);
         RefreshWindowsCommand = new RelayCommand(() => RefreshWindows());
         MoveSelectionUpCommand = new RelayCommand(MoveSelectionUp);
         MoveSelectionDownCommand = new RelayCommand(MoveSelectionDown);
-        ActivateSelectedCommand = new RelayCommand(() => ActivateSelected());
+        ActivateSelectedCommand = new RelayCommand(ActivateSelected);
 
         _searchDebounceTimer = new DispatcherTimer
         {
@@ -159,7 +152,7 @@ public class MainViewModel : ObservableObject, IDisposable
     public ICommand MoveSelectionDownCommand { get; }
     public ICommand ActivateSelectedCommand { get; }
 
-    public event EventHandler<WindowActivationCompletedEventArgs>? WindowActivationCompleted;
+    public event EventHandler? WindowActivated;
 
     /// <summary>
     /// Update <see cref="_filteredWindows"/> in place with minimal collection-changed notifications.
@@ -381,9 +374,12 @@ public class MainViewModel : ObservableObject, IDisposable
         SelectedWindow = FilteredWindows[newIndex];
     }
 
-    public WindowActivationResult ActivateSelected()
+    public void ActivateSelected()
     {
-        return SwitchToWindow(SelectedWindow);
+        if (SelectedWindow != null)
+        {
+            SwitchToWindow(SelectedWindow);
+        }
     }
 
     /// <summary>
@@ -455,32 +451,12 @@ public class MainViewModel : ObservableObject, IDisposable
         SelectWindowAfterRemoval(currentIndex);
     }
 
-    private WindowActivationResult SwitchToWindow(AppWindow? window)
+    private void SwitchToWindow(AppWindow? window)
     {
-        if (window == null)
-        {
-            var noSelection = new WindowActivationResult(WindowActivationOutcome.NoSelection);
-            WindowActivationCompleted?.Invoke(
-                this,
-                new WindowActivationCompletedEventArgs(noSelection));
-            return noSelection;
-        }
+        if (window == null) return;
 
-        var currentIndex = FilteredWindows.IndexOf(window);
-        var result = _windowActivationService.TryActivate(window);
-
-        if (result.Outcome == WindowActivationOutcome.TargetClosed)
-        {
-            _windows.Remove(window);
-            FilteredWindows.Remove(window);
-            NotifyWindowCountChanged();
-            SelectWindowAfterRemoval(currentIndex);
-        }
-
-        WindowActivationCompleted?.Invoke(
-            this,
-            new WindowActivationCompletedEventArgs(result));
-        return result;
+        window.Activate();
+        WindowActivated?.Invoke(this, EventArgs.Empty);
     }
 
     public void ClearSearch()
@@ -568,15 +544,5 @@ public class MainViewModel : ObservableObject, IDisposable
         {
             ExitGroupingMode();
         }
-    }
-}
-
-public sealed class WindowActivationCompletedEventArgs : EventArgs
-{
-    public WindowActivationResult Result { get; }
-
-    public WindowActivationCompletedEventArgs(WindowActivationResult result)
-    {
-        Result = result;
     }
 }
