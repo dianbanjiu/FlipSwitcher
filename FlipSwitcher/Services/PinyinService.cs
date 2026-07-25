@@ -31,7 +31,9 @@ public class PinyinService
     private readonly ConcurrentDictionary<char, string> _charPinyinCache = new();
 
     // Per-string caches — keyed by the input text. Values are already lowercase to avoid
-    // re-lowercasing on every comparison.
+    // re-lowercasing on every comparison. Capped to prevent unbounded growth across long
+    // sessions where every unique document title adds a new entry.
+    private const int MaxStringCacheSize = 1000;
     private readonly ConcurrentDictionary<string, string> _initialsCache = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _fullPinyinCache = new(StringComparer.Ordinal);
 
@@ -69,6 +71,8 @@ public class PinyinService
         }
 
         var result = sb.ToString();
+        if (_initialsCache.Count > MaxStringCacheSize)
+            _initialsCache.Clear();
         _initialsCache[text] = result;
         return result;
     }
@@ -103,6 +107,8 @@ public class PinyinService
         }
 
         var result = sb.ToString();
+        if (_fullPinyinCache.Count > MaxStringCacheSize)
+            _fullPinyinCache.Clear();
         _fullPinyinCache[text] = result;
         return result;
     }

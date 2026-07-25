@@ -110,7 +110,6 @@ public class IconCacheService
     /// <summary>
     /// Drop cached process-id mappings; called when the source list of windows changes
     /// dramatically (e.g. a process exited) to keep the cache from growing unboundedly.
-    /// Icon caches themselves are intentionally retained — same exe, same icon.
     /// </summary>
     public void TrimProcessCache(System.Collections.Generic.HashSet<uint> aliveProcessIds)
     {
@@ -120,6 +119,58 @@ public class IconCacheService
             {
                 _processPathCache.TryRemove(pid, out _);
             }
+        }
+    }
+
+    /// <summary>
+    /// Drop icon cache entries that no longer correspond to any visible window.
+    /// Mirrors <see cref="TrimProcessCache"/> for the three icon caches that were
+    /// previously never trimmed, causing unbounded memory growth over multi-day sessions.
+    /// </summary>
+    /// <param name="aliveProcessIds">PIDs of processes that currently have visible windows.</param>
+    /// <param name="aliveHandles">HWNDs of all currently visible windows.</param>
+    public void TrimIconCaches(
+        System.Collections.Generic.HashSet<uint> aliveProcessIds,
+        System.Collections.Generic.HashSet<IntPtr> aliveHandles)
+    {
+        // Derive alive exe paths and UWP app directories from alive process IDs.
+        var aliveExePaths = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var aliveAppDirs = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pid in aliveProcessIds)
+        {
+            if (_processPathCache.TryGetValue(pid, out var path) && path != null)
+            {
+                aliveExePaths.Add(path);
+                var dir = Path.GetDirectoryName(path);
+                if (dir != null)
+                    aliveAppDirs.Add(dir);
+            }
+        }
+
+        // Derive alive window-icon keys from alive handles.
+        var aliveWindowKeys = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+        foreach (var hWnd in aliveHandles)
+            aliveWindowKeys.Add($"hwnd:{hWnd.ToInt64()}");
+
+        // ── Trim _exeIconCache (keyed by exe path or UWP app directory) ──
+        foreach (var key in _exeIconCache.Keys)
+        {
+            if (!aliveExePaths.Contains(key) && !aliveAppDirs.Contains(key))
+                _exeIconCache.TryRemove(key, out _);
+        }
+
+        // ── Trim _windowIconCache (keyed by "hwnd:{Handle}") ──
+        foreach (var key in _windowIconCache.Keys)
+        {
+            if (!aliveWindowKeys.Contains(key))
+                _windowIconCache.TryRemove(key, out _);
+        }
+
+        // ── Trim _appxLogoCache (keyed by UWP app directory) ──
+        foreach (var key in _appxLogoCache.Keys)
+        {
+            if (!aliveAppDirs.Contains(key))
+                _appxLogoCache.TryRemove(key, out _);
         }
     }
 
