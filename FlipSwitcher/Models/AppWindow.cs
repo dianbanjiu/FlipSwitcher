@@ -388,13 +388,13 @@ public class AppWindow : INotifyPropertyChanged
 
             if (wasMinimized)
             {
-                NativeMethods.ShowWindow(Handle, wasMaximized
+                NativeMethods.ShowWindowAsync(Handle, wasMaximized
                     ? NativeMethods.SW_SHOWMAXIMIZED
                     : NativeMethods.SW_RESTORE);
             }
             else if (wasMaximized)
             {
-                NativeMethods.ShowWindow(Handle, NativeMethods.SW_SHOWMAXIMIZED);
+                NativeMethods.ShowWindowAsync(Handle, NativeMethods.SW_SHOWMAXIMIZED);
             }
 
             NativeMethods.BringWindowToTop(activationTarget);
@@ -428,7 +428,7 @@ public class AppWindow : INotifyPropertyChanged
             {
                 if (NativeMethods.IsIconic(Handle))
                 {
-                    NativeMethods.ShowWindow(Handle, NativeMethods.SW_RESTORE);
+                    NativeMethods.ShowWindowAsync(Handle, NativeMethods.SW_RESTORE);
                 }
                 NativeMethods.SwitchToThisWindow(activationTarget, true);
             }
