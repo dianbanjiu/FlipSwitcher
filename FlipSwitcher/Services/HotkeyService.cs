@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Windows;
 using System.Windows.Interop;
 using FlipSwitcher.Core;
@@ -24,7 +23,7 @@ public enum NavigationDirection
 public class NavigationEventArgs : EventArgs
 {
     public NavigationDirection Direction { get; }
-
+    
     public NavigationEventArgs(NavigationDirection direction)
     {
         Direction = direction;
@@ -37,41 +36,35 @@ public class NavigationEventArgs : EventArgs
 public class HotkeyService : IDisposable
 {
     private const int HOTKEY_ID_ALT_SPACE = 9000;
-
+    
     // Virtual key codes
     private const uint VK_SPACE = 0x20;
-
+    
     private IntPtr _windowHandle;
     private HwndSource? _source;
     private bool _hookInstalled;
     private bool _altSpaceRegistered;
-
+    
     // Low-level keyboard hook for Alt+Tab
     private IntPtr _keyboardHookId = IntPtr.Zero;
     private NativeMethods.LowLevelKeyboardProc? _keyboardProc;
     private readonly object _hookLock = new();
-    private Thread? _keyboardHookThread;
-    private uint _keyboardHookThreadId;
-    private volatile bool _useAltTab;
-    private volatile bool _isVisible;
-    private volatile bool _isSearchMode;
-    private volatile bool _isSettingsWindowOpen;
-    private volatile bool _hookStopRequested;
-    private int _modifierState;
-
-    private const int ModifierAlt = 0x07;
-    private const int ModifierShift = 0x38;
+    private bool _useAltTab;
+    private bool _isVisible;
+    private bool _isSearchMode;
+    private bool _isSettingsWindowOpen;
+    private bool _ignoreAltRelease;
 
     /// <summary>
     /// Fired when the activation hotkey is pressed (to show/hide FlipSwitcher)
     /// </summary>
     public event EventHandler? HotkeyPressed;
-
+    
     /// <summary>
     /// Fired when navigation keys are pressed while Alt is held (Tab, Shift+Tab, Up, Down)
     /// </summary>
     public event EventHandler<NavigationEventArgs>? NavigationRequested;
-
+    
     /// <summary>
     /// Fired when Alt key is released (to confirm selection)
     /// </summary>
@@ -114,27 +107,6 @@ public class HotkeyService : IDisposable
 
     public string CurrentHotkey { get; private set; } = "Alt + Tab";
     public bool IsAltTabEnabled => _useAltTab;
-    internal bool IsKeyboardHookRunning
-    {
-        get
-        {
-            lock (_hookLock)
-            {
-                return _keyboardHookId != IntPtr.Zero &&
-                       _keyboardHookThread?.IsAlive == true;
-            }
-        }
-    }
-    internal uint KeyboardHookThreadId
-    {
-        get
-        {
-            lock (_hookLock)
-            {
-                return _keyboardHookThreadId;
-            }
-        }
-    }
 
     public HotkeyService()
     {
@@ -168,6 +140,14 @@ public class HotkeyService : IDisposable
         _isSettingsWindowOpen = isOpen;
     }
 
+    /// <summary>
+    /// Temporarily ignore Alt release events (used during window activation to prevent re-triggering)
+    /// </summary>
+    public void SetIgnoreAltRelease(bool ignore)
+    {
+        _ignoreAltRelease = ignore;
+    }
+
     public void RegisterHotkeys(Window window, bool useAltSpace = false, bool useAltTab = true)
     {
         var helper = new WindowInteropHelper(window);
@@ -189,7 +169,7 @@ public class HotkeyService : IDisposable
         // Register Alt + Space using RegisterHotKey
         if (useAltSpace)
         {
-            if (NativeMethods.RegisterHotKey(_windowHandle, HOTKEY_ID_ALT_SPACE,
+            if (NativeMethods.RegisterHotKey(_windowHandle, HOTKEY_ID_ALT_SPACE, 
                 NativeMethods.MOD_ALT | NativeMethods.MOD_NOREPEAT, VK_SPACE))
             {
                 _altSpaceRegistered = true;
@@ -222,183 +202,56 @@ public class HotkeyService : IDisposable
 
     private bool InstallKeyboardHook()
     {
-        var hookReady = new ManualResetEventSlim(false);
-
         lock (_hookLock)
         {
-            if (_keyboardHookThread?.IsAlive == true)
-            {
-                hookReady.Dispose();
-                return _keyboardHookId != IntPtr.Zero;
-            }
+            if (_keyboardHookId != IntPtr.Zero)
+                return true;
 
-            _keyboardHookThread = new Thread(() => KeyboardHookThreadMain(hookReady))
-            {
-                IsBackground = true,
-                Name = "FlipSwitcher keyboard hook"
-            };
-            _hookStopRequested = false;
-            _keyboardHookThread.Start();
-        }
+            _keyboardProc = KeyboardHookCallback;
 
-        if (!hookReady.Wait(TimeSpan.FromSeconds(2)))
-        {
-            UninstallKeyboardHook();
-            return false;
-        }
-
-        hookReady.Dispose();
-        lock (_hookLock)
-        {
-            return _keyboardHookId != IntPtr.Zero;
-        }
-    }
-
-    private void KeyboardHookThreadMain(ManualResetEventSlim hookReady)
-    {
-        IntPtr hookId = IntPtr.Zero;
-        bool readySignaled = false;
-        try
-        {
-            uint threadId = NativeMethods.GetCurrentThreadId();
-
-            // Force creation of this thread's message queue before another thread can post WM_QUIT.
-            NativeMethods.PeekMessage(
-                out _,
-                IntPtr.Zero,
-                0,
-                0,
-                NativeMethods.PM_NOREMOVE);
-
-            NativeMethods.LowLevelKeyboardProc keyboardProc = KeyboardHookCallback;
             using var curProcess = Process.GetCurrentProcess();
             using var curModule = curProcess.MainModule;
+
             if (curModule != null)
             {
-                hookId = NativeMethods.SetWindowsHookEx(
+                _keyboardHookId = NativeMethods.SetWindowsHookEx(
                     NativeMethods.WH_KEYBOARD_LL,
-                    keyboardProc,
+                    _keyboardProc,
                     NativeMethods.GetModuleHandle(curModule.ModuleName),
                     0);
             }
 
-            lock (_hookLock)
-            {
-                _keyboardProc = hookId != IntPtr.Zero ? keyboardProc : null;
-                _keyboardHookId = hookId;
-                _keyboardHookThreadId = threadId;
-            }
+            if (_keyboardHookId == IntPtr.Zero)
+                _keyboardProc = null;
 
-            hookReady.Set();
-            readySignaled = true;
-            if (hookId == IntPtr.Zero)
-                return;
-            if (_hookStopRequested)
-                return;
-
-            int messageResult;
-            do
-            {
-                messageResult = NativeMethods.GetMessage(
-                    out _,
-                    IntPtr.Zero,
-                    0,
-                    0);
-            }
-            while (messageResult > 0);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Keyboard hook thread failed: {ex}");
-            if (!readySignaled)
-                hookReady.Set();
-        }
-        finally
-        {
-            if (hookId != IntPtr.Zero)
-                NativeMethods.UnhookWindowsHookEx(hookId);
-
-            Volatile.Write(ref _modifierState, 0);
-            lock (_hookLock)
-            {
-                if (_keyboardHookThread == Thread.CurrentThread)
-                {
-                    _keyboardHookId = IntPtr.Zero;
-                    _keyboardHookThreadId = 0;
-                    _keyboardProc = null;
-                    _keyboardHookThread = null;
-                }
-            }
+            return _keyboardHookId != IntPtr.Zero;
         }
     }
 
     private void UninstallKeyboardHook()
     {
-        Thread? hookThread;
-        uint hookThreadId;
-        IntPtr hookId;
-
-        _hookStopRequested = true;
         lock (_hookLock)
         {
-            hookThread = _keyboardHookThread;
-            hookThreadId = _keyboardHookThreadId;
-            hookId = _keyboardHookId;
+            if (_keyboardHookId != IntPtr.Zero)
+            {
+                NativeMethods.UnhookWindowsHookEx(_keyboardHookId);
+                _keyboardHookId = IntPtr.Zero;
+            }
+            // Clear delegate reference only after unhook to prevent GC from collecting it during callback
+            _keyboardProc = null;
         }
-
-        if (hookThreadId != 0)
-        {
-            NativeMethods.PostThreadMessage(
-                hookThreadId,
-                NativeMethods.WM_QUIT,
-                UIntPtr.Zero,
-                IntPtr.Zero);
-        }
-
-        if (hookThread != null &&
-            hookThread != Thread.CurrentThread &&
-            hookThread.IsAlive &&
-            !hookThread.Join(TimeSpan.FromSeconds(1)) &&
-            hookId != IntPtr.Zero)
-        {
-            // The queue normally exits immediately. If it does not, at least remove the global
-            // hook so a stalled shutdown cannot affect keyboard input in other applications.
-            NativeMethods.UnhookWindowsHookEx(hookId);
-        }
-
-        Volatile.Write(ref _modifierState, 0);
     }
 
     private bool IsAltPressed()
     {
-        return (Volatile.Read(ref _modifierState) & ModifierAlt) != 0;
+        return (NativeMethods.GetAsyncKeyState(NativeMethods.VK_MENU) & 0x8000) != 0 ||
+               (NativeMethods.GetAsyncKeyState(NativeMethods.VK_LMENU) & 0x8000) != 0 ||
+               (NativeMethods.GetAsyncKeyState(NativeMethods.VK_RMENU) & 0x8000) != 0;
     }
 
     private bool IsShiftPressed()
     {
-        return (Volatile.Read(ref _modifierState) & ModifierShift) != 0;
-    }
-
-    private void UpdateModifierState(uint vkCode, bool isKeyDown, bool isKeyUp)
-    {
-        int modifier = vkCode switch
-        {
-            NativeMethods.VK_MENU => 0x01,
-            NativeMethods.VK_LMENU => 0x02,
-            NativeMethods.VK_RMENU => 0x04,
-            NativeMethods.VK_SHIFT => 0x08,
-            NativeMethods.VK_LSHIFT => 0x10,
-            NativeMethods.VK_RSHIFT => 0x20,
-            _ => 0
-        };
-
-        if (modifier == 0)
-            return;
-
-        if (isKeyDown)
-            Interlocked.Or(ref _modifierState, modifier);
-        else if (isKeyUp)
-            Interlocked.And(ref _modifierState, ~modifier);
+        return (NativeMethods.GetAsyncKeyState(NativeMethods.VK_SHIFT) & 0x8000) != 0;
     }
 
     private void InvokeOnDispatcher(Action action)
@@ -421,11 +274,11 @@ public class HotkeyService : IDisposable
 
     private void HandleAltRelease(bool isKeyUp, uint vkCode)
     {
-        if (!isKeyUp || !_isVisible)
+        if (!isKeyUp || !_isVisible || _ignoreAltRelease)
             return;
 
-        if (vkCode == NativeMethods.VK_MENU ||
-            vkCode == NativeMethods.VK_LMENU ||
+        if (vkCode == NativeMethods.VK_MENU || 
+            vkCode == NativeMethods.VK_LMENU || 
             vkCode == NativeMethods.VK_RMENU)
         {
             InvokeOnDispatcher(() => AltReleased?.Invoke(this, EventArgs.Empty));
@@ -491,7 +344,7 @@ public class HotkeyService : IDisposable
     {
         // Hot path: this runs for every keystroke system-wide. Be paranoid about cost.
         if (nCode < 0 || !_useAltTab)
-            return NativeMethods.CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
+            return NativeMethods.CallNextHookEx(_keyboardHookId, nCode, wParam, lParam);
 
         long msg = wParam.ToInt64();
         bool isKeyDown = msg == NativeMethods.WM_KEYDOWN || msg == NativeMethods.WM_SYSKEYDOWN;
@@ -499,7 +352,7 @@ public class HotkeyService : IDisposable
 
         // Neither down nor up — don't bother decoding the struct.
         if (!isKeyDown && !isKeyUp)
-            return NativeMethods.CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
+            return NativeMethods.CallNextHookEx(_keyboardHookId, nCode, wParam, lParam);
 
         // KBDLLHOOKSTRUCT layout: vkCode is the first field (UInt32 at offset 0).
         // Reading it directly via unsafe pointer avoids the cost of full Marshal.PtrToStructure
@@ -511,20 +364,18 @@ public class HotkeyService : IDisposable
             vkCode = *(uint*)lParam;
         }
 
-        UpdateModifierState(vkCode, isKeyDown, isKeyUp);
-
         if (HandleEscapeKey(isKeyDown, vkCode))
             return (IntPtr)1;
 
         if (isKeyUp)
         {
             HandleAltRelease(true, vkCode);
-            return NativeMethods.CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
+            return NativeMethods.CallNextHookEx(_keyboardHookId, nCode, wParam, lParam);
         }
 
         // From here on, isKeyDown == true. Only act when Alt is held.
         if (!IsAltPressed())
-            return NativeMethods.CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
+            return NativeMethods.CallNextHookEx(_keyboardHookId, nCode, wParam, lParam);
 
         // Tab key — show/navigate.
         if (vkCode == NativeMethods.VK_TAB)
@@ -542,7 +393,7 @@ public class HotkeyService : IDisposable
         if (HandleNavigationKeys(vkCode) || HandleVisibleShortcuts(vkCode))
             return (IntPtr)1;
 
-        return NativeMethods.CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
+        return NativeMethods.CallNextHookEx(_keyboardHookId, nCode, wParam, lParam);
     }
 
     public void UnregisterAllHotkeys()

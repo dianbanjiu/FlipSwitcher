@@ -427,6 +427,7 @@ public class WindowService
                 _elevationCache.Remove(pid);
             }
             IconCacheService.Instance.TrimProcessCache(_seenProcessIds);
+            IconCacheService.Instance.TrimIconCaches(_seenProcessIds, _seenHandles);
         }
 
         // Compose the final list: normal Z-ordered windows first (preserving MRU semantics),

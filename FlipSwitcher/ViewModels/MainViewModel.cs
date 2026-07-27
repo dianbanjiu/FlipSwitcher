@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -33,8 +34,16 @@ namespace FlipSwitcher.ViewModels;
 public class MainViewModel : ObservableObject, IDisposable
 {
     private readonly WindowService _windowService;
-    private readonly IWindowActivationService _windowActivationService;
     private string _searchText = string.Empty;
+    /// <summary>
+    /// Tracks which HWND is currently being activated on a background thread.
+    /// <see cref="IntPtr.Zero"/> = idle. Unlike a boolean flag, tracking the HWND
+    /// allows a new activation to supersede a stuck one — e.g. user switches to a
+    /// hung window, then switches to a responsive window. The stuck thread for the
+    /// hung window is orphaned (at most one per unique hung HWND) while the new
+    /// responsive target activates normally.
+    /// </summary>
+    private IntPtr _activatingHandle;
     private AppWindow? _selectedWindow;
     private List<AppWindow> _windows = new();
     private ObservableCollection<AppWindow> _filteredWindows = new();
@@ -51,20 +60,14 @@ public class MainViewModel : ObservableObject, IDisposable
     public bool ShowMonitorInfo => SettingsService.Instance.Settings.ShowMonitorInfo;
 
     public MainViewModel()
-        : this(new WindowActivationService())
-    {
-    }
-
-    internal MainViewModel(IWindowActivationService windowActivationService)
     {
         _windowService = new WindowService();
-        _windowActivationService = windowActivationService;
 
-        SwitchToWindowCommand = new RelayCommand<AppWindow>(window => SwitchToWindow(window));
+        SwitchToWindowCommand = new RelayCommand<AppWindow>(SwitchToWindow);
         RefreshWindowsCommand = new RelayCommand(() => RefreshWindows());
         MoveSelectionUpCommand = new RelayCommand(MoveSelectionUp);
         MoveSelectionDownCommand = new RelayCommand(MoveSelectionDown);
-        ActivateSelectedCommand = new RelayCommand(() => ActivateSelected());
+        ActivateSelectedCommand = new RelayCommand(ActivateSelected);
 
         _searchDebounceTimer = new DispatcherTimer
         {
@@ -159,7 +162,7 @@ public class MainViewModel : ObservableObject, IDisposable
     public ICommand MoveSelectionDownCommand { get; }
     public ICommand ActivateSelectedCommand { get; }
 
-    public event EventHandler<WindowActivationCompletedEventArgs>? WindowActivationCompleted;
+    public event EventHandler? WindowActivated;
 
     /// <summary>
     /// Update <see cref="_filteredWindows"/> in place with minimal collection-changed notifications.
@@ -381,9 +384,12 @@ public class MainViewModel : ObservableObject, IDisposable
         SelectedWindow = FilteredWindows[newIndex];
     }
 
-    public WindowActivationResult ActivateSelected()
+    public void ActivateSelected()
     {
-        return SwitchToWindow(SelectedWindow);
+        if (SelectedWindow != null)
+        {
+            SwitchToWindow(SelectedWindow);
+        }
     }
 
     /// <summary>
@@ -455,32 +461,43 @@ public class MainViewModel : ObservableObject, IDisposable
         SelectWindowAfterRemoval(currentIndex);
     }
 
-    private WindowActivationResult SwitchToWindow(AppWindow? window)
+    private void SwitchToWindow(AppWindow? window)
     {
-        if (window == null)
+        if (window == null) return;
+
+        var target = window.Handle;
+
+        // Atomically claim the activation slot. If the same HWND is already
+        // being activated (blocked on a hung window), skip silently.
+        var current = Interlocked.CompareExchange(ref _activatingHandle, target, IntPtr.Zero);
+        if (current == target)
+            return; // same HWND already being activated — skip
+
+        if (current != IntPtr.Zero)
         {
-            var noSelection = new WindowActivationResult(WindowActivationOutcome.NoSelection);
-            WindowActivationCompleted?.Invoke(
-                this,
-                new WindowActivationCompletedEventArgs(noSelection));
-            return noSelection;
+            // A different HWND was being activated (likely stuck). Overwrite
+            // so the new responsive target can proceed. The old thread is
+            // orphaned but will self-clean when the hung window recovers.
+            Interlocked.Exchange(ref _activatingHandle, target);
         }
 
-        var currentIndex = FilteredWindows.IndexOf(window);
-        var result = _windowActivationService.TryActivate(window);
+        // Hide the switcher immediately so the UI stays responsive even when
+        // the target window is hung. Win32 activation runs on a background thread.
+        WindowActivated?.Invoke(this, EventArgs.Empty);
 
-        if (result.Outcome == WindowActivationOutcome.TargetClosed)
+        Task.Run(() =>
         {
-            _windows.Remove(window);
-            FilteredWindows.Remove(window);
-            NotifyWindowCountChanged();
-            SelectWindowAfterRemoval(currentIndex);
-        }
-
-        WindowActivationCompleted?.Invoke(
-            this,
-            new WindowActivationCompletedEventArgs(result));
-        return result;
+            try
+            {
+                window.Activate();
+            }
+            finally
+            {
+                // Only clear the guard if we're still the "current" activation.
+                // If superseded by a newer call, leave the newer target's handle.
+                Interlocked.CompareExchange(ref _activatingHandle, IntPtr.Zero, target);
+            }
+        });
     }
 
     public void ClearSearch()
@@ -568,15 +585,5 @@ public class MainViewModel : ObservableObject, IDisposable
         {
             ExitGroupingMode();
         }
-    }
-}
-
-public sealed class WindowActivationCompletedEventArgs : EventArgs
-{
-    public WindowActivationResult Result { get; }
-
-    public WindowActivationCompletedEventArgs(WindowActivationResult result)
-    {
-        Result = result;
     }
 }
