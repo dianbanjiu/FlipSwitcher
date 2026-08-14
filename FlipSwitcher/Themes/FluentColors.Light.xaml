@@ -24,10 +24,14 @@
     <Color x:Key="TextTertiary">#66000000</Color>
     <Color x:Key="TextDisabled">#33000000</Color>
     <Color x:Key="TextOnAccent">#FFFFFFFF</Color>
+    <Color x:Key="AccentText">#FF005A9E</Color>
+    <Color x:Key="HyperlinkForeground">#FF005A9E</Color>
+    <Color x:Key="FocusStroke">#FF005A9E</Color>
     
     <!-- Accent Colors - Microsoft Blue -->
     <Color x:Key="AccentDefault">#FF0078D4</Color>
     <Color x:Key="AccentLight1">#FF429CE3</Color>
+    <Color x:Key="AccentHover">#FF106EBE</Color>
     <Color x:Key="AccentLight2">#FF6BB9F0</Color>
     <Color x:Key="AccentLight3">#FF99D1FA</Color>
     <Color x:Key="AccentDark1">#FF005A9E</Color>
@@ -48,7 +52,7 @@
     
     <!-- System Fill Colors - Caution (for elevated windows) -->
     <Color x:Key="SystemFillColorCaution">#FF9D5D00</Color>
-    <Color x:Key="SystemFillColorCautionBackground">#33FFF4CE</Color>
+    <Color x:Key="SystemFillColorCautionBackground">#33DF8E1D</Color>
     
     <!-- ScrollBar Colors -->
     <Color x:Key="ScrollBarThumbDefault">#4D000000</Color>
@@ -74,9 +78,13 @@
     <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiary}"/>
     <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabled}"/>
     <SolidColorBrush x:Key="TextOnAccentBrush" Color="{StaticResource TextOnAccent}"/>
+    <SolidColorBrush x:Key="AccentTextBrush" Color="{StaticResource AccentText}"/>
+    <SolidColorBrush x:Key="HyperlinkForegroundBrush" Color="{StaticResource HyperlinkForeground}"/>
+    <SolidColorBrush x:Key="FocusStrokeBrush" Color="{StaticResource FocusStroke}"/>
     
     <SolidColorBrush x:Key="AccentDefaultBrush" Color="{StaticResource AccentDefault}"/>
     <SolidColorBrush x:Key="AccentLight1Brush" Color="{StaticResource AccentLight1}"/>
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHover}"/>
     <SolidColorBrush x:Key="AccentLight2Brush" Color="{StaticResource AccentLight2}"/>
     <SolidColorBrush x:Key="AccentLight3Brush" Color="{StaticResource AccentLight3}"/>
     <SolidColorBrush x:Key="AccentDark1Brush" Color="{StaticResource AccentDark1}"/>

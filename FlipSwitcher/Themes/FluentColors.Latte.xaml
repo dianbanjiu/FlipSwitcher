@@ -13,21 +13,25 @@
     <!-- Surface Colors -->
     <Color x:Key="SurfaceStroke">#1A4C4F69</Color>
     <Color x:Key="SurfaceStrokeDefault">#0F4C4F69</Color>
-    <Color x:Key="CardBackground">#FFCCD0DA</Color>
-    <Color x:Key="CardBackgroundHover">#FFBCC0CC</Color>
-    <Color x:Key="CardBackgroundPressed">#FFACB0BE</Color>
+    <Color x:Key="CardBackground">#FFDCE0E8</Color>
+    <Color x:Key="CardBackgroundHover">#FFCCD0DA</Color>
+    <Color x:Key="CardBackgroundPressed">#FFBCC0CC</Color>
     <Color x:Key="CardBackgroundSelected">#FF7287FD</Color>
     
     <!-- Text Colors -->
     <Color x:Key="TextPrimary">#FF4C4F69</Color>
-    <Color x:Key="TextSecondary">#FF5C5F77</Color>
-    <Color x:Key="TextTertiary">#FF6C6F85</Color>
+    <Color x:Key="TextSecondary">#FF53566C</Color>
+    <Color x:Key="TextTertiary">#FF5C5F77</Color>
     <Color x:Key="TextDisabled">#FF9CA0B0</Color>
-    <Color x:Key="TextOnAccent">#FFFFFFFF</Color>
+    <Color x:Key="TextOnAccent">#FF11111B</Color>
+    <Color x:Key="AccentText">#FF3347B0</Color>
+    <Color x:Key="HyperlinkForeground">#FF174A8B</Color>
+    <Color x:Key="FocusStroke">#FF3347B0</Color>
     
     <!-- Accent Colors - Catppuccin Lavender (柔和高对比) -->
     <Color x:Key="AccentDefault">#FF7287FD</Color>
     <Color x:Key="AccentLight1">#FF8A9BFD</Color>
+    <Color x:Key="AccentHover">#FF8A9BFD</Color>
     <Color x:Key="AccentLight2">#FFA2AFFE</Color>
     <Color x:Key="AccentLight3">#FFBAC3FE</Color>
     <Color x:Key="AccentDark1">#FF5A73FC</Color>
@@ -39,7 +43,7 @@
     <Color x:Key="ControlSecondary">#154C4F69</Color>
     <Color x:Key="ControlTertiary">#084C4F69</Color>
     <Color x:Key="ControlInputActive">#B3EFF1F5</Color>
-    <Color x:Key="ControlStrongDefault">#8B4C4F69</Color>
+    <Color x:Key="ControlStrongDefault">#C04C4F69</Color>
     <Color x:Key="ControlStrongDisabled">#3D4C4F69</Color>
     
     <!-- Subtle Colors -->
@@ -47,13 +51,13 @@
     <Color x:Key="SubtleSecondary">#0F4C4F69</Color>
     
     <!-- System Fill Colors - Caution (for elevated windows) -->
-    <Color x:Key="SystemFillColorCaution">#FFDF8E1D</Color>
+    <Color x:Key="SystemFillColorCaution">#FF8A5000</Color>
     <Color x:Key="SystemFillColorCautionBackground">#33DF8E1D</Color>
     
     <!-- ScrollBar Colors -->
-    <Color x:Key="ScrollBarThumbDefault">#4D4C4F69</Color>
-    <Color x:Key="ScrollBarThumbHover">#664C4F69</Color>
-    <Color x:Key="ScrollBarThumbPressed">#804C4F69</Color>
+    <Color x:Key="ScrollBarThumbDefault">#A34C4F69</Color>
+    <Color x:Key="ScrollBarThumbHover">#B34C4F69</Color>
+    <Color x:Key="ScrollBarThumbPressed">#CC4C4F69</Color>
     
     <!-- Brushes -->
     <SolidColorBrush x:Key="BackgroundAcrylicBaseBrush" Color="{StaticResource BackgroundAcrylicBase}" />
@@ -74,9 +78,13 @@
     <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiary}" />
     <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabled}" />
     <SolidColorBrush x:Key="TextOnAccentBrush" Color="{StaticResource TextOnAccent}" />
+    <SolidColorBrush x:Key="AccentTextBrush" Color="{StaticResource AccentText}" />
+    <SolidColorBrush x:Key="HyperlinkForegroundBrush" Color="{StaticResource HyperlinkForeground}" />
+    <SolidColorBrush x:Key="FocusStrokeBrush" Color="{StaticResource FocusStroke}" />
     
     <SolidColorBrush x:Key="AccentDefaultBrush" Color="{StaticResource AccentDefault}" />
     <SolidColorBrush x:Key="AccentLight1Brush" Color="{StaticResource AccentLight1}" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHover}" />
     <SolidColorBrush x:Key="AccentLight2Brush" Color="{StaticResource AccentLight2}" />
     <SolidColorBrush x:Key="AccentLight3Brush" Color="{StaticResource AccentLight3}" />
     <SolidColorBrush x:Key="AccentDark1Brush" Color="{StaticResource AccentDark1}" />
@@ -104,8 +112,8 @@
     </LinearGradientBrush>
     
     <LinearGradientBrush x:Key="CardGradientBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#FFBCC0CC" Offset="0"/>
-        <GradientStop Color="#FFCCD0DA" Offset="1"/>
+        <GradientStop Color="#FFE6E9EF" Offset="0"/>
+        <GradientStop Color="#FFDCE0E8" Offset="1"/>
     </LinearGradientBrush>
 
 </ResourceDictionary>

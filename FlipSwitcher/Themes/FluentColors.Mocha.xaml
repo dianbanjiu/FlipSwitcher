@@ -23,11 +23,15 @@
     <Color x:Key="TextSecondary">#FFBAC2DE</Color>
     <Color x:Key="TextTertiary">#FFA6ADC8</Color>
     <Color x:Key="TextDisabled">#FF6C7086</Color>
-    <Color x:Key="TextOnAccent">#FFFFFFFF</Color>
+    <Color x:Key="TextOnAccent">#FF11111B</Color>
+    <Color x:Key="AccentText">#FFA2AFFE</Color>
+    <Color x:Key="HyperlinkForeground">#FF89B4FA</Color>
+    <Color x:Key="FocusStroke">#FF7287FD</Color>
     
     <!-- Accent Colors - Catppuccin Lavender (深色版本，高对比) -->
     <Color x:Key="AccentDefault">#FF7287FD</Color>
     <Color x:Key="AccentLight1">#FF8A9BFD</Color>
+    <Color x:Key="AccentHover">#FF8A9BFD</Color>
     <Color x:Key="AccentLight2">#FFA2AFFE</Color>
     <Color x:Key="AccentLight3">#FFBAC3FE</Color>
     <Color x:Key="AccentDark1">#FF5A73FC</Color>
@@ -51,9 +55,9 @@
     <Color x:Key="SystemFillColorCautionBackground">#33F9E2AF</Color>
     
     <!-- ScrollBar Colors -->
-    <Color x:Key="ScrollBarThumbDefault">#4DCDD6F4</Color>
-    <Color x:Key="ScrollBarThumbHover">#66CDD6F4</Color>
-    <Color x:Key="ScrollBarThumbPressed">#80CDD6F4</Color>
+    <Color x:Key="ScrollBarThumbDefault">#68CDD6F4</Color>
+    <Color x:Key="ScrollBarThumbHover">#80CDD6F4</Color>
+    <Color x:Key="ScrollBarThumbPressed">#99CDD6F4</Color>
     
     <!-- Brushes -->
     <SolidColorBrush x:Key="BackgroundAcrylicBaseBrush" Color="{StaticResource BackgroundAcrylicBase}" />
@@ -74,9 +78,13 @@
     <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiary}" />
     <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabled}" />
     <SolidColorBrush x:Key="TextOnAccentBrush" Color="{StaticResource TextOnAccent}" />
+    <SolidColorBrush x:Key="AccentTextBrush" Color="{StaticResource AccentText}" />
+    <SolidColorBrush x:Key="HyperlinkForegroundBrush" Color="{StaticResource HyperlinkForeground}" />
+    <SolidColorBrush x:Key="FocusStrokeBrush" Color="{StaticResource FocusStroke}" />
     
     <SolidColorBrush x:Key="AccentDefaultBrush" Color="{StaticResource AccentDefault}" />
     <SolidColorBrush x:Key="AccentLight1Brush" Color="{StaticResource AccentLight1}" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHover}" />
     <SolidColorBrush x:Key="AccentLight2Brush" Color="{StaticResource AccentLight2}" />
     <SolidColorBrush x:Key="AccentLight3Brush" Color="{StaticResource AccentLight3}" />
     <SolidColorBrush x:Key="AccentDark1Brush" Color="{StaticResource AccentDark1}" />

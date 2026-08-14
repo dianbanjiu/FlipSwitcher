@@ -59,6 +59,17 @@
         <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
     </Style>
 
+    <Style x:Key="FluentHyperlinkStyle" TargetType="Hyperlink">
+        <Setter Property="Foreground" Value="{DynamicResource HyperlinkForegroundBrush}"/>
+        <Setter Property="TextDecorations" Value="Underline"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- Fluent 2 Search Box Style -->
     <Style x:Key="FluentSearchBoxStyle" TargetType="TextBox">
         <Setter Property="FontFamily" Value="{DynamicResource SegoeUIVariable}"/>
@@ -68,7 +79,7 @@
         <Setter Property="BorderBrush" Value="{DynamicResource SurfaceStrokeBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="0"/>
-        <Setter Property="CaretBrush" Value="{DynamicResource AccentDefaultBrush}"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource FocusStrokeBrush}"/>
         <Setter Property="SelectionBrush" Value="{DynamicResource AccentDefaultBrush}"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Template">
@@ -131,7 +142,7 @@
                         
                         <!-- Focus Indicator -->
                         <Border x:Name="FocusBorder"
-                                BorderBrush="{StaticResource AccentDefaultBrush}"
+                                BorderBrush="{StaticResource FocusStrokeBrush}"
                                 BorderThickness="0,0,0,2"
                                 CornerRadius="8"
                                 Opacity="0"/>
@@ -162,6 +173,7 @@
 
     <!-- Fluent 2 Window Item Style -->
     <Style x:Key="FluentWindowItemStyle" TargetType="ListBoxItem">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="12,10"/>
@@ -177,7 +189,7 @@
                             CornerRadius="8"
                             Padding="{TemplateBinding Padding}"
                             Margin="{TemplateBinding Margin}"
-                            TextElement.Foreground="{StaticResource TextPrimaryBrush}">
+                            TextElement.Foreground="{TemplateBinding Foreground}">
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="Center"/>
                     </Border>
@@ -189,20 +201,25 @@
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentDefaultBrush}"/>
                             <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentLight1Brush}"/>
-                            <Setter TargetName="Border" Property="TextElement.Foreground" Value="{StaticResource TextOnAccentBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextOnAccentBrush}"/>
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsSelected" Value="True"/>
                                 <Condition Property="IsMouseOver" Value="True"/>
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentLight1Brush}"/>
-                            <Setter TargetName="Border" Property="TextElement.Foreground" Value="{StaticResource TextOnAccentBrush}"/>
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentHoverBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextOnAccentBrush}"/>
                         </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsElevated}" Value="True">
+                <Setter Property="AutomationProperties.HelpText" Value="{DynamicResource ElevatedWindow}"/>
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
     <!-- Fluent 2 ScrollBar Thumb Style -->
@@ -370,6 +387,10 @@
                             <Setter TargetName="Border" Property="Background" Value="{StaticResource ControlTertiaryBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
                         </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Border" Property="Opacity" Value="0.55"/>
+                            <Setter Property="Cursor" Value="Arrow"/>
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -396,10 +417,14 @@
                     
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentLight1Brush}"/>
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentDark1Brush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Border" Property="Opacity" Value="0.55"/>
+                            <Setter Property="Cursor" Value="Arrow"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -458,7 +483,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
-                    <Grid>
+                    <Grid x:Name="Root">
                         <ToggleButton x:Name="ToggleButton"
                                       Focusable="False"
                                       IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
@@ -535,6 +560,11 @@
                             </Border>
                         </Popup>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.55"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -612,8 +642,8 @@
                                 <Condition Property="IsChecked" Value="True"/>
                                 <Condition Property="IsMouseOver" Value="True"/>
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentLight1Brush}"/>
-                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentLight1Brush}"/>
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentHoverBrush}"/>
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentHoverBrush}"/>
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Border" Property="Opacity" Value="0.5"/>
