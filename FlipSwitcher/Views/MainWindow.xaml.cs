@@ -1,9 +1,13 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using FlipSwitcher.Core;
+using FlipSwitcher.Models;
 using FlipSwitcher.Services;
 using FlipSwitcher.ViewModels;
 
@@ -18,7 +22,17 @@ public partial class MainWindow : Window
     private readonly HotkeyService _hotkeyService;
     private bool _isClosing;
     private bool _isAltTabMode; // Track if we're in Alt+Tab hold mode
-    private bool _isSearchMode; // Track if we're in search mode
+
+    public static readonly DependencyProperty IsSearchModeProperty = DependencyProperty.Register(
+        nameof(IsSearchMode),
+        typeof(bool),
+        typeof(MainWindow));
+
+    public bool IsSearchMode
+    {
+        get => (bool)GetValue(IsSearchModeProperty);
+        private set => SetValue(IsSearchModeProperty, value);
+    }
 
     public HotkeyService HotkeyService => _hotkeyService;
 
@@ -197,7 +211,12 @@ public partial class MainWindow : Window
 
     private void TryCloseSelectedWindow()
     {
-        if (!_viewModel.CloseSelectedWindow())
+        TryCloseWindow(_viewModel.SelectedWindow);
+    }
+
+    private void TryCloseWindow(AppWindow? window)
+    {
+        if (!_viewModel.CloseWindow(window))
         {
             // Cannot close elevated window, show prompt
             FluentDialog.Show(
@@ -226,7 +245,7 @@ public partial class MainWindow : Window
     private void EnterSearchMode()
     {
         _isAltTabMode = false;
-        _isSearchMode = true;
+        IsSearchMode = true;
         _hotkeyService.SetSearchMode(true);
         
         ForceActivateWindow();
@@ -382,7 +401,7 @@ public partial class MainWindow : Window
             Hide();
             _viewModel.ClearSearch();
             _isAltTabMode = false;
-            _isSearchMode = false;
+            IsSearchMode = false;
             
             // Notify hotkey service that we're hidden
             _hotkeyService.SetVisible(false);
@@ -408,11 +427,11 @@ public partial class MainWindow : Window
         if (!SettingsService.Instance.Settings.HideOnFocusLost)
         {
             // In search mode with HideOnFocusLost disabled, try to regain focus
-            if (_isSearchMode)
+            if (IsSearchMode)
             {
                 Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
                 {
-                    if (_isSearchMode && IsVisible)
+                    if (IsSearchMode && IsVisible)
                     {
                         ForceActivateWindow();
                         SearchBox.Focus();
@@ -573,13 +592,50 @@ public partial class MainWindow : Window
         return null;
     }
 
+    private static T? FindVisualAncestor<T>(DependencyObject? element) where T : DependencyObject
+    {
+        while (element != null)
+        {
+            if (element is T ancestor)
+                return ancestor;
+
+            element = element switch
+            {
+                Visual => VisualTreeHelper.GetParent(element),
+                ContentElement contentElement => ContentOperations.GetParent(contentElement)
+                    ?? (contentElement as FrameworkContentElement)?.Parent,
+                _ => LogicalTreeHelper.GetParent(element)
+            };
+        }
+
+        return null;
+    }
+
     private void WindowList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        // Activate the selected window on click
-        if (_viewModel.SelectedWindow != null)
-        {
-            ActivateSelectedWindow();
-        }
+        var source = e.OriginalSource as DependencyObject;
+
+        // Interactive controls inside a row own their clicks. In particular, the search-mode
+        // close button must not activate the target window before its Click event runs.
+        if (FindVisualAncestor<ButtonBase>(source) != null)
+            return;
+
+        if (FindVisualAncestor<ListBoxItem>(source)?.DataContext is not AppWindow window)
+            return;
+
+        _viewModel.SelectedWindow = window;
+        ActivateSelectedWindow();
+    }
+
+    private void WindowCloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+
+        if (!IsSearchMode || sender is not FrameworkElement { DataContext: AppWindow window })
+            return;
+
+        TryCloseWindow(window);
+        SearchBox.Focus();
     }
 
     private void ViewModel_WindowActivated(object? sender, EventArgs e)

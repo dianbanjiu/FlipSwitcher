@@ -81,6 +81,38 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+
+        <Style x:Key="SearchModeWindowCloseButtonStyle"
+            TargetType="Button"
+            BasedOn="{StaticResource FluentButtonStyle}">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger
+                    Binding="{Binding IsSearchMode, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                    Value="True">
+                    <Setter Property="Visibility" Value="Hidden" />
+                </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition
+                            Binding="{Binding IsSearchMode, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                            Value="True" />
+                        <Condition
+                            Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}"
+                            Value="True" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Visibility" Value="Visible" />
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
     <!-- Main Container with Acrylic-like background -->
@@ -177,6 +209,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
@@ -293,6 +326,26 @@
                                             </Canvas>
                                         </Viewbox>
                                     </Border>
+
+                                    <!-- Mouse close action (search mode only) -->
+                                    <Button Grid.Column="5"
+                                        Style="{StaticResource SearchModeWindowCloseButtonStyle}"
+                                        ToolTip="{DynamicResource HintClose}"
+                                        AutomationProperties.Name="{DynamicResource HintClose}"
+                                        Click="WindowCloseButton_Click">
+                                        <Viewbox Width="12"
+                                            Height="12"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center">
+                                            <Canvas Width="16" Height="16">
+                                                <Path Style="{StaticResource SelectedAwareWindowIconStyle}"
+                                                    StrokeThickness="1.75"
+                                                    StrokeStartLineCap="Round"
+                                                    StrokeEndLineCap="Round"
+                                                    Data="M3.5,3.5 L12.5,12.5 M12.5,3.5 L3.5,12.5" />
+                                            </Canvas>
+                                        </Viewbox>
+                                    </Button>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>

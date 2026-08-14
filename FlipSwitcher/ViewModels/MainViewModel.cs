@@ -396,11 +396,15 @@ public class MainViewModel : ObservableObject, IDisposable
     /// Close the selected window and refresh the list.
     /// </summary>
     /// <returns>true if closed successfully, false if the window is elevated and we're not admin.</returns>
-    public bool CloseSelectedWindow()
-    {
-        if (SelectedWindow == null) return true;
+    public bool CloseSelectedWindow() => CloseWindow(SelectedWindow);
 
-        var windowToClose = SelectedWindow;
+    /// <summary>
+    /// Close a specific window and update the filtered list without disturbing an unrelated selection.
+    /// </summary>
+    /// <returns>true if the close request was handled, false if administrator privileges are required.</returns>
+    public bool CloseWindow(AppWindow? windowToClose)
+    {
+        if (windowToClose == null) return true;
 
         // Check if admin privileges are required.
         if (windowToClose.IsElevated && !Services.AdminService.IsRunningAsAdmin())
@@ -409,6 +413,7 @@ public class MainViewModel : ObservableObject, IDisposable
         }
 
         var currentIndex = FilteredWindows.IndexOf(windowToClose);
+        bool wasSelected = ReferenceEquals(SelectedWindow, windowToClose);
 
         // Close() returns false when it only dismissed an active modal child dialog (e.g. the
         // "Environment Variables" dialog owned by System Properties). The root window is still
@@ -421,7 +426,8 @@ public class MainViewModel : ObservableObject, IDisposable
         _windows.Remove(windowToClose);
         FilteredWindows.Remove(windowToClose);
         NotifyWindowCountChanged();
-        SelectWindowAfterRemoval(currentIndex);
+        if (wasSelected || SelectedWindow == null)
+            SelectWindowAfterRemoval(currentIndex);
         return true;
     }
 
