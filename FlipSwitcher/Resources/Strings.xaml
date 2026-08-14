@@ -126,7 +126,7 @@
     <system:String x:Key="SettingsWindowTitle">FlipSwitcher Settings</system:String>
     <system:String x:Key="VersionPreview">preview</system:String>
     <system:String x:Key="VersionFormat">FlipSwitcher v{0}</system:String>
-    <system:String x:Key="DefaultFontDisplay">Default (Segoe UI Variable)</system:String>
+    <system:String x:Key="DefaultFontDisplay">Default</system:String>
     <system:String x:Key="HotkeyNone">None</system:String>
     <system:String x:Key="HotkeySeparator"> / </system:String>
     <system:String x:Key="SettingsFont">Font</system:String>

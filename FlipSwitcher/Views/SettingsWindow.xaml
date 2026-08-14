@@ -14,6 +14,15 @@
     ResizeMode="NoResize"
     PreviewKeyDown="Window_PreviewKeyDown">
 
+    <Window.Resources>
+        <Style x:Key="SettingsDescriptionTextStyle"
+            TargetType="TextBlock"
+            BasedOn="{StaticResource CaptionTextStyle}">
+            <Setter Property="Margin" Value="0,4,8,0" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </Window.Resources>
+
     <!-- Main Container -->
     <Border Background="{DynamicResource BackgroundSolidBaseBrush}"
         BorderBrush="{DynamicResource SurfaceStrokeBrush}"
@@ -68,6 +77,7 @@
             <ScrollViewer Grid.Row="1"
                 Background="{DynamicResource BackgroundSolidBaseBrush}"
                 VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Disabled"
                 Padding="20,16,20,20"
                 Style="{DynamicResource FluentScrollViewerStyle}">
                 <StackPanel Margin="8,8,0,8">
@@ -93,13 +103,13 @@
                                 <TextBlock Text="{DynamicResource SettingsLanguage}"
                                     Style="{DynamicResource BodyStrongTextStyle}" />
                                 <TextBlock Text="{DynamicResource SettingsLanguageDesc}"
-                                    Style="{DynamicResource CaptionTextStyle}"
-                                    Margin="0,4,0,0" />
+                                    Style="{StaticResource SettingsDescriptionTextStyle}" />
                             </StackPanel>
 
                             <ComboBox x:Name="LanguageComboBox"
                                 Grid.Column="1"
                                 Width="120"
+                                VerticalAlignment="Center"
                                 SelectedIndex="0"
                                 SelectionChanged="LanguageComboBox_SelectionChanged"
                                 Style="{DynamicResource FluentComboBoxStyle}"
@@ -135,8 +145,7 @@
                                     <TextBlock Text="{DynamicResource SettingsAltSpace}"
                                         Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsAltSpaceDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <CheckBox x:Name="AltSpaceCheckBox"
@@ -171,8 +180,7 @@
                                         </Border>
                                     </StackPanel>
                                     <TextBlock Text="{DynamicResource SettingsAltTabDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <CheckBox x:Name="AltTabCheckBox"
@@ -227,8 +235,7 @@
                                     <TextBlock Text="{DynamicResource SettingsFollowSystemTheme}"
                                         Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsFollowSystemThemeDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <CheckBox x:Name="FollowSystemThemeCheckBox"
@@ -250,13 +257,13 @@
                                     <TextBlock Text="{DynamicResource SettingsTheme}"
                                         Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsThemeDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <ComboBox x:Name="ThemeComboBox"
                                     Grid.Column="1"
                                     Width="120"
+                                    VerticalAlignment="Center"
                                     SelectedIndex="0"
                                     SelectionChanged="ThemeComboBox_SelectionChanged"
                                     Style="{DynamicResource FluentComboBoxStyle}"
@@ -279,13 +286,13 @@
                                     <TextBlock Text="{DynamicResource SettingsFont}"
                                         Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsFontDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <ComboBox x:Name="FontFamilyComboBox"
                                     Grid.Column="1"
                                     Width="200"
+                                    VerticalAlignment="Center"
                                     SelectionChanged="FontFamilyComboBox_SelectionChanged"
                                     Style="{DynamicResource FluentComboBoxStyle}"
                                     ItemContainerStyle="{DynamicResource FluentComboBoxItemStyle}" />
@@ -329,8 +336,7 @@
                                     </StackPanel>
                                     <TextBlock
                                         Text="{DynamicResource SettingsRunAsAdminDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <CheckBox x:Name="RunAsAdminCheckBox"
@@ -352,8 +358,7 @@
                                     <TextBlock Text="{DynamicResource SettingsStartWithWindows}"
                                         Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsStartWithWindowsDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <CheckBox x:Name="StartWithWindowsCheckBox"
@@ -375,8 +380,7 @@
                                     <TextBlock Text="{DynamicResource SettingsHideOnFocusLost}"
                                         Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsHideOnFocusLostDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <CheckBox x:Name="HideOnFocusLostCheckBox"
@@ -398,8 +402,7 @@
                                     <TextBlock Text="{DynamicResource SettingsPinyinSearch}"
                                         Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsPinyinSearchDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <CheckBox x:Name="PinyinSearchCheckBox"
@@ -421,8 +424,7 @@
                                     <TextBlock Text="{DynamicResource SettingsShowMonitorInfo}"
                                         Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsShowMonitorInfoDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <CheckBox x:Name="ShowMonitorInfoCheckBox"
@@ -444,8 +446,7 @@
                                     <TextBlock Text="{DynamicResource SettingsOpenSearchOnActivation}"
                                         Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsOpenSearchOnActivationDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <CheckBox x:Name="OpenSearchOnActivationCheckBox"
@@ -467,8 +468,7 @@
                                     <TextBlock Text="{DynamicResource SettingsShowOnMouseScreen}"
                                         Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock Text="{DynamicResource SettingsShowOnMouseScreenDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <CheckBox x:Name="ShowOnMouseScreenCheckBox"
@@ -504,8 +504,7 @@
                                         Style="{DynamicResource BodyStrongTextStyle}" />
                                     <TextBlock
                                         Text="{DynamicResource SettingsCheckForUpdatesAutoDesc}"
-                                        Style="{DynamicResource CaptionTextStyle}"
-                                        Margin="0,4,0,0" />
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
                                 </StackPanel>
 
                                 <CheckBox x:Name="CheckForUpdatesCheckBox"
