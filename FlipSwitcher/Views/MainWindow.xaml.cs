@@ -518,6 +518,41 @@ public partial class MainWindow : Window
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // Alt + vim keys: H/L move left/right and J/K move down/up between cards in grid
+        // view (mirroring the arrow keys); list view supports J/K only (mirroring its
+        // arrows). While Alt is held WPF reports e.Key == Key.System with the real key in
+        // SystemKey — normalize before matching, or the guard is silently dead.
+        var vimKey = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (vimKey is Key.H or Key.J or Key.K or Key.L
+            && Keyboard.Modifiers is ModifierKeys.Alt or (ModifierKeys.Alt | ModifierKeys.Shift))
+        {
+            if (_viewModel.IsGridView)
+            {
+                switch (vimKey)
+                {
+                    case Key.H: _viewModel.MoveGridSelection(-1, 0); break;
+                    case Key.L: _viewModel.MoveGridSelection(1, 0); break;
+                    case Key.J: _viewModel.MoveGridSelection(0, 1); break;
+                    case Key.K: _viewModel.MoveGridSelection(0, -1); break;
+                }
+                ScrollGridSelectedIntoView();
+                e.Handled = true;
+                return;
+            }
+            else if (vimKey is Key.J or Key.K)
+            {
+                if (vimKey == Key.J)
+                    _viewModel.MoveSelectionDown();
+                else
+                    _viewModel.MoveSelectionUp();
+                ScrollSelectedIntoView();
+                e.Handled = true;
+                return;
+            }
+
+            // List-mode H/L: no movement there — fall through to the switch below unhandled.
+        }
+
         switch (e.Key)
         {
             case Key.Escape:

@@ -47,6 +47,7 @@ dotnet run --project FlipSwitcher
 | `Alt + ,`     | 打开设置                                    |
 | `Alt + →`     | 按选中应用分组显示窗口                      |
 | `Alt + ←`     | 返回完整窗口列表                            |
+| `Alt + H / J / K / L` | 以 Vim 风格移动选中项（列表视图仅支持 J/K） |
 | `Alt + D`     | 终止选定进程                                |
 
 ## ✨ 特性

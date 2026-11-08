@@ -47,6 +47,7 @@ dotnet run --project FlipSwitcher
 | `Alt + ,`     | Open settings                                         |
 | `Alt + →`     | Group windows by selected app                         |
 | `Alt + ←`     | Back to full window list                              |
+| `Alt + H / J / K / L` | Move the selection, vim-style (list view supports J/K only) |
 | `Alt + D`     | Terminate the selected process                        |
 
 ## ✨ Features
