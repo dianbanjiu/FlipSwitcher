@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -42,6 +43,16 @@ public class MainViewModel : ObservableObject, IDisposable
     private string? _groupedProcessName;
     private AppWindow? _lastSelectedWindowBeforeGrouping;
 
+    // Hold-mode ordering gate. Set from the selectSecondWindow parameter of every
+    // RefreshWindows/RefreshWindowsAsync call (i.e. true while Alt is held in Alt+Tab
+    // mode) and deliberately left to persist until the next refresh: parameterless
+    // filter passes (search debounce, ungroup, post-removal refilter) have no Alt-state
+    // source of their own and must inherit the current mode's ordering instead of
+    // re-sorting held-Alt cycling into frequency order. ApplyUsageOrder reads this —
+    // it is the single gate; explicit selectSecondWindow:true still forces no-order
+    // regardless of the field.
+    private bool _suppressUsageOrder;
+
     // Debounce timer for SearchText. Idle filter passes are cheap on small lists, but
     // typing 5 characters quickly on a list with pinyin enabled used to trigger 5 full
     // pinyin computations — this collapses to one.
@@ -75,7 +86,13 @@ public class MainViewModel : ObservableObject, IDisposable
         FilterWindows();
     }
 
-    private void OnSettingsChanged(object? sender, EventArgs e) => OnPropertyChanged(nameof(ShowMonitorInfo));
+    private void OnSettingsChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(ShowMonitorInfo));
+        OnPropertyChanged(nameof(IsGridView));
+        OnPropertyChanged(nameof(ShowListView));
+        OnPropertyChanged(nameof(ShowGridView));
+    }
 
     public void Dispose()
     {
@@ -133,6 +150,67 @@ public class MainViewModel : ObservableObject, IDisposable
             OnPropertyChanged();
         }
     }
+
+    // Actual viewport width of the grid (reported by WindowGrid.SizeChanged), used by
+    // CardWidth to divide the real available width — scrollbar appearance included.
+    private double _gridViewportWidth;
+
+    private GridLayout _layout = GridDensity.Calculate(
+        0, SystemParameters.WorkArea.Width, SystemParameters.WorkArea.Height);
+
+    /// <summary>Current grid layout, recomputed whenever FilteredWindows changes size.</summary>
+    public GridLayout Layout
+    {
+        get => _layout;
+        private set
+        {
+            if (!_layout.Equals(value))
+            {
+                _layout = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CardWidth));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Per-card width: divides the grid's actual viewport width (reported via
+    /// <see cref="UpdateCardWidth"/>) so full rows fill edge-to-edge, with the vertical
+    /// scrollbar's width automatically accounted for. Falls back to a (PopupWidth - 16)
+    /// estimate for the first measure pass before layout runs; capped and centered for
+    /// 1-2 columns.
+    /// </summary>
+    public double CardWidth
+    {
+        get
+        {
+            // Actual viewport width once known; PopupWidth-based estimate only for the
+            // first measure pass before layout runs.
+            double available = _gridViewportWidth > 0 ? _gridViewportWidth : Layout.PopupWidth - 16;
+            double width = available / Math.Max(Layout.Columns, 1);
+            if (Layout.Columns <= 2)
+                width = Math.Min(width, GridDensity.LowDensityCardMaxWidth);
+            return Math.Floor(width);
+        }
+    }
+
+    /// <summary>
+    /// Record the grid's actual viewport width (from WindowGrid.SizeChanged) so CardWidth
+    /// divides the real available width — scrollbar appearance/disappearance included —
+    /// and every full row fills edge-to-edge.
+    /// </summary>
+    public void UpdateCardWidth(double viewportWidth)
+    {
+        if (Math.Abs(_gridViewportWidth - viewportWidth) < 0.5) return;
+        _gridViewportWidth = viewportWidth;
+        OnPropertyChanged(nameof(CardWidth));
+    }
+
+    /// <summary>Grid is the default view; the setting only needs an explicit List to opt out.</summary>
+    public bool IsGridView => SettingsService.Instance.Settings.ViewMode != ViewMode.List;
+
+    public bool ShowListView => HasWindows && !IsGridView;
+    public bool ShowGridView => HasWindows && IsGridView;
 
     public int WindowCount => FilteredWindows.Count;
     public bool HasWindows => FilteredWindows.Count > 0;
@@ -204,6 +282,15 @@ public class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(WindowCount));
         OnPropertyChanged(nameof(HasWindows));
         OnPropertyChanged(nameof(NoWindowsFound));
+        UpdateGridLayout();
+        OnPropertyChanged(nameof(ShowListView));
+        OnPropertyChanged(nameof(ShowGridView));
+    }
+
+    private void UpdateGridLayout()
+    {
+        var work = SystemParameters.WorkArea;
+        Layout = GridDensity.Calculate(_filteredWindows.Count, work.Width, work.Height);
     }
 
     private void ExitGroupingMode()
@@ -241,6 +328,10 @@ public class MainViewModel : ObservableObject, IDisposable
         // Cancel any pending debounced filter — we're refreshing now.
         _searchDebounceTimer.Stop();
 
+        // Record hold-mode before enumerating; parameterless filter passes consult this
+        // until the next refresh (see _suppressUsageOrder).
+        _suppressUsageOrder = selectSecondWindow;
+
         _windows = _windowService.GetWindows();
         ApplyRefreshedWindows(selectSecondWindow);
     }
@@ -266,6 +357,11 @@ public class MainViewModel : ObservableObject, IDisposable
         {
             // Cancel any pending debounced filter — we're refreshing now.
             _searchDebounceTimer.Stop();
+
+            // Record hold-mode before the enumeration; parameterless filter passes consult
+            // this until the next refresh (see _suppressUsageOrder). After the _isRefreshing
+            // guard so a rejected overlapping call can't clobber the in-flight mode.
+            _suppressUsageOrder = selectSecondWindow;
 
             // EnumWindows + per-window Win32/DWM calls are the slow part and touch no WPF objects,
             // so they run off the UI thread. The AppWindow instances created here are plain models;
@@ -295,6 +391,9 @@ public class MainViewModel : ObservableObject, IDisposable
                 if (_windows[i].ProcessName == _groupedProcessName)
                     groupedWindows.Add(_windows[i]);
             }
+
+            // Same Alt+Tab-hold exception as FilterWindows: never re-sort held-Alt cycling.
+            ApplyUsageOrder(groupedWindows, selectSecondWindow);
 
             UpdateFilteredWindows(groupedWindows);
             NotifyWindowCountChanged();
@@ -337,6 +436,11 @@ public class MainViewModel : ObservableObject, IDisposable
             }
         }
 
+        // Held-Alt cycling must stay MRU (OS contract) — usage ordering only applies
+        // to plain opens/refreshes/search passes. The gate lives in ApplyUsageOrder
+        // (single source of truth, consulted by every ordering path).
+        ApplyUsageOrder(filtered, selectSecondWindow);
+
         UpdateFilteredWindows(filtered);
         NotifyWindowCountChanged();
 
@@ -349,6 +453,30 @@ public class MainViewModel : ObservableObject, IDisposable
         {
             SelectedWindow = null;
         }
+    }
+
+    /// <summary>
+    /// Reorder a filtered list by usage frequency (most-activated process first), ties
+    /// keeping the existing Z-order. No-op when <see cref="AppSettings.FrequencyOrdering"/>
+    /// is off, on the Alt+Tab hold path (explicit <paramref name="selectSecondWindow"/>),
+    /// or while <see cref="_suppressUsageOrder"/> is set (last refresh was a hold —
+    /// parameterless filter passes inherit it). Held-Alt cycling must remain MRU per
+    /// the OS contract, so this method is the single gate for all ordering call sites.
+    /// </summary>
+    private void ApplyUsageOrder(List<AppWindow> list, bool selectSecondWindow)
+    {
+        if (!SettingsService.Instance.Settings.FrequencyOrdering
+            || _suppressUsageOrder
+            || selectSecondWindow)
+            return;
+
+        var ordered = UsageOrdering.Apply(
+            list,
+            window => window.ProcessName,
+            processName => UsageStatsService.Instance.GetCount(processName));
+
+        list.Clear();
+        list.AddRange(ordered);
     }
 
     public void MoveSelectionUp()
@@ -373,6 +501,52 @@ public class MainViewModel : ObservableObject, IDisposable
 
         var newIndex = currentIndex < FilteredWindows.Count - 1 ? currentIndex + 1 : 0;
         SelectedWindow = FilteredWindows[newIndex];
+    }
+
+    /// <summary>
+    /// Move the grid selection spatially. dx = ±1 moves within a row (stepping from the last
+    /// column of a row into the first column of the next row, and back), dy = ±1 moves a full
+    /// row. Selection stops at the first/last item — no wrap-around (spec §6).
+    /// </summary>
+    public void MoveGridSelection(int dx, int dy)
+    {
+        int count = FilteredWindows.Count;
+        if (count == 0) return;
+
+        int columns = Math.Max(Layout.Columns, 1);
+        int current = SelectedWindow != null ? FilteredWindows.IndexOf(SelectedWindow) : 0;
+        if (current < 0) current = 0;
+
+        int row = current / columns;
+        int col = current % columns;
+        int target;
+
+        if (dx != 0)
+        {
+            int newCol = col + dx;
+            if (newCol < 0)
+            {
+                if (row == 0) return;
+                row -= 1;
+                newCol = columns - 1;
+            }
+            else if (newCol >= columns)
+            {
+                if ((row + 1) * columns >= count) return;
+                row += 1;
+                newCol = 0;
+            }
+            target = row * columns + newCol;
+        }
+        else
+        {
+            int newRow = row + dy;
+            if (newRow < 0 || newRow * columns >= count) return;
+            target = newRow * columns + col;
+        }
+
+        if (target < 0 || target >= count) return;
+        SelectedWindow = FilteredWindows[target];
     }
 
     public void ActivateSelected()
@@ -465,7 +639,14 @@ public class MainViewModel : ObservableObject, IDisposable
         // Hide the switcher immediately so the UI stays responsive even when
         // activation is skipped. This also resets the hotkey's ignore-Alt-release flag.
         WindowActivated?.Invoke(this, EventArgs.Empty);
-        _ = _activationService.TryActivate(window.Handle, window.Activate);
+
+        // TryActivate returns null for duplicate/rejected requests (at capacity or the
+        // same HWND is already activating); a non-null task means the activation actually
+        // started — only then count it toward usage-frequency ordering.
+        if (_activationService.TryActivate(window.Handle, window.Activate) != null)
+        {
+            UsageStatsService.Instance.RecordActivation(window.ProcessName);
+        }
     }
 
     public void ClearSearch()

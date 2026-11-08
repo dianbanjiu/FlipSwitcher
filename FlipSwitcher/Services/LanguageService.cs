@@ -5,16 +5,6 @@ using System.Windows;
 namespace FlipSwitcher.Services;
 
 /// <summary>
-/// Supported languages
-/// </summary>
-public enum AppLanguage
-{
-    English,
-    Chinese,
-    ChineseTraditional
-}
-
-/// <summary>
 /// Service for managing application language/localization
 /// </summary>
 public class LanguageService

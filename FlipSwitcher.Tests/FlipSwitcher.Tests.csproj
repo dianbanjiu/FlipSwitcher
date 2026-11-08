@@ -6,5 +6,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../FlipSwitcher/Services/WindowActivationService.cs" Link="Services/WindowActivationService.cs" />
+    <Compile Include="../FlipSwitcher/Services/SettingsService.cs" Link="Services/SettingsService.cs" />
+    <Compile Include="../FlipSwitcher/Services/GridDensity.cs" Link="Services/GridDensity.cs" />
+    <Compile Include="../FlipSwitcher/Services/UsageStatsService.cs" Link="Services/UsageStatsService.cs" />
+    <Compile Include="../FlipSwitcher/Services/UsageOrdering.cs" Link="Services/UsageOrdering.cs" />
   </ItemGroup>
 </Project>

@@ -49,6 +49,12 @@
     <system:String x:Key="SettingsAppearance">Appearance</system:String>
     <system:String x:Key="SettingsTheme">Theme</system:String>
     <system:String x:Key="SettingsThemeDesc">Choose between light and dark mode</system:String>
+    <system:String x:Key="SettingsViewMode">View Mode</system:String>
+    <system:String x:Key="SettingsViewModeDesc">Switcher layout for multiple windows (applies on next open)</system:String>
+    <system:String x:Key="SettingsFrequencyOrdering">Frequency Ordering</system:String>
+    <system:String x:Key="SettingsFrequencyOrderingDesc">Sort windows by how often you activate them (applies on next open)</system:String>
+    <system:String x:Key="ViewModeGrid">Grid</system:String>
+    <system:String x:Key="ViewModeList">List</system:String>
     <system:String x:Key="ThemeDark">Dark</system:String>
     <system:String x:Key="ThemeLight">Light</system:String>
     <system:String x:Key="ThemeLatte">Latte</system:String>

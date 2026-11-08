@@ -275,6 +275,54 @@
                                 </ComboBox>
                             </Grid>
 
+                            <!-- View Mode Option -->
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{DynamicResource SettingsViewMode}"
+                                        Style="{DynamicResource BodyStrongTextStyle}" />
+                                    <TextBlock Text="{DynamicResource SettingsViewModeDesc}"
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                </StackPanel>
+
+                                <ComboBox x:Name="ViewModeComboBox"
+                                    Grid.Column="1"
+                                    Width="120"
+                                    VerticalAlignment="Center"
+                                    SelectionChanged="ViewModeComboBox_SelectionChanged"
+                                    Style="{DynamicResource FluentComboBoxStyle}"
+                                    ItemContainerStyle="{DynamicResource FluentComboBoxItemStyle}">
+                                    <ComboBoxItem Content="{DynamicResource ViewModeGrid}" />
+                                    <ComboBoxItem Content="{DynamicResource ViewModeList}" />
+                                </ComboBox>
+                            </Grid>
+
+                            <!-- Frequency Ordering Option -->
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{DynamicResource SettingsFrequencyOrdering}"
+                                        Style="{DynamicResource BodyStrongTextStyle}" />
+                                    <TextBlock Text="{DynamicResource SettingsFrequencyOrderingDesc}"
+                                        Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                </StackPanel>
+
+                                <CheckBox x:Name="FrequencyOrderingCheckBox"
+                                    Grid.Column="1"
+                                    IsChecked="False"
+                                    Checked="FrequencyOrderingCheckBox_Changed"
+                                    Unchecked="FrequencyOrderingCheckBox_Changed"
+                                    Style="{DynamicResource FluentCheckBoxStyle}" />
+                            </Grid>
+
                             <!-- Font Family Option -->
                             <Grid Margin="0,0,0,16">
                                 <Grid.ColumnDefinitions>

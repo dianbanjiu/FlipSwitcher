@@ -1,0 +1,86 @@
+<UserControl x:Class="FlipSwitcher.Controls.WindowCard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:FlipSwitcher.Converters">
+
+    <UserControl.Resources>
+        <converters:ElevatedToVisibilityConverter x:Key="ElevatedToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <Border x:Name="CardRoot"
+        CornerRadius="8"
+        Background="{DynamicResource ControlDefaultBrush}"
+        BorderThickness="2"
+        Cursor="Hand">
+        <Border.Style>
+            <Style TargetType="Border">
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource AccentDefaultBrush}" />
+                    </DataTrigger>
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding IsSelected}" Value="False" />
+                            <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True" />
+                        </MultiDataTrigger.Conditions>
+                        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceStrokeBrush}" />
+                    </MultiDataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+
+        <Grid Margin="10,8" VerticalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Border Width="36" Height="36"
+                Background="{DynamicResource ControlDefaultBrush}"
+                CornerRadius="7">
+                <Image Source="{Binding Icon}"
+                    Width="28" Height="28"
+                    RenderOptions.BitmapScalingMode="Fant"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0,0,0">
+                <TextBlock Text="{Binding FormattedTitle}"
+                    Style="{DynamicResource BodyStrongTextStyle}"
+                    TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding ProcessName}"
+                    Style="{DynamicResource CaptionTextStyle}"
+                    Foreground="{DynamicResource TextSecondaryBrush}"
+                    Margin="0,1,0,0" />
+            </StackPanel>
+
+            <!-- Elevated Indicator (Admin window when not running as admin) -->
+            <Border Grid.Column="2"
+                Visibility="{Binding IsElevated, Converter={StaticResource ElevatedToVisibilityConverter}}"
+                Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                CornerRadius="4"
+                Width="28"
+                Height="24"
+                Margin="8,0,0,0"
+                VerticalAlignment="Center"
+                ToolTip="{DynamicResource ElevatedWindow}">
+                <Viewbox Width="14"
+                    Height="14"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                    <Canvas Width="16" Height="16">
+                        <Path
+                            Stroke="{DynamicResource SystemFillColorCautionBrush}"
+                            StrokeThickness="1.5"
+                            StrokeStartLineCap="Round"
+                            StrokeEndLineCap="Round"
+                            StrokeLineJoin="Round"
+                            Fill="Transparent"
+                            Data="M8,2.25 L13,4.25 L13,7.5 C13,10.6 10.95,13.25 8,14.25 C5.05,13.25 3,10.6 3,7.5 L3,4.25 Z" />
+                    </Canvas>
+                </Viewbox>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

@@ -140,6 +140,8 @@ public partial class SettingsWindow : Window
         ShowOnMouseScreenCheckBox.IsChecked = settings.ShowOnMouseScreen;
         FollowSystemThemeCheckBox.IsChecked = settings.FollowSystemTheme;
         ThemeComboBox.SelectedIndex = (int)settings.Theme;
+        ViewModeComboBox.SelectedIndex = (int)settings.ViewMode;
+        FrequencyOrderingCheckBox.IsChecked = settings.FrequencyOrdering;
         CheckForUpdatesCheckBox.IsChecked = settings.CheckForUpdates;
 
         UpdateThemeControlsState();
@@ -341,6 +343,19 @@ public partial class SettingsWindow : Window
             ThemeService.Instance.ApplyTheme((AppTheme)ThemeComboBox.SelectedIndex);
             UpdateAdminStatusDisplay();
         });
+    }
+
+    private void ViewModeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        SaveSetting((s, v) => s.ViewMode = (ViewMode)v, ViewModeComboBox.SelectedIndex);
+    }
+
+    private void FrequencyOrderingCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        // No live re-sort of the switcher list here (consistent with ViewMode's
+        // next-open semantics): the new ordering applies on the next
+        // open/refresh/filter pass.
+        SaveSetting((s, v) => s.FrequencyOrdering = v, FrequencyOrderingCheckBox.IsChecked == true);
     }
 
     private void FollowSystemThemeCheckBox_Changed(object sender, RoutedEventArgs e)

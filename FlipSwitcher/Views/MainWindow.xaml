@@ -5,6 +5,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:FlipSwitcher.ViewModels"
     xmlns:converters="clr-namespace:FlipSwitcher.Converters"
+    xmlns:controls="clr-namespace:FlipSwitcher.Controls"
     mc:Ignorable="d"
     Title="{DynamicResource AppTitle}"
     Height="520"
@@ -198,7 +199,7 @@
                         SelectedItem="{Binding SelectedWindow, Mode=TwoWay}"
                         Style="{DynamicResource FluentListBoxStyle}"
                         Padding="8,4"
-                        Visibility="{Binding HasWindows, Converter={StaticResource BoolToVisibilityConverter}}"
+                        Visibility="{Binding ShowListView, Converter={StaticResource BoolToVisibilityConverter}}"
                         PreviewMouseLeftButtonUp="WindowList_PreviewMouseLeftButtonUp"
                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                         VirtualizingPanel.IsVirtualizing="True"
@@ -350,6 +351,34 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
+
+                    <!-- Thumbnail Grid -->
+                    <ScrollViewer
+                        Visibility="{Binding ShowGridView, Converter={StaticResource BoolToVisibilityConverter}}"
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled"
+                        Background="Transparent">
+                        <ItemsControl x:Name="WindowGrid"
+                            ItemsSource="{Binding FilteredWindows}"
+                            Focusable="False"
+                            Margin="8"
+                            SizeChanged="WindowGrid_SizeChanged">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel
+                                        ItemWidth="{Binding CardWidth}"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Top" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <controls:WindowCard
+                                        MouseLeftButtonUp="WindowCard_MouseLeftButtonUp" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
 
                     <!-- Empty State -->
                     <StackPanel

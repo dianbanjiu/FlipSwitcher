@@ -51,6 +51,7 @@ dotnet run --project FlipSwitcher
 
 ## ✨ Features
 
+- **Thumbnail Grid** - Switch between windows in an adaptive multi-column grid; the popup adapts its size to the number of windows (View Mode setting switches back to the classic list)
 - **Fast Search** - Quickly filter windows by typing
 - **Pinyin Search** - Search Chinese window titles using pinyin initials or full pinyin (optional, disabled by default)
 - **Multi-Monitor Support** - Show which monitor each window is on in multi-monitor setups (optional, disabled by default)

@@ -194,6 +194,22 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        // Flush usage counts so the last activation isn't lost. Every real exit funnels
+        // through here: ShutdownMode is OnExplicitShutdown (tray app), and the tray Exit
+        // menu, the restart-as-admin/normal-user paths, and the OnStartup early-outs all
+        // call Application.Shutdown. MainWindow close merely hides the switcher and does
+        // NOT terminate the process, so it must not (and does not) reach this. Guarded:
+        // exit must never fail because of stats (PersistNow already swallows IO errors;
+        // this catch is belt-and-braces).
+        try
+        {
+            UsageStatsService.Instance.PersistNow();
+        }
+        catch
+        {
+            // Stats are best-effort — never block shutdown.
+        }
+
         _trayIconService?.Dispose();
         UpdateService.Instance.Dispose();
         ThemeService.Instance.Dispose();

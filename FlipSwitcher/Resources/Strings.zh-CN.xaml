@@ -49,6 +49,12 @@
     <system:String x:Key="SettingsAppearance">外观</system:String>
     <system:String x:Key="SettingsTheme">主题</system:String>
     <system:String x:Key="SettingsThemeDesc">选择浅色或深色模式</system:String>
+    <system:String x:Key="SettingsViewMode">视图模式</system:String>
+    <system:String x:Key="SettingsViewModeDesc">多窗口时的切换器布局（下次打开时生效）</system:String>
+    <system:String x:Key="SettingsFrequencyOrdering">常用优先</system:String>
+    <system:String x:Key="SettingsFrequencyOrderingDesc">按激活频率排序窗口（下次打开时生效）</system:String>
+    <system:String x:Key="ViewModeGrid">网格</system:String>
+    <system:String x:Key="ViewModeList">列表</system:String>
     <system:String x:Key="ThemeDark">深色</system:String>
     <system:String x:Key="ThemeLight">浅色</system:String>
     <system:String x:Key="ThemeLatte">拿铁</system:String>
