@@ -6,6 +6,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using FlipSwitcher.Controls;
 using FlipSwitcher.Core;
 using FlipSwitcher.Models;
 using FlipSwitcher.Services;
@@ -42,6 +43,7 @@ public partial class MainWindow : Window
         
         _viewModel = (MainViewModel)DataContext;
         _viewModel.WindowActivated += ViewModel_WindowActivated;
+        _viewModel.PropertyChanged += ViewModel_PropertyChanged;
 
         _hotkeyService = new HotkeyService();
         _hotkeyService.HotkeyPressed += HotkeyService_HotkeyPressed;
@@ -162,12 +164,16 @@ public partial class MainWindow : Window
     {
         if (!IsVisible) return;
 
+        // Held-Alt+Tab cycling must reach every window in MRU order (wrap), in BOTH view
+        // modes — spatial grid movement would strand the user in one column. Arrow keys
+        // (Window_PreviewKeyDown) remain spatial in grid mode per spec §6.
         if (e.Direction == NavigationDirection.Next)
             _viewModel.MoveSelectionDown();
         else
             _viewModel.MoveSelectionUp();
-        
+
         ScrollSelectedIntoView();
+        ScrollGridSelectedIntoView();
     }
 
     private void HotkeyService_AltReleased(object? sender, EventArgs e)
@@ -190,16 +196,33 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Skip activation for elevated windows when not running as admin
+        // Skip activation for elevated windows when not running as admin (UIPI) —
+        // hide the popup and tell the user why instead of failing silently.
         if (selectedWindow.IsElevated && !AdminService.IsRunningAsAdmin())
         {
             HideWindow();
+            FluentDialog.Show(
+                LanguageService.GetString("MsgCannotSwitchToElevatedWindow"),
+                LanguageService.GetString("AppTitle"),
+                FluentDialogButton.OK,
+                FluentDialogIcon.Warning,
+                this);
             return;
         }
 
         // Ignore simulated Alt release events during window activation
         _hotkeyService.SetIgnoreAltRelease(true);
         _viewModel.ActivateSelected();
+    }
+
+    /// <summary>
+    /// Activate a specific window from a grid card click (selects it first so Alt+W etc.
+    /// keep operating on the clicked card).
+    /// </summary>
+    internal void ActivateCard(AppWindow window)
+    {
+        _viewModel.SelectedWindow = window;
+        ActivateSelectedWindow();
     }
 
     private void HotkeyService_CloseWindowRequested(object? sender, EventArgs e)
@@ -306,6 +329,51 @@ public partial class MainWindow : Window
         ScrollSelectedIntoView();
     }
 
+    private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        // Live re-size while open: search and grouping change the window count, which
+        // recomputes the grid layout.
+        if (e.PropertyName == nameof(MainViewModel.Layout) && IsVisible)
+            ApplyGridLayout();
+    }
+
+    /// <summary>
+    /// Apply the grid's computed popup size and re-center. List mode restores the fixed
+    /// 640x520 (spec §9 item 10), overriding any size left behind by a previous grid session.
+    /// </summary>
+    private void ApplyGridLayout()
+    {
+        if (!_viewModel.IsGridView)
+        {
+            // List mode is fixed-size (spec §9 item 10) — restore in case a previous
+            // grid session resized the popup, and re-center so the first open after a
+            // Grid→List switch isn't offset by the size delta.
+            Width = 640;
+            Height = 520;
+            RecenterPopup();
+            return;
+        }
+
+        var layout = _viewModel.Layout;
+        Width = layout.PopupWidth;
+        Height = layout.PopupHeight;
+        RecenterPopup();
+    }
+
+    private void RecenterPopup()
+    {
+        if (SettingsService.Instance.Settings.ShowOnMouseScreen)
+        {
+            PositionOnMouseScreen();
+        }
+        else
+        {
+            var workArea = SystemParameters.WorkArea;
+            Left = (workArea.Width - Width) / 2 + workArea.Left;
+            Top = (workArea.Height - Height) / 2 + workArea.Top;
+        }
+    }
+
     private async void ShowWindow()
     {
         // Reset grouping state to ensure the full list is shown
@@ -323,16 +391,7 @@ public partial class MainWindow : Window
         // window enumeration then runs on a background thread and populates the list a moment
         // later — it no longer blocks the window from painting. The list briefly shows the
         // previous session's contents until RefreshWindowsAsync completes (typically <1 frame).
-        if (SettingsService.Instance.Settings.ShowOnMouseScreen)
-        {
-            PositionOnMouseScreen();
-        }
-        else
-        {
-            var workArea = SystemParameters.WorkArea;
-            Left = (workArea.Width - Width) / 2 + workArea.Left;
-            Top = (workArea.Height - Height) / 2 + workArea.Top;
-        }
+        RecenterPopup();
 
         Show();
         Activate();
@@ -359,6 +418,8 @@ public partial class MainWindow : Window
         // is applied after enumeration completes, before the user releases Alt in practice.
         await _viewModel.RefreshWindowsAsync(selectSecondWindow: _isAltTabMode);
 
+        ApplyGridLayout();
+
         // Delay scroll execution to ensure layout is complete. Fire-and-forget: DispatcherOperation
         // is awaitable, so discard it to avoid CS4014 now that ShowWindow is async.
         _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
@@ -382,8 +443,8 @@ public partial class MainWindow : Window
         if (NativeMethods.GetDpiForMonitor(hMonitor, NativeMethods.MDT_EFFECTIVE_DPI, out uint dpiX, out uint _) == 0)
             targetDpiScale = dpiX / 96.0;
 
-        int expectedWidthPx = (int)(640 * targetDpiScale);
-        int expectedHeightPx = (int)(520 * targetDpiScale);
+        int expectedWidthPx = (int)(Width * targetDpiScale);
+        int expectedHeightPx = (int)(Height * targetDpiScale);
 
         var rc = monitorInfo.rcWork;
         int x = rc.Left + (rc.Right - rc.Left - expectedWidthPx) / 2;
@@ -402,7 +463,7 @@ public partial class MainWindow : Window
             _viewModel.ClearSearch();
             _isAltTabMode = false;
             IsSearchMode = false;
-            
+
             // Notify hotkey service that we're hidden
             _hotkeyService.SetVisible(false);
             _hotkeyService.SetSearchMode(false);
@@ -457,6 +518,41 @@ public partial class MainWindow : Window
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // Alt + vim keys: H/L move left/right and J/K move down/up between cards in grid
+        // view (mirroring the arrow keys); list view supports J/K only (mirroring its
+        // arrows). While Alt is held WPF reports e.Key == Key.System with the real key in
+        // SystemKey — normalize before matching, or the guard is silently dead.
+        var vimKey = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (vimKey is Key.H or Key.J or Key.K or Key.L
+            && Keyboard.Modifiers is ModifierKeys.Alt or (ModifierKeys.Alt | ModifierKeys.Shift))
+        {
+            if (_viewModel.IsGridView)
+            {
+                switch (vimKey)
+                {
+                    case Key.H: _viewModel.MoveGridSelection(-1, 0); break;
+                    case Key.L: _viewModel.MoveGridSelection(1, 0); break;
+                    case Key.J: _viewModel.MoveGridSelection(0, 1); break;
+                    case Key.K: _viewModel.MoveGridSelection(0, -1); break;
+                }
+                ScrollGridSelectedIntoView();
+                e.Handled = true;
+                return;
+            }
+            else if (vimKey is Key.J or Key.K)
+            {
+                if (vimKey == Key.J)
+                    _viewModel.MoveSelectionDown();
+                else
+                    _viewModel.MoveSelectionUp();
+                ScrollSelectedIntoView();
+                e.Handled = true;
+                return;
+            }
+
+            // List-mode H/L: no movement there — fall through to the switch below unhandled.
+        }
+
         switch (e.Key)
         {
             case Key.Escape:
@@ -470,30 +566,60 @@ public partial class MainWindow : Window
                 break;
 
             case Key.Up:
+                if (_viewModel.IsGridView)
+                {
+                    _viewModel.MoveGridSelection(0, -1);
+                    ScrollGridSelectedIntoView();
+                    e.Handled = true;
+                    break;
+                }
                 _viewModel.MoveSelectionUp();
                 ScrollSelectedIntoView();
+                ScrollGridSelectedIntoView();
                 e.Handled = true;
                 break;
 
             case Key.Down:
+                if (_viewModel.IsGridView)
+                {
+                    _viewModel.MoveGridSelection(0, 1);
+                    ScrollGridSelectedIntoView();
+                    e.Handled = true;
+                    break;
+                }
                 _viewModel.MoveSelectionDown();
                 ScrollSelectedIntoView();
+                ScrollGridSelectedIntoView();
                 e.Handled = true;
                 break;
 
             case Key.Right:
-                // When search box focused: Alt+Right groups, plain Right moves cursor
+                // When search box focused: plain Right moves the caret; Alt+Right groups.
                 if (SearchBox.IsFocused && Keyboard.Modifiers != ModifierKeys.Alt)
                     break;
+                if (_viewModel.IsGridView && Keyboard.Modifiers != ModifierKeys.Alt)
+                {
+                    _viewModel.MoveGridSelection(1, 0);
+                    ScrollGridSelectedIntoView();
+                    e.Handled = true;
+                    break;
+                }
                 _viewModel.GroupByProcess();
                 ScrollSelectedIntoView();
                 e.Handled = true;
                 break;
 
             case Key.Left:
-                // When search box focused: Alt+Left ungroups, plain Left moves cursor
+                // When search box focused: plain Left moves the caret; Alt+Left ungroups.
                 if (SearchBox.IsFocused && Keyboard.Modifiers != ModifierKeys.Alt)
                     break;
+                if (_viewModel.IsGridView && Keyboard.Modifiers != ModifierKeys.Alt)
+                {
+                    _viewModel.MoveGridSelection(-1, 0);
+                    ScrollGridSelectedIntoView();
+                    e.Handled = true;
+                    break;
+                }
                 _viewModel.UngroupFromProcess();
                 ScrollSelectedIntoView();
                 e.Handled = true;
@@ -505,6 +631,7 @@ public partial class MainWindow : Window
                 else
                     _viewModel.MoveSelectionDown();
                 ScrollSelectedIntoView();
+                ScrollGridSelectedIntoView();
                 e.Handled = true;
                 break;
 
@@ -548,10 +675,23 @@ public partial class MainWindow : Window
 
     private void ScrollSelectedIntoView()
     {
+        // Grid mode scrolls via ScrollGridSelectedIntoView; the ListBox is collapsed.
+        if (_viewModel.IsGridView) return;
+
         if (_viewModel.SelectedWindow != null)
         {
             WindowList.ScrollIntoView(_viewModel.SelectedWindow);
         }
+    }
+
+    /// <summary>Grid counterpart of <see cref="ScrollSelectedIntoView"/>: no-op in list mode.</summary>
+    private void ScrollGridSelectedIntoView()
+    {
+        if (!_viewModel.IsGridView || _viewModel.SelectedWindow == null) return;
+        if (WindowGrid.ItemContainerGenerator.ContainerFromItem(_viewModel.SelectedWindow) is not ContentPresenter presenter)
+            return;
+        if (FindVisualDescendant<WindowCard>(presenter) is { } card)
+            card.BringIntoView();
     }
 
     /// <summary>
@@ -611,6 +751,21 @@ public partial class MainWindow : Window
         return null;
     }
 
+    private static T? FindVisualDescendant<T>(DependencyObject root) where T : DependencyObject
+    {
+        int count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < count; i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+            if (child is T match)
+                return match;
+            var nested = FindVisualDescendant<T>(child);
+            if (nested != null)
+                return nested;
+        }
+        return null;
+    }
+
     private void WindowList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         var source = e.OriginalSource as DependencyObject;
@@ -625,6 +780,21 @@ public partial class MainWindow : Window
 
         _viewModel.SelectedWindow = window;
         ActivateSelectedWindow();
+    }
+
+    private void WindowCard_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is WindowCard card && card.DataContext is AppWindow window)
+        {
+            ActivateCard(window);
+        }
+    }
+
+    private void WindowGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        // Drives CardWidth from the real viewport so rows fill the full width —
+        // the vertical scrollbar's width is accounted for automatically.
+        _viewModel.UpdateCardWidth(e.NewSize.Width);
     }
 
     private void WindowCloseButton_Click(object sender, RoutedEventArgs e)

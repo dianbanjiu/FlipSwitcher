@@ -6,14 +6,6 @@ using Microsoft.Win32;
 
 namespace FlipSwitcher.Services;
 
-public enum AppTheme
-{
-    Dark = 0,
-    Light = 1,
-    Latte = 2,
-    Mocha = 3
-}
-
 public class ThemeService
 {
     private static ThemeService? _instance;

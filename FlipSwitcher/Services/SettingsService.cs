@@ -70,6 +70,37 @@ public class SettingsService
 }
 
 /// <summary>
+/// Application theme variant
+/// </summary>
+public enum AppTheme
+{
+    Dark = 0,
+    Light = 1,
+    Latte = 2,
+    Mocha = 3
+}
+
+/// <summary>
+/// Supported languages
+/// </summary>
+public enum AppLanguage
+{
+    English,
+    Chinese,
+    ChineseTraditional
+}
+
+/// <summary>
+/// Layout used by the switcher popup. Grid = DWM thumbnail grid (default), List = original list.
+/// Numeric order must match the ViewModeComboBox item order in SettingsWindow.
+/// </summary>
+public enum ViewMode
+{
+    Grid = 0,
+    List = 1
+}
+
+/// <summary>
 /// Application settings model
 /// </summary>
 public class AppSettings
@@ -137,5 +168,18 @@ public class AppSettings
     /// Show window on the screen where the mouse cursor is located
     /// </summary>
     public bool ShowOnMouseScreen { get; set; } = false;
+
+    /// <summary>
+    /// Switcher layout: thumbnail grid (default) or the original single-column list.
+    /// Takes effect the next time the switcher opens.
+    /// </summary>
+    public ViewMode ViewMode { get; set; } = ViewMode.Grid;
+
+    /// <summary>
+    /// 常用优先 ordering: sort windows by how often they are activated (most-used first),
+    /// ties keeping the existing Z-order. Takes effect the next time the list is
+    /// filtered/refreshed. Never applies to Alt+Tab hold mode, which must stay MRU.
+    /// </summary>
+    public bool FrequencyOrdering { get; set; } = true;
 }
 
